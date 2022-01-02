@@ -196,19 +196,28 @@ mod tests {
     }
 
     #[test]
-    fn test_lock() {
+    fn set_order() {
         let context = get_context(vec![], false);
         testing_env!(context);
         //let attached_deposit = env::attached_deposit();
         let mut contract = NearP2P::default();
-        let escrow_account_id = env::predecessor_account_id();
         let account_id = "info.testnet".to_string();
-        contract.lock(account_id.to_string());
-        print!("Locked balance: {}", contract.get_locked_balance(account_id.to_string(), escrow_account_id));
+        let asset = "NEAR".to_string();
+        let price = "14.5".to_string();
+        let amount = "100".to_string();
+        let min_limit = "10".to_string();
+        let max_limit = "100".to_string();
+        let order_type = 1;
+        let payment_method = 1;
+        let orders_completed = 0;
+        let percentaje_completion = 0;
+        let badge = "super star".to_string();
+        contract.set_offers(account_id, asset, price, amount, min_limit, max_limit, order_type, payment_method, orders_completed, percentaje_completion, badge);
+        assert_eq!(contract.get_offers().len(), 1);
     }
 
     #[test]
-    fn set_order() {
+    fn test_lock() {
         let context = get_context(vec![], false);
         testing_env!(context);
         //let attached_deposit = env::attached_deposit();
