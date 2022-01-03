@@ -1,6 +1,8 @@
 # NearP2PBackend
 
-Samrt contratc that controls the workflow of a Peer to Peer DaPP. At the moment, are defined the next funtions calls:
+Smart contratc that controls the workflow of a Peer to Peer DaPP. At the moment, are defined the next funtions calls:
+
+**NETWORK:** Testnet
 
 Created functions calls
 
