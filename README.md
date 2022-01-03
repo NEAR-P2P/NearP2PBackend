@@ -2,7 +2,7 @@
 
 Samrt contratc that controls the workflow of a Peer to Peer DaPP. At the moment, are defined the next funtions calls:
 
-Create functions calls
+Created functions calls
 
 **Lock Balance**
 
