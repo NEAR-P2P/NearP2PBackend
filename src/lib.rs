@@ -24,7 +24,7 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use serde::Serialize;
 use serde::Deserialize;
 use near_sdk::collections::UnorderedMap;
-use near_sdk::{json_types::U128, env, near_bindgen, AccountId, Balance};
+use near_sdk::{json_types::U128, env, near_bindgen, AccountId, Balance, Promise};
 use std::collections::HashMap;
 
 near_sdk::setup_alloc!();
@@ -92,14 +92,14 @@ This object contains, order_id, owner_id, asset, exchange_rate, email, country
 #[serde(crate = "near_sdk::serde")]
 pub struct OfferObject {
     offer_id: i128,
-    owner_id: String,
+    owner_id: AccountId,
     asset: String, // NEAR, USD
     exchange_rate: String,
     amount: u128,
     remaining_amount: u128,
     min_limit: u128,
     max_limit: u128,
-    payment_method: PaymentMethodsOfferObject, // Info concerning to payment asociated to payment contract
+    payment_method: Vec<PaymentMethodsOfferObject>, // Info concerning to payment asociated to payment contract
     fiat_method: i128,
     merchant_ad: bool,
     status: i8,
@@ -111,8 +111,8 @@ pub struct OfferObject {
 pub struct OrderObject {
     offer_id: i128,
     order_id: i128,
-    owner_id: String,
-    signer_id: String,
+    owner_id: AccountId,
+    signer_id: AccountId,
     exchange_rate: String,
     operation_amount: u128,
     payment_method: i128, // Info concerning to payment asociated to payment contract
@@ -130,7 +130,7 @@ This object contains, user_id, total_orders, orders_completed, percentaje_comple
 #[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize)]
 #[serde(crate = "near_sdk::serde")]
 pub struct MerchantObject {
-    user_id: String,
+    user_id: AccountId,
     total_orders: i64,
     orders_completed: i64,
     percentaje_completion: f64, // pioasjoidjasoi
@@ -158,7 +158,7 @@ pub struct PaymentMethodsObject {
 #[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize)]
 #[serde(crate = "near_sdk::serde")]
 pub struct PaymentMethodUserObject {
-    user_id: String,
+    user_id: AccountId,
     payment_method_id: i128,
     payment_method: String,
     desc1: String,
@@ -309,7 +309,7 @@ impl NearP2P {
 
     /// Returns the users object loaded in contract
     /// Params: user_id: AccountId
-    pub fn get_user(self, user_id: String) -> Vec<UserObject> {
+    pub fn get_user(self, user_id: AccountId) -> Vec<UserObject> {
         if user_id == "%" {
             self.users     
         } else {
@@ -335,7 +335,7 @@ impl NearP2P {
     /// Set the users object into the contract
     /// Params: user_id: String, name: String
     /// last_name: String, phone: String, email: String, country: String
-    pub fn set_user(&mut self, user_id: String,
+    pub fn set_user(&mut self, user_id: AccountId,
         name: String,
         last_name: String,
         phone: String,
@@ -368,7 +368,7 @@ impl NearP2P {
     /// Set the users object into the contract
     /// Params: user_id: String, name: String
     /// name: String, last_name: String, phone: String, email: String, country: String
-    pub fn put_user(&mut self, user_id: String
+    pub fn put_user(&mut self, user_id: AccountId
         , name: String
         , last_name: String
         , phone: String
@@ -418,13 +418,13 @@ impl NearP2P {
     /// Params: owner_id: String, asset: String, exchange_rate: String, amount: String
     /// min_limit: String, max_limit: String, payment_method_id: String, status: i8
     /// This is a list of offers for sellings operations, will be called by the user
-    pub fn set_offers_sell(&mut self, owner_id: String
+    pub fn set_offers_sell(&mut self, owner_id: AccountId
         , asset: String
         , exchange_rate: String
         , amount: U128
         , min_limit: U128
         , max_limit: U128
-        , payment_method: PaymentMethodsOfferObject
+        , payment_method: Vec<PaymentMethodsOfferObject>
         , fiat_method: i128) -> i128{
         self.offer_sell_id += 1;
         let data = OfferObject {
@@ -458,13 +458,13 @@ impl NearP2P {
     /// Params: owner_id: String, asset: String, exchange_rate: String, amount: String
     /// min_limit: String, max_limit: String, payment_method_id: String, status: i8
     /// This is a list of offers for buying operations, will be called by the user
-    pub fn set_offers_buy(&mut self, owner_id: String
+    pub fn set_offers_buy(&mut self, owner_id: AccountId
         , asset: String
         , exchange_rate: String
         , amount: U128
         , min_limit: U128
         , max_limit: U128
-        , payment_method: PaymentMethodsOfferObject
+        , payment_method: Vec<PaymentMethodsOfferObject>
         , fiat_method: i128) -> i128{
         self.offer_buy_id += 1;
         let data = OfferObject {
@@ -488,7 +488,7 @@ impl NearP2P {
 
 
     /// Returns the merchant object loaded in contract
-    pub fn get_merchant(self, user_id: String) -> Vec<MerchantObject> {
+    pub fn get_merchant(self, user_id: AccountId) -> Vec<MerchantObject> {
         if user_id == "%" {
             self.merchant  // Return all merchants   
         } else {
@@ -512,7 +512,7 @@ impl NearP2P {
     /// Set the merchant object into the contract
     /// Params: user_id: String, total_orders: i128, orders_completed: i128
     /// badge: String
-    pub fn put_merchant(&mut self, user_id: String
+    pub fn put_merchant(&mut self, user_id: AccountId
         , total_orders: i64
         , orders_completed: i64 
         , badge: String) {
@@ -529,7 +529,7 @@ impl NearP2P {
 
     /// Delete the merchant object into the contract
     /// Params: user_id: String
-    pub fn delete_merchant(&mut self, user_id: String) {
+    pub fn delete_merchant(&mut self, user_id: AccountId) {
         for i in 0..self.merchant.len() {
             if self.merchant.get(i).unwrap().user_id == user_id.to_string() {
                 self.merchant.remove(i);
@@ -671,7 +671,7 @@ impl NearP2P {
 
 
      /// Returns the users object loaded in contract
-     pub fn get_payment_method_user(self, user_id: String) -> Vec<PaymentMethodUserObject> {
+     pub fn get_payment_method_user(self, user_id: AccountId) -> Vec<PaymentMethodUserObject> {
         let mut result: Vec<PaymentMethodUserObject> = Vec::new();
         for i in 0..self.payment_method_user.len() {
             if self.payment_method_user[i].user_id == user_id.to_string() {
@@ -696,7 +696,7 @@ impl NearP2P {
     }
 
     //Set the Payment Method User object into the contract
-    pub fn set_payment_method_user(&mut self, user_id: String
+    pub fn set_payment_method_user(&mut self, user_id: AccountId
         , payment_method_id: i128
         , input1: String
         , input2: String
@@ -739,7 +739,7 @@ impl NearP2P {
     }
 
     /// put the Payment Method object into the contract
-    pub fn put_payment_method_user(&mut self, user_id: String
+    pub fn put_payment_method_user(&mut self, user_id: AccountId
         , payment_method_id: i128
         , input1: String
         , input2: String
@@ -760,7 +760,7 @@ impl NearP2P {
     }
 
     /// delete the Payment Method user object into the contract
-    pub fn delete_payment_method_user(&mut self, user_id: String
+    pub fn delete_payment_method_user(&mut self, user_id: AccountId
         , payment_method_id: i128) {
         for i in 0..self.payment_method_user.len() {
             if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == user_id.to_string() {
@@ -940,11 +940,40 @@ impl NearP2P {
             return String::from("Invalid offer type");
         }
     }
+
+        /// accept offer into the contract
+        pub fn prueba(self) -> String {
+            return String::from(env::signer_account_id().to_string() + " - " + &env::current_account_id().to_string());
+        }
+
+        pub fn prueba2(self) -> String {
+            let amount: U128 = U128::from(1000000000000000000000000);
+            Promise::new("hrpalencia2.testnet".to_string()).transfer(amount.0);
+            return String::from(env::signer_account_id().to_string() + " - " + &env::current_account_id().to_string());
+        }
+        
+        #[payable]
+        pub fn take_my_money(&mut self) -> Promise {
+            let amount: U128 = U128::from(1000000000000000000000000);
+            env::storage_usage();
+            env::attached_deposit();
+            env::log("Thanks!".as_bytes());
+            Promise::new("hrpalencia2.testnet".to_string()).transfer(amount.0)
+            //return String::from(env::signer_account_id().to_string() + " - " + &env::current_account_id().to_string() + " - " + env::storage_usage().to_string().as_str() + " - " + env::attached_deposit().to_string().as_str());
+            
+        }
 }
 
 
 fn search_offer(data: Vec<OfferObject>, campo: String, valor: String) -> Vec<OfferObject> {
     fn object_offer(index: usize, data: &Vec<OfferObject>) -> OfferObject {
+        let mut payment_method: Vec<PaymentMethodsOfferObject> = Vec::new();
+        for j in 0..data[index].payment_method.len() {
+            payment_method.push(PaymentMethodsOfferObject {
+                id: data[index].payment_method[j].id,
+                payment_method: data[index].payment_method[j].payment_method.to_string(),
+            });
+        } 
         return OfferObject {
             offer_id: data[index].offer_id,
             owner_id: data[index].owner_id.to_string(),
@@ -954,10 +983,7 @@ fn search_offer(data: Vec<OfferObject>, campo: String, valor: String) -> Vec<Off
             remaining_amount: data[index].remaining_amount,
             min_limit: data[index].min_limit,
             max_limit: data[index].max_limit,
-            payment_method: PaymentMethodsOfferObject {
-                id: data[index].payment_method.id,
-                payment_method: data[index].payment_method.payment_method.to_string(),
-            },
+            payment_method: payment_method, 
             fiat_method: data[index].fiat_method,
             merchant_ad: data[index].merchant_ad,
             status: data[index].status,
@@ -998,7 +1024,6 @@ fn search_offer(data: Vec<OfferObject>, campo: String, valor: String) -> Vec<Off
         }
         return vector
     }
-    
 }
 
 
