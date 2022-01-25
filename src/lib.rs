@@ -869,10 +869,10 @@ impl NearP2P {
     
     /// accept offer into the contract
     pub fn offer_confirmation(&mut self, offer_type: i8, order_id: i128) -> String {
+        let mut tranfer: bool = false;
         if offer_type == 1 {
             for i in 0..self.orders_sell.len() {
                 if self.orders_sell.get(i).unwrap().order_id == order_id {
-                    let mut tranfer: bool = false;
                     if self.orders_sell[i].owner_id == env::signer_account_id().to_string() {
                         self.orders_sell[i].confirmation_owner_id = 1;  
                         if self.orders_sell[i].confirmation_signer_id == 1 {
@@ -903,8 +903,40 @@ impl NearP2P {
                 }
             }
             return String::from("Offer not found");
-    
-        }   else {
+        } else if offer_type == 2 {
+            for i in 0..self.orders_buy.len() {
+                if self.orders_buy.get(i).unwrap().order_id == order_id {
+                    if self.orders_buy[i].owner_id == env::signer_account_id().to_string() {
+                        self.orders_buy[i].confirmation_owner_id = 1;  
+                        if self.orders_buy[i].confirmation_signer_id == 1 {
+                            tranfer = true;
+                        }
+                    } else if self.orders_buy[i].signer_id == env::signer_account_id().to_string() {
+                        self.orders_buy[i].confirmation_signer_id = 1;
+                        if self.orders_buy[i].confirmation_owner_id == 1{
+                            tranfer = true;
+                        }
+                    } else {
+                        return String::from("Server internar error, signer not found or order id not found");    
+                    }
+                    if tranfer == true {
+                        // here transfer function
+                        self.orders_buy[i].status = 2;
+                        //actualizar transacciones culminadas owner_id
+                        for j in 0..self.merchant.len() {
+                            if self.merchant.get(j).unwrap().user_id == self.offers_buy[i].owner_id {
+                                self.merchant[j].orders_completed = self.merchant[j].orders_completed + 1;
+                                self.merchant[j].percentaje_completion = (self.merchant[j].orders_completed as f64 / self.merchant[j].total_orders as f64) * 100.0;
+                            }
+                        }
+                        return String::from("Offer Completed");
+                    } else {
+                        return String::from("Offer Confirmation");
+                    }
+                }
+            }
+            return String::from("Offer not found");
+        }  else {
             return String::from("Invalid offer type");
         }
     }
