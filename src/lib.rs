@@ -953,14 +953,14 @@ impl NearP2P {
                             self.orders_sell[i].status = 3;
                             self.orders_sell[i].confirmation_owner_id = 2;
                         } else {
-                            return String::from("the user " + env::signer_account_id().to_owned() + " is confirmed");
+                            return String::from("The user already confirmed");
                         }
                     } else if self.orders_sell[i].signer_id == env::signer_account_id().to_string() {
                         if self.orders_sell[i].confirmation_signer_id != 1 {
                             self.orders_sell[i].status = 3;
                             self.orders_sell[i].confirmation_signer_id = 2;
                         } else {
-                            return String::from("the user " + env::signer_account_id().to_owned() + " is confirmed");
+                            return String::from("The user already confirmed");
                         }
                     } else {
                         return String::from("Server internar error, signer not found or order id not found");    
@@ -977,14 +977,14 @@ impl NearP2P {
                             self.orders_buy[i].status = 3;
                             self.orders_buy[i].confirmation_owner_id = 2;
                         } else {
-                            return String::from("the user " + env::signer_account_id().to_owned() + " is confirmed");
+                            return String::from("The user already confirmed");
                         }
                     } else if self.orders_buy[i].signer_id == env::signer_account_id().to_string() {
                         if self.orders_buy[i].confirmation_signer_id != 1 {
                             self.orders_buy[i].status = 3;
                             self.orders_buy[i].confirmation_signer_id = 2;
                         } else {
-                            return String::from("the user " + env::signer_account_id().to_owned() + " is confirmed");
+                            return String::from("The user already confirmed");
                         }
                     } else {
                         return String::from("Server internar error, signer not found or order id not found");    
