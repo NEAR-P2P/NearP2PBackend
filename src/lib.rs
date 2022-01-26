@@ -381,6 +381,7 @@ impl NearP2P {
         for i in 0..self.users.len() {    
             if self.users[i].user_id == env::signer_account_id().to_string() {
                 administrator = self.users[i].admin;
+                break;
             }
         }
         if administrator {
@@ -525,17 +526,6 @@ impl NearP2P {
             }
         }
         env::log(b"Merchant Updated");
-    }
-
-    /// Delete the merchant object into the contract
-    /// Params: user_id: String
-    pub fn delete_merchant(&mut self, user_id: AccountId) {
-        for i in 0..self.merchant.len() {
-            if self.merchant.get(i).unwrap().user_id == user_id.to_string() {
-                self.merchant.remove(i);
-            }
-        }
-        env::log(b"Merchant Delete");
     }
 
 
@@ -781,6 +771,9 @@ impl NearP2P {
                 if self.offers_sell.get(i).unwrap().offer_id == offer_id {
                     if self.offers_sell[i].remaining_amount >= amount.0 {
                         if self.offers_sell[i].min_limit >= amount.0 && self.offers_sell[i].max_limit <= amount.0 {  
+                            ////////////////////////////////////////////////////////////////////
+                            /// colocar aqui el bloqueo de saldo del owner_id  cuando seal venta
+                            ////////////////////////////////////////////////////////////////////
                             let remaining: u128 = self.offers_sell[i].remaining_amount - amount.0;
                             if remaining == 0 {
                                 self.offers_sell[i].status = 2;
@@ -824,6 +817,9 @@ impl NearP2P {
                 if self.offers_buy.get(i).unwrap().offer_id == offer_id {
                     if self.offers_buy[i].remaining_amount >= amount.0 {
                         if self.offers_buy[i].min_limit >= amount.0 && self.offers_buy[i].max_limit <= amount.0 {  
+                            ////////////////////////////////////////////////////////////////////////
+                            /// colocar aqui el bloqueo de saldo del owner_id  cuando sea compra
+                            /// ////////////////////////////////////////////////////////////////////
                             let remaining: u128 = self.offers_buy[i].remaining_amount - amount.0;
                             if remaining == 0 {
                                 self.offers_buy[i].status = 2;
@@ -869,25 +865,17 @@ impl NearP2P {
     
     /// accept offer into the contract
     pub fn offer_confirmation(&mut self, offer_type: i8, order_id: i128) -> String {
-        let mut tranfer: bool = false;
         if offer_type == 1 {
             for i in 0..self.orders_sell.len() {
                 if self.orders_sell.get(i).unwrap().order_id == order_id {
                     if self.orders_sell[i].owner_id == env::signer_account_id().to_string() {
-                        self.orders_sell[i].confirmation_owner_id = 1;  
-                        if self.orders_sell[i].confirmation_signer_id == 1 {
-                            tranfer = true;
-                        }
+                        self.orders_sell[i].confirmation_owner_id = 1;
+                        return String::from("Offer sell Confirmation");
                     } else if self.orders_sell[i].signer_id == env::signer_account_id().to_string() {
                         self.orders_sell[i].confirmation_signer_id = 1;
-                        if self.orders_sell[i].confirmation_owner_id == 1{
-                            tranfer = true;
-                        }
-                    } else {
-                        return String::from("Server internar error, signer not found or order id not found");    
-                    }
-                    if tranfer == true {
-                        // here transfer function
+                        /////////////////////////////////////////////////////////////////////////
+                        // Aqui va la el codigo para transferir los near a la cuenta del ownwe_id
+                        /////////////////////////////////////////////////////////////////////////
                         self.orders_sell[i].status = 2;
                         //actualizar transacciones culminadas owner_id
                         for j in 0..self.merchant.len() {
@@ -896,9 +884,9 @@ impl NearP2P {
                                 self.merchant[j].percentaje_completion = (self.merchant[j].orders_completed as f64 / self.merchant[j].total_orders as f64) * 100.0;
                             }
                         }
-                        return String::from("Offer Completed");
+                        return String::from("Offer sell Completed");
                     } else {
-                        return String::from("Offer Confirmation");
+                        return String::from("Server internar error, signer not found or order id not found");    
                     }
                 }
             }
@@ -908,19 +896,9 @@ impl NearP2P {
                 if self.orders_buy.get(i).unwrap().order_id == order_id {
                     if self.orders_buy[i].owner_id == env::signer_account_id().to_string() {
                         self.orders_buy[i].confirmation_owner_id = 1;  
-                        if self.orders_buy[i].confirmation_signer_id == 1 {
-                            tranfer = true;
-                        }
-                    } else if self.orders_buy[i].signer_id == env::signer_account_id().to_string() {
-                        self.orders_buy[i].confirmation_signer_id = 1;
-                        if self.orders_buy[i].confirmation_owner_id == 1{
-                            tranfer = true;
-                        }
-                    } else {
-                        return String::from("Server internar error, signer not found or order id not found");    
-                    }
-                    if tranfer == true {
-                        // here transfer function
+                        /////////////////////////////////////////////////////////////////////////
+                        // Aqui va la el codigo para transferir los near a la cuenta del signer_id
+                        /////////////////////////////////////////////////////////////////////////
                         self.orders_buy[i].status = 2;
                         //actualizar transacciones culminadas owner_id
                         for j in 0..self.merchant.len() {
@@ -929,9 +907,12 @@ impl NearP2P {
                                 self.merchant[j].percentaje_completion = (self.merchant[j].orders_completed as f64 / self.merchant[j].total_orders as f64) * 100.0;
                             }
                         }
-                        return String::from("Offer Completed");
+                        return String::from("Offer buy Completed");
+                    } else if self.orders_buy[i].signer_id == env::signer_account_id().to_string() {
+                        self.orders_buy[i].confirmation_signer_id = 1;
+                        return String::from("Offer buy Confirmation");
                     } else {
-                        return String::from("Offer Confirmation");
+                        return String::from("Server internar error, signer not found or order id not found");    
                     }
                 }
             }
