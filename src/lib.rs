@@ -26,6 +26,7 @@ use serde::Deserialize;
 use near_sdk::collections::UnorderedMap;
 use near_sdk::{json_types::U128, env, near_bindgen, AccountId, Balance, Promise};
 use std::collections::HashMap;
+use near_sdk::json_types::ValidAccountId;
 
 near_sdk::setup_alloc!();
 
@@ -772,7 +773,7 @@ impl NearP2P {
             for i in 0..self.offers_sell.len() {
                 if self.offers_sell.get(i).unwrap().offer_id == offer_id {
                     if self.offers_sell[i].remaining_amount >= amount.0 {
-                        if self.offers_sell[i].min_limit >= amount.0 && self.offers_sell[i].max_limit <= amount.0 {  
+                        if amount.0 >= self.offers_sell[i].min_limit  && amount.0 <= self.offers_sell[i].max_limit {  
                             ////////////////////////////////////////////////////////////////////
                             /// colocar aqui el bloqueo de saldo del owner_id  cuando seal venta
                             ////////////////////////////////////////////////////////////////////
@@ -818,7 +819,7 @@ impl NearP2P {
             for i in 0..self.offers_buy.len() {
                 if self.offers_buy.get(i).unwrap().offer_id == offer_id {
                     if self.offers_buy[i].remaining_amount >= amount.0 {
-                        if self.offers_buy[i].min_limit >= amount.0 && self.offers_buy[i].max_limit <= amount.0 {  
+                        if amount.0 >= self.offers_buy[i].min_limit && amount.0 <= self.offers_buy[i].max_limit {  
                             ////////////////////////////////////////////////////////////////////////
                             /// colocar aqui el bloqueo de saldo del owner_id  cuando sea compra
                             /// ////////////////////////////////////////////////////////////////////
