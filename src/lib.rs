@@ -442,7 +442,7 @@ impl NearP2P {
     pub fn set_offers_sell(&mut self, owner_id: AccountId
         , asset: String
         , exchange_rate: String
-        , amount: U128
+        , amount: u128
         , min_limit: f64
         , max_limit: f64
         , payment_method: Vec<PaymentMethodsOfferObject>
@@ -453,8 +453,8 @@ impl NearP2P {
             owner_id: String::from(owner_id),
             asset: String::from(asset),
             exchange_rate: String::from(exchange_rate),
-            amount: u128::from(amount.0),
-            remaining_amount: u128::from(amount.0),
+            amount: u128::from(amount),
+            remaining_amount: u128::from(amount),
             min_limit: min_limit,
             max_limit: max_limit,
             payment_method: payment_method,
@@ -483,7 +483,7 @@ impl NearP2P {
     pub fn set_offers_buy(&mut self, owner_id: AccountId
         , asset: String
         , exchange_rate: String
-        , amount: U128
+        , amount: u128
         , min_limit: f64
         , max_limit: f64
         , payment_method: Vec<PaymentMethodsOfferObject>
@@ -494,8 +494,8 @@ impl NearP2P {
             owner_id: String::from(owner_id),
             asset: String::from(asset),
             exchange_rate: String::from(exchange_rate),
-            amount: u128::from(amount.0),
-            remaining_amount: u128::from(amount.0),
+            amount: u128::from(amount),
+            remaining_amount: u128::from(amount),
             min_limit: min_limit,
             max_limit: max_limit,
             payment_method: payment_method,
@@ -787,16 +787,16 @@ impl NearP2P {
     #[payable]
     pub fn accept_offer(&mut self, offer_type: i8
         , offer_id: i128
-        , amount: U128
+        , amount: u128
         , payment_method: i128) -> String {
         if offer_type == 1 {
             for i in 0..self.offers_sell.len() {
                 if self.offers_sell.get(i).unwrap().offer_id == offer_id {
-                    if self.offers_sell[i].remaining_amount >= amount.0 {
+                    if self.offers_sell[i].remaining_amount >= amount {
                         ////////////////////////////////////////////////////////////////////
                         /// colocar aqui el bloqueo de saldo del owner_id  cuando seal venta
                         ////////////////////////////////////////////////////////////////////
-                        let remaining: u128 = self.offers_sell[i].remaining_amount - amount.0;
+                        let remaining: u128 = self.offers_sell[i].remaining_amount - amount;
                         if remaining == 0 {
                             self.offers_sell[i].status = 2;
                         }
@@ -808,7 +808,7 @@ impl NearP2P {
                             owner_id: self.offers_sell[i].owner_id.to_string(),
                             signer_id: env::signer_account_id(),
                             exchange_rate: self.offers_sell[i].exchange_rate.to_string(),
-                            operation_amount: amount.0,
+                            operation_amount: amount,
                             payment_method: payment_method,
                             fiat_method: self.offers_sell[i].fiat_method,
                             confirmation_owner_id: 0,
@@ -834,11 +834,11 @@ impl NearP2P {
         } else if offer_type == 2 {
             for i in 0..self.offers_buy.len() {
                 if self.offers_buy.get(i).unwrap().offer_id == offer_id {
-                    if self.offers_buy[i].remaining_amount >= amount.0 {
+                    if self.offers_buy[i].remaining_amount >= amount {
                         ////////////////////////////////////////////////////////////////////////
                         /// colocar aqui el bloqueo de saldo del owner_id  cuando sea compra
                         /// ////////////////////////////////////////////////////////////////////
-                        let remaining: u128 = self.offers_buy[i].remaining_amount - amount.0;
+                        let remaining: u128 = self.offers_buy[i].remaining_amount - amount;
                         if remaining == 0 {
                             self.offers_buy[i].status = 2;
                         }
@@ -850,7 +850,7 @@ impl NearP2P {
                             owner_id: self.offers_buy[i].owner_id.to_string(),
                             signer_id: env::signer_account_id(),
                             exchange_rate: self.offers_buy[i].exchange_rate.to_string(),
-                            operation_amount: amount.0,
+                            operation_amount: amount,
                             payment_method: payment_method,
                             fiat_method: self.offers_buy[i].fiat_method,
                             confirmation_owner_id: 0,
