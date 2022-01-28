@@ -74,6 +74,7 @@ pub struct UserObject {
     country: String,
     mediator: bool,
     admin: bool,
+    is_active: bool,
 }
 
 
@@ -98,8 +99,8 @@ pub struct OfferObject {
     exchange_rate: String,
     amount: u128,
     remaining_amount: u128,
-    min_limit: u128,
-    max_limit: u128,
+    min_limit: f64,
+    max_limit: f64,
     payment_method: Vec<PaymentMethodsOfferObject>, // Info concerning to payment asociated to payment contract
     fiat_method: i128,
     merchant_ad: bool,
@@ -247,6 +248,7 @@ impl Default for NearP2P {
                 country: "Venezuela".to_string(),
                 mediator: false,
                 admin: true,
+                is_active: true,
             }],
             offers_sell: Vec::new(),
             offer_sell_id: 0,
@@ -326,6 +328,7 @@ impl NearP2P {
                         country: self.users[i].country.to_string(),
                         mediator: self.users[i].mediator,
                         admin: self.users[i].admin,
+                        is_active: self.users[i].is_active,
                     });
                 }
             }
@@ -351,6 +354,7 @@ impl NearP2P {
             country: country.to_string(),
             mediator: false,
             admin: false,
+            is_active: true,
         };
         self.users.push(data);
         let data2 = MerchantObject {
@@ -369,44 +373,59 @@ impl NearP2P {
     /// Set the users object into the contract
     /// Params: user_id: String, name: String
     /// name: String, last_name: String, phone: String, email: String, country: String
-    pub fn put_user(&mut self, user_id: AccountId
+    pub fn put_user(&mut self, name: String
+        , last_name: String
+        , phone: String
+        , email: String
+        , country: String) {
+        for i in 0..self.users.len() {
+            if self.users[i].user_id == env::signer_account_id() {
+                self.users[i].name = name.to_string();
+                self.users[i].last_name = last_name.to_string();
+                self.users[i].phone = phone.to_string();
+                self.users[i].email = email.to_string();
+                self.users[i].country = country.to_string();
+                self.users[i].mediator = self.users[i].mediator;
+                self.users[i].admin = self.users[i].admin;
+                self.users[i].is_active = self.users[i].is_active;
+            }
+        }
+        env::log(b"User Updated");
+    }
+
+    pub fn put_users(&mut self, user_id: AccountId
         , name: String
         , last_name: String
         , phone: String
         , email: String
         , country: String
         , mediator: bool
-        , admin: bool) {
+        , admin: bool
+        , is_active: bool) {
         let mut administrator: bool = false;
         let mut user: String = "".to_string();
         for i in 0..self.users.len() {    
             if self.users[i].user_id == env::signer_account_id().to_string() {
-                administrator = self.users[i].admin;
+                if self.users[i].admin == true {
+                    for i in 0..self.users.len() {
+                        if self.users[i].user_id == user_id {
+                            self.users[i].name = name.to_string();
+                            self.users[i].last_name = last_name.to_string();
+                            self.users[i].phone = phone.to_string();
+                            self.users[i].email = email.to_string();
+                            self.users[i].country = country.to_string();
+                            self.users[i].mediator = mediator;
+                            self.users[i].admin = admin;
+                            self.users[i].is_active = is_active;
+                            break;
+                        }
+                    }
+                    env::log(b"User Updated");
+                }
                 break;
             }
         }
-        if administrator {
-            user = user_id;
-        } else {
-            user = env::signer_account_id().to_string()
-        }
-        for i in 0..self.users.len() {
-            if self.users[i].user_id == user {
-                self.users[i].name = name.to_string();
-                self.users[i].last_name = last_name.to_string();
-                self.users[i].phone = phone.to_string();
-                self.users[i].email = email.to_string();
-                self.users[i].country = country.to_string();
-                if admin {
-                    self.users[i].mediator = mediator;
-                    self.users[i].admin = admin;
-                } else {
-                    self.users[i].mediator = self.users[i].mediator;
-                    self.users[i].admin = self.users[i].admin;
-                }
-            }
-        }
-        env::log(b"User Updated");
+
     }
 
     /// Returns the order object loaded in contract
@@ -424,8 +443,8 @@ impl NearP2P {
         , asset: String
         , exchange_rate: String
         , amount: U128
-        , min_limit: U128
-        , max_limit: U128
+        , min_limit: f64
+        , max_limit: f64
         , payment_method: Vec<PaymentMethodsOfferObject>
         , fiat_method: i128) -> i128{
         self.offer_sell_id += 1;
@@ -434,10 +453,10 @@ impl NearP2P {
             owner_id: String::from(owner_id),
             asset: String::from(asset),
             exchange_rate: String::from(exchange_rate),
-            amount: amount.0,
-            remaining_amount: amount.0,
-            min_limit: min_limit.0,
-            max_limit: max_limit.0,
+            amount: u128::from(amount.0),
+            remaining_amount: u128::from(amount.0),
+            min_limit: min_limit,
+            max_limit: max_limit,
             payment_method: payment_method,
             fiat_method: fiat_method,
             merchant_ad: false,
@@ -460,12 +479,13 @@ impl NearP2P {
     /// Params: owner_id: String, asset: String, exchange_rate: String, amount: String
     /// min_limit: String, max_limit: String, payment_method_id: String, status: i8
     /// This is a list of offers for buying operations, will be called by the user
+    #[payable]
     pub fn set_offers_buy(&mut self, owner_id: AccountId
         , asset: String
         , exchange_rate: String
         , amount: U128
-        , min_limit: U128
-        , max_limit: U128
+        , min_limit: f64
+        , max_limit: f64
         , payment_method: Vec<PaymentMethodsOfferObject>
         , fiat_method: i128) -> i128{
         self.offer_buy_id += 1;
@@ -474,10 +494,10 @@ impl NearP2P {
             owner_id: String::from(owner_id),
             asset: String::from(asset),
             exchange_rate: String::from(exchange_rate),
-            amount: amount.0,
-            remaining_amount: amount.0,
-            min_limit: min_limit.0,
-            max_limit: max_limit.0,
+            amount: u128::from(amount.0),
+            remaining_amount: u128::from(amount.0),
+            min_limit: min_limit,
+            max_limit: max_limit,
             payment_method: payment_method,
             fiat_method: fiat_method,
             merchant_ad: false,
@@ -773,42 +793,38 @@ impl NearP2P {
             for i in 0..self.offers_sell.len() {
                 if self.offers_sell.get(i).unwrap().offer_id == offer_id {
                     if self.offers_sell[i].remaining_amount >= amount.0 {
-                        if amount.0 >= self.offers_sell[i].min_limit  && amount.0 <= self.offers_sell[i].max_limit {  
-                            ////////////////////////////////////////////////////////////////////
-                            /// colocar aqui el bloqueo de saldo del owner_id  cuando seal venta
-                            ////////////////////////////////////////////////////////////////////
-                            let remaining: u128 = self.offers_sell[i].remaining_amount - amount.0;
-                            if remaining == 0 {
-                                self.offers_sell[i].status = 2;
-                            }
-                            self.offers_sell[i].remaining_amount = remaining;
-                            self.order_sell_id += 1;
-                            let data = OrderObject {
-                                offer_id: offer_id,
-                                order_id: self.order_sell_id,
-                                owner_id: self.offers_sell[i].owner_id.to_string(),
-                                signer_id: env::signer_account_id(),
-                                exchange_rate: self.offers_sell[i].exchange_rate.to_string(),
-                                operation_amount: amount.0,
-                                payment_method: payment_method,
-                                fiat_method: self.offers_sell[i].fiat_method,
-                                confirmation_owner_id: 0,
-                                confirmation_signer_id: 0,
-                                confirmation_current: 0,
-                                status: 1,
-                            };
-                            self.orders_sell.push(data);
-                            //actualizar total ordenes owner_id
-                            for j in 0..self.merchant.len() {
-                                if self.merchant.get(j).unwrap().user_id == self.offers_sell[i].owner_id {
-                                    self.merchant[j].total_orders = self.merchant[j].total_orders + 1;
-                                    self.merchant[j].percentaje_completion = (self.merchant[j].orders_completed as f64 / self.merchant[j].total_orders as f64) * 100.0;
-                                }
-                            }
-                            return String::from("Offer accepted");
-                        } else {
-                            return String::from("amount of change out of range");
+                        ////////////////////////////////////////////////////////////////////
+                        /// colocar aqui el bloqueo de saldo del owner_id  cuando seal venta
+                        ////////////////////////////////////////////////////////////////////
+                        let remaining: u128 = self.offers_sell[i].remaining_amount - amount.0;
+                        if remaining == 0 {
+                            self.offers_sell[i].status = 2;
                         }
+                        self.offers_sell[i].remaining_amount = remaining;
+                        self.order_sell_id += 1;
+                        let data = OrderObject {
+                            offer_id: offer_id,
+                            order_id: self.order_sell_id,
+                            owner_id: self.offers_sell[i].owner_id.to_string(),
+                            signer_id: env::signer_account_id(),
+                            exchange_rate: self.offers_sell[i].exchange_rate.to_string(),
+                            operation_amount: amount.0,
+                            payment_method: payment_method,
+                            fiat_method: self.offers_sell[i].fiat_method,
+                            confirmation_owner_id: 0,
+                            confirmation_signer_id: 0,
+                            confirmation_current: 0,
+                            status: 1,
+                        };
+                        self.orders_sell.push(data);
+                        //actualizar total ordenes owner_id
+                        for j in 0..self.merchant.len() {
+                            if self.merchant.get(j).unwrap().user_id == self.offers_sell[i].owner_id {
+                                self.merchant[j].total_orders = self.merchant[j].total_orders + 1;
+                                self.merchant[j].percentaje_completion = (self.merchant[j].orders_completed as f64 / self.merchant[j].total_orders as f64) * 100.0;
+                            }
+                        }
+                        return String::from("Offer accepted");
                     } else {
                         return String::from("the quantity is greater than the offer amount");
                     }
@@ -819,42 +835,38 @@ impl NearP2P {
             for i in 0..self.offers_buy.len() {
                 if self.offers_buy.get(i).unwrap().offer_id == offer_id {
                     if self.offers_buy[i].remaining_amount >= amount.0 {
-                        if amount.0 >= self.offers_buy[i].min_limit && amount.0 <= self.offers_buy[i].max_limit {  
-                            ////////////////////////////////////////////////////////////////////////
-                            /// colocar aqui el bloqueo de saldo del owner_id  cuando sea compra
-                            /// ////////////////////////////////////////////////////////////////////
-                            let remaining: u128 = self.offers_buy[i].remaining_amount - amount.0;
-                            if remaining == 0 {
-                                self.offers_buy[i].status = 2;
-                            }
-                            self.offers_buy[i].remaining_amount = remaining;
-                            self.order_buy_id += 1;
-                            let data = OrderObject {
-                                offer_id: offer_id,
-                                order_id: self.order_buy_id,
-                                owner_id: self.offers_buy[i].owner_id.to_string(),
-                                signer_id: env::signer_account_id(),
-                                exchange_rate: self.offers_buy[i].exchange_rate.to_string(),
-                                operation_amount: amount.0,
-                                payment_method: payment_method,
-                                fiat_method: self.offers_buy[i].fiat_method,
-                                confirmation_owner_id: 0,
-                                confirmation_signer_id: 0,
-                                confirmation_current: 0,
-                                status: 1,
-                            };
-                            self.orders_buy.push(data);
-                            //actualizar total ordenes owner_id
-                            for j in 0..self.merchant.len() {
-                                if self.merchant.get(j).unwrap().user_id == self.offers_buy[i].owner_id {
-                                    self.merchant[j].total_orders = self.merchant[j].total_orders + 1;
-                                    self.merchant[j].percentaje_completion = (self.merchant[j].orders_completed as f64 / self.merchant[j].total_orders as f64) * 100.0;
-                                }
-                            }
-                            return String::from("Offer accepted");
-                        } else {
-                            return String::from("amount of change out of range");
+                        ////////////////////////////////////////////////////////////////////////
+                        /// colocar aqui el bloqueo de saldo del owner_id  cuando sea compra
+                        /// ////////////////////////////////////////////////////////////////////
+                        let remaining: u128 = self.offers_buy[i].remaining_amount - amount.0;
+                        if remaining == 0 {
+                            self.offers_buy[i].status = 2;
                         }
+                        self.offers_buy[i].remaining_amount = remaining;
+                        self.order_buy_id += 1;
+                        let data = OrderObject {
+                            offer_id: offer_id,
+                            order_id: self.order_buy_id,
+                            owner_id: self.offers_buy[i].owner_id.to_string(),
+                            signer_id: env::signer_account_id(),
+                            exchange_rate: self.offers_buy[i].exchange_rate.to_string(),
+                            operation_amount: amount.0,
+                            payment_method: payment_method,
+                            fiat_method: self.offers_buy[i].fiat_method,
+                            confirmation_owner_id: 0,
+                            confirmation_signer_id: 0,
+                            confirmation_current: 0,
+                            status: 1,
+                        };
+                        self.orders_buy.push(data);
+                        //actualizar total ordenes owner_id
+                        for j in 0..self.merchant.len() {
+                            if self.merchant.get(j).unwrap().user_id == self.offers_buy[i].owner_id {
+                                self.merchant[j].total_orders = self.merchant[j].total_orders + 1;
+                                self.merchant[j].percentaje_completion = (self.merchant[j].orders_completed as f64 / self.merchant[j].total_orders as f64) * 100.0;
+                            }
+                        }
+                        return String::from("Offer accepted");
                     } else {
                         return String::from("the quantity is greater than the offer amount");
                     }
@@ -1112,12 +1124,6 @@ fn search_offer(data: Vec<OfferObject>, campo: String, valor: String) -> Vec<Off
                 vector.push(object_offer(i, &data));
             }
             if campo == "remaining_amount" && data[i].remaining_amount == valor.parse::<u128>().unwrap().into() {
-                vector.push(object_offer(i, &data));
-            }
-            if campo == "min_limit" && data[i].min_limit == valor.parse::<u128>().unwrap().into() {
-                vector.push(object_offer(i, &data));
-            }
-            if campo == "max_limit" && data[i].max_limit == valor.parse::<u128>().unwrap().into() {
                 vector.push(object_offer(i, &data));
             }
             if campo == "status" && data[i].status == valor.parse::<i8>().unwrap() {
