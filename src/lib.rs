@@ -97,8 +97,8 @@ pub struct OfferObject {
     owner_id: AccountId,
     asset: String, // NEAR, USD
     exchange_rate: String,
-    amount: u128,
-    remaining_amount: u128,
+    amount: Balance,
+    remaining_amount: Balance,
     min_limit: f64,
     max_limit: f64,
     payment_method: Vec<PaymentMethodsOfferObject>, // Info concerning to payment asociated to payment contract
@@ -116,7 +116,7 @@ pub struct OrderObject {
     owner_id: AccountId,
     signer_id: AccountId,
     exchange_rate: String,
-    operation_amount: u128,
+    operation_amount: Balance,
     payment_method: i128, // Info concerning to payment asociated to payment contract
     fiat_method: i128,
     confirmation_owner_id: i8,
@@ -442,7 +442,7 @@ impl NearP2P {
     pub fn set_offers_sell(&mut self, owner_id: AccountId
         , asset: String
         , exchange_rate: String
-        , amount: u128
+        , amount: Balance
         , min_limit: f64
         , max_limit: f64
         , payment_method: Vec<PaymentMethodsOfferObject>
@@ -453,8 +453,8 @@ impl NearP2P {
             owner_id: String::from(owner_id),
             asset: String::from(asset),
             exchange_rate: String::from(exchange_rate),
-            amount: u128::from(amount),
-            remaining_amount: u128::from(amount),
+            amount: amount,
+            remaining_amount: amount,
             min_limit: min_limit,
             max_limit: max_limit,
             payment_method: payment_method,
@@ -483,7 +483,7 @@ impl NearP2P {
     pub fn set_offers_buy(&mut self, owner_id: AccountId
         , asset: String
         , exchange_rate: String
-        , amount: u128
+        , amount: Balance
         , min_limit: f64
         , max_limit: f64
         , payment_method: Vec<PaymentMethodsOfferObject>
@@ -494,8 +494,8 @@ impl NearP2P {
             owner_id: String::from(owner_id),
             asset: String::from(asset),
             exchange_rate: String::from(exchange_rate),
-            amount: u128::from(amount),
-            remaining_amount: u128::from(amount),
+            amount: amount,
+            remaining_amount: amount,
             min_limit: min_limit,
             max_limit: max_limit,
             payment_method: payment_method,
@@ -787,7 +787,7 @@ impl NearP2P {
     #[payable]
     pub fn accept_offer(&mut self, offer_type: i8
         , offer_id: i128
-        , amount: u128
+        , amount: Balance
         , payment_method: i128) -> String {
         if offer_type == 1 {
             for i in 0..self.offers_sell.len() {
@@ -796,7 +796,7 @@ impl NearP2P {
                         ////////////////////////////////////////////////////////////////////
                         /// colocar aqui el bloqueo de saldo del owner_id  cuando seal venta
                         ////////////////////////////////////////////////////////////////////
-                        let remaining: u128 = self.offers_sell[i].remaining_amount - amount;
+                        let remaining: Balance = self.offers_sell[i].remaining_amount - amount;
                         if remaining == 0 {
                             self.offers_sell[i].status = 2;
                         }
@@ -838,7 +838,7 @@ impl NearP2P {
                         ////////////////////////////////////////////////////////////////////////
                         /// colocar aqui el bloqueo de saldo del owner_id  cuando sea compra
                         /// ////////////////////////////////////////////////////////////////////
-                        let remaining: u128 = self.offers_buy[i].remaining_amount - amount;
+                        let remaining: Balance = self.offers_buy[i].remaining_amount - amount;
                         if remaining == 0 {
                             self.offers_buy[i].status = 2;
                         }
