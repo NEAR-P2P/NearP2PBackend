@@ -402,8 +402,6 @@ impl NearP2P {
         , mediator: bool
         , admin: bool
         , is_active: bool) {
-        let mut administrator: bool = false;
-        let mut user: String = "".to_string();
         for i in 0..self.users.len() {    
             if self.users[i].user_id == env::signer_account_id().to_string() {
                 if self.users[i].admin == true {
@@ -707,7 +705,7 @@ impl NearP2P {
     }
 
     //Set the Payment Method User object into the contract
-    pub fn set_payment_method_user(&mut self, user_id: AccountId
+    pub fn set_payment_method_user(&mut self, user_id: ValidAccountId
         , payment_method_id: i128
         , input1: String
         , input2: String
@@ -724,7 +722,7 @@ impl NearP2P {
             for i in 0..self.payment_method.len() {
                 if self.payment_method[i].id == payment_method_id {
                     let data = PaymentMethodUserObject {
-                        user_id: user_id,
+                        user_id: user_id.to_string(),
                         payment_method_id: payment_method_id,
                         payment_method: self.payment_method[i].payment_method.to_string(),
                         desc1: self.payment_method[i].input1.to_string(),
@@ -740,12 +738,14 @@ impl NearP2P {
                     };
                     self.payment_method_user.push(data);
                     env::log(b"Payment Method User Created");
-                    break;
+                    return "".to_string();
                 }
             }
-            String::from("Payment Method User Created")
+            env::panic(b"the payment method provided does not exist");
+            return "the payment method provided does not exist".to_string();
         } else {
-            String::from("Repeated payment methods are not allowed")
+            env::panic(b"Repeated payment methods are not allowed");
+            return "Repeated payment methods are not allowed".to_string();
         }
     }
 
@@ -824,8 +824,10 @@ impl NearP2P {
                                 self.merchant[j].percentaje_completion = (self.merchant[j].orders_completed as f64 / self.merchant[j].total_orders as f64) * 100.0;
                             }
                         }
+                        env::log(b"Offer accepted");
                         return String::from("Offer accepted");
                     } else {
+                        env::panic(b"the quantity is greater than the offer amount");
                         return String::from("the quantity is greater than the offer amount");
                     }
                 }
@@ -866,14 +868,18 @@ impl NearP2P {
                                 self.merchant[j].percentaje_completion = (self.merchant[j].orders_completed as f64 / self.merchant[j].total_orders as f64) * 100.0;
                             }
                         }
+                        env::log(b"Offer accepted");
                         return String::from("Offer accepted");
                     } else {
+                        env::panic(b"the quantity is greater than the offer amount");
                         return String::from("the quantity is greater than the offer amount");
                     }
                 }
             }
+            env::panic(b"Offer not found");
             return String::from("Offer not found");
         }   else {
+            env::panic(b"Invalid offer type");
             return String::from("Invalid offer type");
         }
     }
@@ -888,8 +894,10 @@ impl NearP2P {
                     if self.orders_sell[i].owner_id == env::signer_account_id().to_string() {
                         if self.orders_sell[i].status == 3 {
                             self.orders_sell[i].confirmation_owner_id = 1;
+                            env::log(b"Order sell Confirmation");
                             return String::from("Order sell Confirmation");
                         } else {
+                            env::panic(b"Order sell in dispute");
                             return String::from("Order sell in dispute");
                         }
                     } else if self.orders_sell[i].signer_id == env::signer_account_id().to_string() {
@@ -906,16 +914,20 @@ impl NearP2P {
                                     self.merchant[j].percentaje_completion = (self.merchant[j].orders_completed as f64 / self.merchant[j].total_orders as f64) * 100.0;
                                 }
                             }
+                            env::log(b"Order sell Completed");
                             return String::from("Order sell Completed");
                         } else {
+                            env::panic(b"Order sell in dispute");
                             return String::from("Order sell in dispute");
                         }
                     } else {
-                        return String::from("Server internar error, signer not found or order id not found");    
+                        env::panic(b"Server internar error, signer not found or order id not found");
+                        return String::from("Server internar error, signer not found or order id not found");
                     }
                 }
             }
-            return String::from("Offer not found");
+            env::panic(b"Order sell not found");
+            return String::from("Offer sell not found");
         } else if offer_type == 2 {
             for i in 0..self.orders_buy.len() {
                 if self.orders_buy.get(i).unwrap().order_id == order_id {
@@ -933,24 +945,31 @@ impl NearP2P {
                                     self.merchant[j].percentaje_completion = (self.merchant[j].orders_completed as f64 / self.merchant[j].total_orders as f64) * 100.0;
                                 }
                             }
+                            env::log(b"Order buy Completed");
                             return String::from("Order buy Completed");
                         } else {
+                            env::panic(b"Order buy in dispute");
                             return String::from("Order buy in dispute");
                         }
                     } else if self.orders_buy[i].signer_id == env::signer_account_id().to_string() {
                         if self.orders_buy[i].status == 3 {
                             self.orders_buy[i].confirmation_signer_id = 1;
+                            env::log(b"Order buy Confirmation");
                             return String::from("Order buy Confirmation");
                         } else {
+                            env::panic(b"Order buy in dispute");
                             return String::from("Order buy in dispute");
                         }
                     } else {
+                        env::panic(b"Server internar error, signer not found or order id not found");
                         return String::from("Server internar error, signer not found or order id not found");    
                     }
                 }
             }
-            return String::from("Offer not found");
+            env::panic(b"Order buy not found");
+            return String::from("Offer buy not found");
         }  else {
+            env::panic(b"Invalid offer type");
             return String::from("Invalid offer type");
         }
     }
@@ -966,6 +985,7 @@ impl NearP2P {
                             self.orders_sell[i].status = 3;
                             self.orders_sell[i].confirmation_owner_id = 2;
                         } else {
+                            env::log(b"The user already confirmed");
                             return String::from("The user already confirmed");
                         }
                     } else if self.orders_sell[i].signer_id == env::signer_account_id().to_string() {
@@ -973,15 +993,19 @@ impl NearP2P {
                             self.orders_sell[i].status = 3;
                             self.orders_sell[i].confirmation_signer_id = 2;
                         } else {
+                            env::log(b"The user already confirmed");
                             return String::from("The user already confirmed");
                         }
                     } else {
+                        env::panic(b"Server internar error, signer not found or order id not found");
                         return String::from("Server internar error, signer not found or order id not found");    
                     }
-                    return String::from("Order sell Dispute");
+                    env::log(b"Order sell in dispute");
+                    return String::from("Order sell in Dispute");
                 }
             }
-            return String::from("Offer not found");
+            env::panic(b"Order sell not found");
+            return String::from("Offer sell not found");
         } else if offer_type == 2 {
             for i in 0..self.orders_buy.len() {
                 if self.orders_buy.get(i).unwrap().order_id == order_id {
@@ -990,6 +1014,7 @@ impl NearP2P {
                             self.orders_buy[i].status = 3;
                             self.orders_buy[i].confirmation_owner_id = 2;
                         } else {
+                            env::log(b"The user already confirmed");
                             return String::from("The user already confirmed");
                         }
                     } else if self.orders_buy[i].signer_id == env::signer_account_id().to_string() {
@@ -997,16 +1022,21 @@ impl NearP2P {
                             self.orders_buy[i].status = 3;
                             self.orders_buy[i].confirmation_signer_id = 2;
                         } else {
+                            env::log(b"The user already confirmed");
                             return String::from("The user already confirmed");
                         }
                     } else {
+                        env::panic(b"Server internar error, signer not found or order id not found");
                         return String::from("Server internar error, signer not found or order id not found");    
                     }
+                    env::log(b"Order buy in dispute");
                     return String::from("Order buy Dispute");
                 }
             }
+            env::panic(b"Order buy not found");
             return String::from("Order buy not found");
         }  else {
+            env::panic(b"Invalid offer type");
             return String::from("Invalid offer type");
         }
     }
@@ -1023,13 +1053,16 @@ impl NearP2P {
                             /////////////////////////////////////////////////////////////
                             /// Aqui va el codigo para transferir los near a la cuenta del "ownwe_id"
                             ////////////////////////////////////////////////////////////
+                            env::log(b"Order sell mediator Confirmation");
                             return String::from("Order sell mediator Confirmation");
                         } else if offer_type == 2 {
                             /////////////////////////////////////////////////////////////
                             /// Aqui va el codigo para transferir los near a la cuenta del "signer_id"
                             ////////////////////////////////////////////////////////////
+                            env::log(b"Order buy mediator Confirmation");
                             return String::from("Order buy mediator Confirmation");
                         } else {
+                            env::panic(b"Invalid offer type");
                             return String::from("Invalid offer type");
                         }
                     } else {
@@ -1037,13 +1070,16 @@ impl NearP2P {
                             /////////////////////////////////////////////////////////////
                             /// Aqui va el codigo para transferir los near a la cuenta del "signer_id"
                             ////////////////////////////////////////////////////////////
+                            env::log(b"Order sell mediator Confirmation");
                             return String::from("Order sell mediator Confirmation");
                         } else if offer_type == 2 {
                             /////////////////////////////////////////////////////////////
                             /// Aqui va el codigo para transferir los near a la cuenta del "ownwe_id"
                             ////////////////////////////////////////////////////////////
-                            return String::from("Order sell mediator Confirmation");
+                            env::log(b"Order buy mediator Confirmation");
+                            return String::from("Order buy mediator Confirmation");
                         } else {
+                            env::panic(b"Invalid offer type");
                             return String::from("Invalid offer type");
                         }
                     }
@@ -1051,6 +1087,7 @@ impl NearP2P {
                 break;
             }
         }
+        env::panic(b"the user does not have permission");
         return String::from("the user does not have permission");
     }
 
