@@ -40,21 +40,6 @@ pub struct Account {
     pub locked_balances: HashMap<AccountId, Balance>,
 }
 
-impl Account {
-
-    pub fn set_locked_balance(&mut self, escrow_account_id: &AccountId, locked_balance: Balance) {
-        if locked_balance > 0 {
-            self.locked_balances.insert(escrow_account_id.clone(), locked_balance);
-        } else {
-            self.locked_balances.remove(escrow_account_id);
-        }
-    }
-
-    pub fn get_locked_balance(&self, escrow_account_id: &AccountId) -> Balance {
-        *self.locked_balances.get(escrow_account_id).unwrap_or(&0)
-    }
-}
-
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /// Objects Definition////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -240,11 +225,11 @@ impl Default for NearP2P {
         Self {
             accounts: UnorderedMap::new(b"a"),
             users: vec![UserObject {
-                user_id: "hrpalencia.testnet".to_string(),
-                name: "Hector".to_string(),
-                last_name: "Palencia".to_string(),
+                user_id: "info.testnet".to_string(),
+                name: "info".to_string(),
+                last_name: "info".to_string(),
                 phone: "0413-4158733".to_string(),
-                email: "hpalenciatestnet@gmail.com".to_string(),
+                email: "info@gmail.com".to_string(),
                 country: "Venezuela".to_string(),
                 mediator: false,
                 admin: true,
@@ -277,38 +262,6 @@ impl Default for NearP2P {
 /// Implementing Struct
 #[near_bindgen]
 impl NearP2P {
-
-    /// Locks an amount from
-    /// the `owner_id`.
-    /// Requirements:
-    /// * The owner should have enough unlocked balance.
-    #[payable]
-    pub fn lock(&mut self, owner_id: AccountId) {
-        let lock_amount = env::attached_deposit();
-        if lock_amount == 0 {
-            env::panic("Can't lock 0 tokens".as_bytes());
-        }
-        let escrow_account_id = env::signer_account_id();
-        let mut account = self.get_account(&owner_id);
-        account.balance = env::account_balance();
-        // Checking and updating unlocked balance
-        if account.balance < lock_amount {
-            env::panic("Not enough unlocked balance".as_bytes());
-        }
-        account.balance -= lock_amount;
-
-        // Updating total lock balance
-        let locked_balance = account.get_locked_balance(&escrow_account_id);
-        account.set_locked_balance(&escrow_account_id, locked_balance + lock_amount);
-
-        self.accounts.insert(&owner_id, &account);
-        env::log(b"Amount locked, waiting for transaction");
-    }
-
-    /// Returns current locked balance for the `owner_id` locked by `escrow_account_id`.
-    pub fn get_locked_balance(&self, owner_id: AccountId, escrow_account_id: AccountId) -> String {
-        self.get_account(&owner_id).get_locked_balance(&escrow_account_id).to_string()
-    }
 
     /// Returns the users object loaded in contract
     /// Params: user_id: AccountId
@@ -742,10 +695,8 @@ impl NearP2P {
                 }
             }
             env::panic(b"the payment method provided does not exist");
-            return "the payment method provided does not exist".to_string();
         } else {
             env::panic(b"Repeated payment methods are not allowed");
-            return "Repeated payment methods are not allowed".to_string();
         }
     }
 
@@ -794,7 +745,7 @@ impl NearP2P {
                 if self.offers_sell.get(i).unwrap().offer_id == offer_id {
                     if self.offers_sell[i].remaining_amount >= amount {
                         ////////////////////////////////////////////////////////////////////
-                        /// colocar aqui el bloqueo de saldo del owner_id  cuando seal venta
+                        /// colocar aqui el bloqueo de saldo del owner_id  cuando sea venta///
                         ////////////////////////////////////////////////////////////////////
                         let remaining: Balance = self.offers_sell[i].remaining_amount - amount;
                         if remaining == 0 {
@@ -828,7 +779,6 @@ impl NearP2P {
                         return String::from("Offer accepted");
                     } else {
                         env::panic(b"the quantity is greater than the offer amount");
-                        return String::from("the quantity is greater than the offer amount");
                     }
                 }
             }
@@ -838,7 +788,7 @@ impl NearP2P {
                 if self.offers_buy.get(i).unwrap().offer_id == offer_id {
                     if self.offers_buy[i].remaining_amount >= amount {
                         ////////////////////////////////////////////////////////////////////////
-                        /// colocar aqui el bloqueo de saldo del owner_id  cuando sea compra
+                        /// colocar aqui el bloqueo de saldo del owner_id  cuando sea compra///
                         /// ////////////////////////////////////////////////////////////////////
                         let remaining: Balance = self.offers_buy[i].remaining_amount - amount;
                         if remaining == 0 {
@@ -872,15 +822,12 @@ impl NearP2P {
                         return String::from("Offer accepted");
                     } else {
                         env::panic(b"the quantity is greater than the offer amount");
-                        return String::from("the quantity is greater than the offer amount");
                     }
                 }
             }
             env::panic(b"Offer not found");
-            return String::from("Offer not found");
         }   else {
             env::panic(b"Invalid offer type");
-            return String::from("Invalid offer type");
         }
     }
     
@@ -898,7 +845,6 @@ impl NearP2P {
                             return String::from("Order sell Confirmation");
                         } else {
                             env::panic(b"Order sell in dispute");
-                            return String::from("Order sell in dispute");
                         }
                     } else if self.orders_sell[i].signer_id == env::signer_account_id().to_string() {
                         if self.orders_sell[i].status == 3 {
@@ -918,16 +864,13 @@ impl NearP2P {
                             return String::from("Order sell Completed");
                         } else {
                             env::panic(b"Order sell in dispute");
-                            return String::from("Order sell in dispute");
                         }
                     } else {
                         env::panic(b"Server internar error, signer not found or order id not found");
-                        return String::from("Server internar error, signer not found or order id not found");
                     }
                 }
             }
             env::panic(b"Order sell not found");
-            return String::from("Offer sell not found");
         } else if offer_type == 2 {
             for i in 0..self.orders_buy.len() {
                 if self.orders_buy.get(i).unwrap().order_id == order_id {
@@ -949,7 +892,6 @@ impl NearP2P {
                             return String::from("Order buy Completed");
                         } else {
                             env::panic(b"Order buy in dispute");
-                            return String::from("Order buy in dispute");
                         }
                     } else if self.orders_buy[i].signer_id == env::signer_account_id().to_string() {
                         if self.orders_buy[i].status == 3 {
@@ -958,19 +900,15 @@ impl NearP2P {
                             return String::from("Order buy Confirmation");
                         } else {
                             env::panic(b"Order buy in dispute");
-                            return String::from("Order buy in dispute");
                         }
                     } else {
-                        env::panic(b"Server internar error, signer not found or order id not found");
-                        return String::from("Server internar error, signer not found or order id not found");    
+                        env::panic(b"Server internar error, signer not found or order id not found");  
                     }
                 }
             }
             env::panic(b"Order buy not found");
-            return String::from("Offer buy not found");
         }  else {
             env::panic(b"Invalid offer type");
-            return String::from("Invalid offer type");
         }
     }
 
@@ -997,15 +935,13 @@ impl NearP2P {
                             return String::from("The user already confirmed");
                         }
                     } else {
-                        env::panic(b"Server internar error, signer not found or order id not found");
-                        return String::from("Server internar error, signer not found or order id not found");    
+                        env::panic(b"Server internar error, signer not found or order id not found");  
                     }
                     env::log(b"Order sell in dispute");
                     return String::from("Order sell in Dispute");
                 }
             }
             env::panic(b"Order sell not found");
-            return String::from("Offer sell not found");
         } else if offer_type == 2 {
             for i in 0..self.orders_buy.len() {
                 if self.orders_buy.get(i).unwrap().order_id == order_id {
@@ -1027,17 +963,14 @@ impl NearP2P {
                         }
                     } else {
                         env::panic(b"Server internar error, signer not found or order id not found");
-                        return String::from("Server internar error, signer not found or order id not found");    
                     }
                     env::log(b"Order buy in dispute");
                     return String::from("Order buy Dispute");
                 }
             }
             env::panic(b"Order buy not found");
-            return String::from("Order buy not found");
         }  else {
             env::panic(b"Invalid offer type");
-            return String::from("Invalid offer type");
         }
     }
 
@@ -1050,37 +983,35 @@ impl NearP2P {
                 if self.users[i].admin == true || self.users[i].mediator == true {
                     if confirmation == true {
                         if offer_type == 1 {
-                            /////////////////////////////////////////////////////////////
-                            /// Aqui va el codigo para transferir los near a la cuenta del "ownwe_id"
-                            ////////////////////////////////////////////////////////////
+                            ////////////////////////////////////////////////////////////////////////////
+                            /// Aqui va el codigo para transferir los near a la cuenta del "ownwe_id"///
+                            ///////////////////////////////////////////////////////////////////////////
                             env::log(b"Order sell mediator Confirmation");
                             return String::from("Order sell mediator Confirmation");
                         } else if offer_type == 2 {
-                            /////////////////////////////////////////////////////////////
-                            /// Aqui va el codigo para transferir los near a la cuenta del "signer_id"
-                            ////////////////////////////////////////////////////////////
+                            /////////////////////////////////////////////////////////////////////////////
+                            /// Aqui va el codigo para transferir los near a la cuenta del "signer_id"///
+                            /////////////////////////////////////////////////////////////////////////////
                             env::log(b"Order buy mediator Confirmation");
                             return String::from("Order buy mediator Confirmation");
                         } else {
                             env::panic(b"Invalid offer type");
-                            return String::from("Invalid offer type");
                         }
                     } else {
                         if offer_type == 1 {
-                            /////////////////////////////////////////////////////////////
-                            /// Aqui va el codigo para transferir los near a la cuenta del "signer_id"
-                            ////////////////////////////////////////////////////////////
+                            /////////////////////////////////////////////////////////////////////////////
+                            /// Aqui va el codigo para transferir los near a la cuenta del "signer_id"///
+                            /////////////////////////////////////////////////////////////////////////////
                             env::log(b"Order sell mediator Confirmation");
                             return String::from("Order sell mediator Confirmation");
                         } else if offer_type == 2 {
-                            /////////////////////////////////////////////////////////////
-                            /// Aqui va el codigo para transferir los near a la cuenta del "ownwe_id"
-                            ////////////////////////////////////////////////////////////
+                            ////////////////////////////////////////////////////////////////////////////
+                            /// Aqui va el codigo para transferir los near a la cuenta del "ownwe_id"///
+                            ////////////////////////////////////////////////////////////////////////////
                             env::log(b"Order buy mediator Confirmation");
                             return String::from("Order buy mediator Confirmation");
                         } else {
                             env::panic(b"Invalid offer type");
-                            return String::from("Invalid offer type");
                         }
                     }
                 } 
@@ -1088,7 +1019,6 @@ impl NearP2P {
             }
         }
         env::panic(b"the user does not have permission");
-        return String::from("the user does not have permission");
     }
 
 
@@ -1145,25 +1075,19 @@ fn search_offer(data: Vec<OfferObject>, campo: String, valor: String) -> Vec<Off
     } else {
         let mut vector: Vec<OfferObject> = Vec::new();
         for i in 0..data.len() {
-            if campo == "offer_id" && data[i].offer_id == valor.parse::<i128>().unwrap().into() {
+            if campo == "fiat_method" && data[i].offer_id == valor.parse::<i128>().unwrap().into() {
                 vector.push(object_offer(i, &data));
             }
-            if campo == "owner_id" && data[i].owner_id == valor.to_string() {
+            if campo == "payment_method" && data[i].owner_id == valor.to_string() {
                 vector.push(object_offer(i, &data));
             }
             if campo == "asset" && data[i].asset == valor.to_string() {
                 vector.push(object_offer(i, &data));
             }
-            if campo == "exchange_rate" && data[i].exchange_rate == valor.to_string() {
-                vector.push(object_offer(i, &data));
-            }
             if campo == "amount" && data[i].amount == valor.parse::<u128>().unwrap().into() {
                 vector.push(object_offer(i, &data));
             }
-            if campo == "remaining_amount" && data[i].remaining_amount == valor.parse::<u128>().unwrap().into() {
-                vector.push(object_offer(i, &data));
-            }
-            if campo == "status" && data[i].status == valor.parse::<i8>().unwrap() {
+            if campo == "amount" && data[i].amount == valor.parse::<u128>().unwrap().into() {
                 vector.push(object_offer(i, &data));
             }
         }
@@ -1171,13 +1095,6 @@ fn search_offer(data: Vec<OfferObject>, campo: String, valor: String) -> Vec<Off
     }
 }
 
-
-impl NearP2P {
-    /// Helper method to get the account details for `owner_id`.
-    fn get_account(&self, owner_id: &AccountId) -> Account {
-        self.accounts.get(owner_id).unwrap_or_default()
-    }
-}
 
 
 
@@ -1229,8 +1146,8 @@ mod tests {
         let orders_completed = 0;
         let percentaje_completion = 0;
         let badge = "super star".to_string();
-        contract.set_offers(account_id, asset, price, amount, min_limit, max_limit, order_type, payment_method, orders_completed, percentaje_completion, badge);
-        assert_eq!(contract.get_offers().len(), 1);
+        //contract.set_offers(account_id, asset, price, amount, min_limit, max_limit, order_type, payment_method, orders_completed, percentaje_completion, badge);
+        //assert_eq!(contract.get_offers().len(), 1);
     }
 
     #[test]
@@ -1241,8 +1158,8 @@ mod tests {
         let mut contract = NearP2P::default();
         let escrow_account_id = env::predecessor_account_id();
         let account_id = "info.testnet".to_string();
-        contract.lock(account_id.to_string());
-        print!("Locked balance: {}", contract.get_locked_balance(account_id.to_string(), escrow_account_id));
+        //contract.lock(account_id.to_string());
+        //print!("Locked balance: {}", contract.get_locked_balance(account_id.to_string(), escrow_account_id));
     }
     
 }
