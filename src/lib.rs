@@ -88,7 +88,8 @@ pub struct OfferObject {
     max_limit: f64,
     payment_method: Vec<PaymentMethodsOfferObject>, // Info concerning to payment asociated to payment contract
     fiat_method: i128,
-    merchant_ad: bool,
+    is_merchant: bool,
+    time: i64,
     status: i8, // 1: active, 2: closed
 }
 
@@ -107,6 +108,7 @@ pub struct OrderObject {
     confirmation_owner_id: i8,
     confirmation_signer_id: i8,
     confirmation_current: i8,
+    time: i64,
     status: i8, // 1 = pending, 2 = completed, 3 = disputed
 }
 
@@ -122,6 +124,7 @@ pub struct MerchantObject {
     orders_completed: i64,
     percentaje_completion: f64, // pioasjoidjasoi
     badge: String, //Badge that represent a merchant verified
+    is_merchant: bool,
 }
 
 
@@ -231,7 +234,7 @@ impl Default for NearP2P {
                 phone: "0413-4158733".to_string(),
                 email: "info@gmail.com".to_string(),
                 country: "Venezuela".to_string(),
-                mediator: false,
+                mediator: true,
                 admin: true,
                 is_active: true,
             }],
@@ -249,6 +252,7 @@ impl Default for NearP2P {
                 orders_completed: 0,
                 percentaje_completion: 0.0,
                 badge: "".to_string(),
+                is_merchant: true,
             }],
             payment_method: Vec::new(),
             payment_method_user: Vec::new(),
@@ -315,7 +319,8 @@ impl NearP2P {
             total_orders: 0,
             orders_completed: 0,
             percentaje_completion: 0.0,
-            badge: "".to_string()
+            badge: "".to_string(),
+            is_merchant: false,
         };
         self.merchant.push(data2);
        // set_merchant(user_id: user_id.to_string(), total_orders: 0, orders_completed: 0 , badge: "".to_string());
@@ -381,8 +386,9 @@ impl NearP2P {
 
     /// Returns the order object loaded in contract
     /// Params: campo: String, valor: String
-    pub fn get_offers_sell(self, campo: String, valor: String) -> Vec<OfferObject> {
-        search_offer(self.offers_sell, campo.to_string(), valor.to_string())
+    pub fn get_offers_sell(self, amount: Option<Balance>, fiat_method: Option<i128>, payment_method: Option<i128>, is_merchant: Option<bool>) -> Vec<OfferObject> {
+        search_offer(self.offers_sell, amount, fiat_method, payment_method, is_merchant)
+        //search_offer(self.offers_sell, campo.to_string(), valor.to_string())
     }
 
 
@@ -397,8 +403,14 @@ impl NearP2P {
         , min_limit: f64
         , max_limit: f64
         , payment_method: Vec<PaymentMethodsOfferObject>
-        , fiat_method: i128) -> i128{
+        , fiat_method: i128
+        , time: i64) -> i128{
         self.offer_sell_id += 1;
+        let mut merchant_valid: bool = false;
+        match self.merchant.iter().find(|x| x.is_merchant == true && x.user_id == owner_id.to_string()) {
+            Some(_) => merchant_valid = true,
+            None => merchant_valid = false,
+        }
         let data = OfferObject {
             offer_id: self.offer_sell_id,
             owner_id: String::from(owner_id),
@@ -410,7 +422,8 @@ impl NearP2P {
             max_limit: max_limit,
             payment_method: payment_method,
             fiat_method: fiat_method,
-            merchant_ad: false,
+            is_merchant: merchant_valid,
+            time: time,
             status: 1,
         };
         self.offers_sell.push(data);
@@ -421,8 +434,9 @@ impl NearP2P {
 
     /// Returns the order object loaded in contract
     /// Params: campo: String, valor: String
-    pub fn get_offers_buy(self, campo: String, valor: String) -> Vec<OfferObject> {
-        search_offer(self.offers_buy, campo.to_string(), valor.to_string())
+    pub fn get_offers_buy(self, amount: Option<Balance>, fiat_method: Option<i128>, payment_method: Option<i128>, is_merchant: Option<bool>) -> Vec<OfferObject> {
+        search_offer(self.offers_buy, amount, fiat_method, payment_method, is_merchant)
+        //search_offer(self.offers_buy, campo.to_string(), valor.to_string())
     }
 
 
@@ -438,8 +452,14 @@ impl NearP2P {
         , min_limit: f64
         , max_limit: f64
         , payment_method: Vec<PaymentMethodsOfferObject>
-        , fiat_method: i128) -> i128{
+        , fiat_method: i128
+        , time: i64) -> i128{
         self.offer_buy_id += 1;
+        let mut merchant_valid: bool = false;
+        match self.merchant.iter().find(|x| x.is_merchant == true && x.user_id == owner_id.to_string()) {
+            Some(_) => merchant_valid = true,
+            None => merchant_valid = false,
+        }
         let data = OfferObject {
             offer_id: self.offer_buy_id,
             owner_id: String::from(owner_id),
@@ -451,7 +471,8 @@ impl NearP2P {
             max_limit: max_limit,
             payment_method: payment_method,
             fiat_method: fiat_method,
-            merchant_ad: false,
+            is_merchant: merchant_valid,
+            time: time,
             status: 1,
         };
         self.offers_buy.push(data);
@@ -466,16 +487,18 @@ impl NearP2P {
             self.merchant  // Return all merchants   
         } else {
             let mut result: Vec<MerchantObject> = Vec::new();
-            for i in 0..self.merchant.len() {
-                if self.merchant[i].user_id == user_id.to_string() {
-                    result.push(MerchantObject {
-                        user_id: self.merchant[i].user_id.to_string(),
-                        total_orders: self.merchant[i].total_orders,
-                        orders_completed: self.merchant[i].orders_completed,
-                        percentaje_completion: self.merchant[i].percentaje_completion,
-                        badge: self.merchant[i].badge.to_string(),
-                    });
-                }
+            // for i in 0..self.merchant.len() {
+            for i in (0..self.merchant.len()).filter(|&x| self.merchant[x].user_id == user_id.to_string()) {
+                //if self.merchant[i].user_id == user_id.to_string() {
+                result.push(MerchantObject {
+                    user_id: self.merchant[i].user_id.to_string(),
+                    total_orders: self.merchant[i].total_orders,
+                    orders_completed: self.merchant[i].orders_completed,
+                    percentaje_completion: self.merchant[i].percentaje_completion,
+                    badge: self.merchant[i].badge.to_string(),
+                    is_merchant: self.merchant[i].is_merchant,
+                });
+                //}
             }
             result
         }
@@ -488,13 +511,15 @@ impl NearP2P {
     pub fn put_merchant(&mut self, user_id: AccountId
         , total_orders: i64
         , orders_completed: i64 
-        , badge: String) {
+        , badge: String
+        , is_merchant: bool) {
         for i in 0..self.merchant.len() {
             if self.merchant[i].user_id == user_id {
                 self.merchant[i].total_orders = total_orders;
                 self.merchant[i].orders_completed = orders_completed;
                 self.merchant[i].percentaje_completion = (orders_completed as f64 / total_orders as f64) * 100.0;
                 self.merchant[i].badge = badge.to_string();
+                self.merchant[i].is_merchant = is_merchant;
             }
         }
         env::log(b"Merchant Updated");
@@ -765,6 +790,7 @@ impl NearP2P {
                             confirmation_owner_id: 0,
                             confirmation_signer_id: 0,
                             confirmation_current: 0,
+                            time: self.offers_sell[i].time,
                             status: 1,
                         };
                         self.orders_sell.push(data);
@@ -808,6 +834,7 @@ impl NearP2P {
                             confirmation_owner_id: 0,
                             confirmation_signer_id: 0,
                             confirmation_current: 0,
+                            time: self.offers_buy[i].time,
                             status: 1,
                         };
                         self.orders_buy.push(data);
@@ -1046,6 +1073,101 @@ impl NearP2P {
 }
 
 
+fn search_offer(data: Vec<OfferObject>, amount: Option<Balance>, fiat_method: Option<i128>, payment_method: Option<i128>, is_merchant: Option<bool>) -> Vec<OfferObject> {
+    let mut result: Vec<OfferObject> = data ;
+
+    if amount.is_some() {
+        result = result.iter().filter(|x| x.amount >= amount.unwrap())
+                    .map(|r| OfferObject { 
+                        offer_id: r.offer_id,
+                        owner_id: r.owner_id.clone(),
+                        asset: r.asset.clone(), // NEAR, USD
+                        exchange_rate: r.exchange_rate.clone(),
+                        amount: r.amount,
+                        remaining_amount: r.remaining_amount,
+                        min_limit: r.min_limit,
+                        max_limit: r.max_limit,
+                        payment_method: r.payment_method.iter().map(|r| PaymentMethodsOfferObject {id: r.id, payment_method: r.payment_method.clone()}).collect(), // Info concerning to payment asociated to payment contract
+                        fiat_method: r.fiat_method,
+                        is_merchant: r.is_merchant,
+                        time: r.time,
+                        status: r.status, // 1: active, 2: closed).collect()
+                    }).collect();
+    }
+    if fiat_method.is_some() {
+        result = result.iter().filter(|x| x.fiat_method >= fiat_method.unwrap())
+                    .map(|r| OfferObject { 
+                        offer_id: r.offer_id,
+                        owner_id: r.owner_id.clone(),
+                        asset: r.asset.clone(), // NEAR, USD
+                        exchange_rate: r.exchange_rate.clone(),
+                        amount: r.amount,
+                        remaining_amount: r.remaining_amount,
+                        min_limit: r.min_limit,
+                        max_limit: r.max_limit,
+                        payment_method: r.payment_method.iter().map(|r| PaymentMethodsOfferObject {id: r.id, payment_method: r.payment_method.clone()}).collect(), // Info concerning to payment asociated to payment contract
+                        fiat_method: r.fiat_method,
+                        is_merchant: r.is_merchant,
+                        time: r.time,
+                        status: r.status, // 1: active, 2: closed).collect()
+                    }).collect();
+    }
+    if payment_method.is_some() {
+        result = result.iter().filter(|x| x.payment_method.iter().filter(|z| z.id == payment_method.unwrap()).count() > 0 )
+                    .map(|r| OfferObject { 
+                        offer_id: r.offer_id,
+                        owner_id: r.owner_id.clone(),
+                        asset: r.asset.clone(), // NEAR, USD
+                        exchange_rate: r.exchange_rate.clone(),
+                        amount: r.amount,
+                        remaining_amount: r.remaining_amount,
+                        min_limit: r.min_limit,
+                        max_limit: r.max_limit,
+                        payment_method: r.payment_method.iter().map(|r| PaymentMethodsOfferObject {id: r.id, payment_method: r.payment_method.clone()}).collect(), // Info concerning to payment asociated to payment contract
+                        fiat_method: r.fiat_method,
+                        is_merchant: r.is_merchant,
+                        time: r.time,
+                        status: r.status, // 1: active, 2: closed).collect()
+                    }).collect();
+    }
+    if is_merchant.is_some() {
+        result = result.iter().filter(|x| x.is_merchant == is_merchant.unwrap())
+                    .map(|r| OfferObject { 
+                        offer_id: r.offer_id,
+                        owner_id: r.owner_id.clone(),
+                        asset: r.asset.clone(), // NEAR, USD
+                        exchange_rate: r.exchange_rate.clone(),
+                        amount: r.amount,
+                        remaining_amount: r.remaining_amount,
+                        min_limit: r.min_limit,
+                        max_limit: r.max_limit,
+                        payment_method: r.payment_method.iter().map(|r| PaymentMethodsOfferObject {id: r.id, payment_method: r.payment_method.clone()}).collect(), // Info concerning to payment asociated to payment contract
+                        fiat_method: r.fiat_method,
+                        is_merchant: r.is_merchant,
+                        time: r.time,
+                        status: r.status, // 1: active, 2: closed).collect()
+                    }).collect();
+    }
+    
+    result.iter().map(|r| OfferObject { 
+        offer_id: r.offer_id,
+        owner_id: r.owner_id.clone(),
+        asset: r.asset.clone(), // NEAR, USD
+        exchange_rate: r.exchange_rate.clone(),
+        amount: r.amount,
+        remaining_amount: r.remaining_amount,
+        min_limit: r.min_limit,
+        max_limit: r.max_limit,
+        payment_method: r.payment_method.iter().map(|r| PaymentMethodsOfferObject {id: r.id, payment_method: r.payment_method.clone()}).collect(), // Info concerning to payment asociated to payment contract
+        fiat_method: r.fiat_method,
+        is_merchant: r.is_merchant,
+        time: r.time,
+        status: r.status, // 1: active, 2: closed).collect()
+    }).collect()
+    
+}
+
+/*
 fn search_offer(data: Vec<OfferObject>, campo: String, valor: String) -> Vec<OfferObject> {
     fn object_offer(index: usize, data: &Vec<OfferObject>) -> OfferObject {
         let mut payment_method: Vec<PaymentMethodsOfferObject> = Vec::new();
@@ -1066,7 +1188,8 @@ fn search_offer(data: Vec<OfferObject>, campo: String, valor: String) -> Vec<Off
             max_limit: data[index].max_limit,
             payment_method: payment_method, 
             fiat_method: data[index].fiat_method,
-            merchant_ad: data[index].merchant_ad,
+            is_merchant: data[index].is_merchant,
+            time: data[index].time,
             status: data[index].status,
         }
     }
@@ -1094,7 +1217,7 @@ fn search_offer(data: Vec<OfferObject>, campo: String, valor: String) -> Vec<Off
         return vector
     }
 }
-
+*/
 
 
 
