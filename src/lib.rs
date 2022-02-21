@@ -857,7 +857,84 @@ impl NearP2P {
             env::panic(b"Invalid offer type");
         }
     }
+
+    pub fn get_order_sell(&mut self, order_id: Option<i128>) -> Vec<OrderObject> {
+        if order_id.is_none() {
+            self.orders_sell.iter().filter(|x| x.owner_id == env::signer_account_id().to_string() || x.signer_id == env::signer_account_id().to_string())
+            .map(|x| OrderObject {
+                offer_id: x.offer_id,
+                order_id: x.order_id,
+                owner_id: x.owner_id.clone(),
+                signer_id: x.signer_id.clone(),
+                exchange_rate: x.exchange_rate.clone(),
+                operation_amount: x.operation_amount,
+                payment_method: x.payment_method,
+                fiat_method: x.fiat_method,
+                confirmation_owner_id: x.confirmation_owner_id,
+                confirmation_signer_id: x.confirmation_signer_id,
+                confirmation_current: x.confirmation_current,
+                time: x.time,
+                status: x.status,
+            }).collect()
+        } else {
+            self.orders_sell.iter().filter(|x| x.order_id == order_id.unwrap())
+            .map(|x| OrderObject {
+                offer_id: x.offer_id,
+                order_id: x.order_id,
+                owner_id: x.owner_id.clone(),
+                signer_id: x.signer_id.clone(),
+                exchange_rate: x.exchange_rate.clone(),
+                operation_amount: x.operation_amount,
+                payment_method: x.payment_method,
+                fiat_method: x.fiat_method,
+                confirmation_owner_id: x.confirmation_owner_id,
+                confirmation_signer_id: x.confirmation_signer_id,
+                confirmation_current: x.confirmation_current,
+                time: x.time,
+                status: x.status,
+            }).collect()
+        }
+    }
+
+    pub fn get_order_buy(&mut self, order_id: Option<i128>) -> Vec<OrderObject> {
+        if order_id.is_none() {
+            self.orders_buy.iter().filter(|x| x.owner_id == env::signer_account_id().to_string() || x.signer_id == env::signer_account_id().to_string())
+            .map(|x| OrderObject {
+                offer_id: x.offer_id,
+                order_id: x.order_id,
+                owner_id: x.owner_id.clone(),
+                signer_id: x.signer_id.clone(),
+                exchange_rate: x.exchange_rate.clone(),
+                operation_amount: x.operation_amount,
+                payment_method: x.payment_method,
+                fiat_method: x.fiat_method,
+                confirmation_owner_id: x.confirmation_owner_id,
+                confirmation_signer_id: x.confirmation_signer_id,
+                confirmation_current: x.confirmation_current,
+                time: x.time,
+                status: x.status,
+            }).collect()
+        } else {
+            self.orders_buy.iter().filter(|x| x.order_id == order_id.unwrap())
+            .map(|x| OrderObject {
+                offer_id: x.offer_id,
+                order_id: x.order_id,
+                owner_id: x.owner_id.clone(),
+                signer_id: x.signer_id.clone(),
+                exchange_rate: x.exchange_rate.clone(),
+                operation_amount: x.operation_amount,
+                payment_method: x.payment_method,
+                fiat_method: x.fiat_method,
+                confirmation_owner_id: x.confirmation_owner_id,
+                confirmation_signer_id: x.confirmation_signer_id,
+                confirmation_current: x.confirmation_current,
+                time: x.time,
+                status: x.status,
+            }).collect()
+        }
+    }
     
+
     /// confirmation order into the contract
     /// Params: offer_type: 1 = sell, 2 = buy
     #[payable]
