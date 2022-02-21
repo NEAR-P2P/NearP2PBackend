@@ -109,6 +109,7 @@ pub struct OrderObject {
     confirmation_signer_id: i8,
     confirmation_current: i8,
     time: i64,
+    datetime: String,
     status: i8, // 1 = pending, 2 = completed, 3 = disputed
 }
 
@@ -764,7 +765,8 @@ impl NearP2P {
     pub fn accept_offer(&mut self, offer_type: i8
         , offer_id: i128
         , amount: Balance
-        , payment_method: i128) -> String {
+        , payment_method: i128
+        , datetime: String) -> String {
         if offer_type == 1 {
             for i in 0..self.offers_sell.len() {
                 if self.offers_sell.get(i).unwrap().offer_id == offer_id {
@@ -791,6 +793,7 @@ impl NearP2P {
                             confirmation_signer_id: 0,
                             confirmation_current: 0,
                             time: self.offers_sell[i].time,
+                            datetime: datetime,
                             status: 1,
                         };
                         self.orders_sell.push(data);
@@ -835,6 +838,7 @@ impl NearP2P {
                             confirmation_signer_id: 0,
                             confirmation_current: 0,
                             time: self.offers_buy[i].time,
+                            datetime: datetime,
                             status: 1,
                         };
                         self.orders_buy.push(data);
@@ -874,6 +878,7 @@ impl NearP2P {
                 confirmation_signer_id: x.confirmation_signer_id,
                 confirmation_current: x.confirmation_current,
                 time: x.time,
+                datetime: x.datetime.clone(),
                 status: x.status,
             }).collect()
         } else {
@@ -891,6 +896,7 @@ impl NearP2P {
                 confirmation_signer_id: x.confirmation_signer_id,
                 confirmation_current: x.confirmation_current,
                 time: x.time,
+                datetime: x.datetime.clone(),
                 status: x.status,
             }).collect()
         }
@@ -912,6 +918,7 @@ impl NearP2P {
                 confirmation_signer_id: x.confirmation_signer_id,
                 confirmation_current: x.confirmation_current,
                 time: x.time,
+                datetime: x.datetime.clone(),
                 status: x.status,
             }).collect()
         } else {
@@ -929,6 +936,7 @@ impl NearP2P {
                 confirmation_signer_id: x.confirmation_signer_id,
                 confirmation_current: x.confirmation_current,
                 time: x.time,
+                datetime: x.datetime.clone(),
                 status: x.status,
             }).collect()
         }
