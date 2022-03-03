@@ -964,6 +964,9 @@ impl NearP2P {
                             /////////////////////////////////////////////////////////////////////////
                             // Aqui va la el codigo para transferir los near a la cuenta del ownwe_id
                             /////////////////////////////////////////////////////////////////////////
+                            
+                            Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(self.orders_sell[i].operation_amount);
+
                             self.orders_sell[i].status = 2;
                             //actualizar transacciones culminadas owner_id
                             for j in 0..self.merchant.len() {
@@ -992,6 +995,9 @@ impl NearP2P {
                             /////////////////////////////////////////////////////////////////////////
                             // Aqui va la el codigo para transferir los near a la cuenta del signer_id
                             /////////////////////////////////////////////////////////////////////////
+                            
+                            Promise::new(self.orders_buy[i].signer_id.to_string()).transfer(self.orders_buy[i].operation_amount);
+                            
                             self.orders_buy[i].status = 2;
                             //actualizar transacciones culminadas owner_id
                             for j in 0..self.merchant.len() {
@@ -1098,12 +1104,33 @@ impl NearP2P {
                             ////////////////////////////////////////////////////////////////////////////
                             /// Aqui va el codigo para transferir los near a la cuenta del "ownwe_id"///
                             ///////////////////////////////////////////////////////////////////////////
+                            let mut tranfer_valid = false;
+                            for i in 0..self.orders_sell.len() {
+                                if self.orders_sell.get(i).unwrap().order_id == order_id {
+                                    Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(self.orders_sell[i].operation_amount);
+                                    tranfer_valid = true;
+                                };
+                            };
+                            if tranfer_valid == false {
+                                env::panic(b"Order sell not found");
+                            };
                             env::log(b"Order sell mediator Confirmation");
                             return String::from("Order sell mediator Confirmation");
                         } else if offer_type == 2 {
                             /////////////////////////////////////////////////////////////////////////////
                             /// Aqui va el codigo para transferir los near a la cuenta del "signer_id"///
                             /////////////////////////////////////////////////////////////////////////////
+                            
+                            let mut tranfer_valid = false;
+                            for i in 0..self.orders_buy.len() {
+                                if self.orders_buy.get(i).unwrap().order_id == order_id {
+                                    Promise::new(self.orders_buy[i].owner_id.to_string()).transfer(self.orders_buy[i].operation_amount);
+                                    tranfer_valid = true;
+                                };
+                            };
+                            if tranfer_valid == false {
+                                env::panic(b"Order buy not found");
+                            };
                             env::log(b"Order buy mediator Confirmation");
                             return String::from("Order buy mediator Confirmation");
                         } else {
@@ -1114,12 +1141,32 @@ impl NearP2P {
                             /////////////////////////////////////////////////////////////////////////////
                             /// Aqui va el codigo para transferir los near a la cuenta del "signer_id"///
                             /////////////////////////////////////////////////////////////////////////////
+                            
+                            let mut tranfer_valid = false;
+                            for i in 0..self.orders_sell.len() {
+                                if self.orders_sell.get(i).unwrap().order_id == order_id {
+                                    Promise::new(self.orders_sell[i].signer_id.to_string()).transfer(self.orders_sell[i].operation_amount);
+                                    tranfer_valid = true;
+                                };
+                            };
+
                             env::log(b"Order sell mediator Confirmation");
                             return String::from("Order sell mediator Confirmation");
                         } else if offer_type == 2 {
                             ////////////////////////////////////////////////////////////////////////////
                             /// Aqui va el codigo para transferir los near a la cuenta del "ownwe_id"///
                             ////////////////////////////////////////////////////////////////////////////
+                            
+                            let mut tranfer_valid = false;
+                            for i in 0..self.orders_buy.len() {
+                                if self.orders_buy.get(i).unwrap().order_id == order_id {
+                                    Promise::new(self.orders_buy[i].owner_id.to_string()).transfer(self.orders_buy[i].operation_amount);
+                                    tranfer_valid = true;
+                                };
+                            };
+                            if tranfer_valid == false {
+                                env::panic(b"Order buy not found");
+                            };
                             env::log(b"Order buy mediator Confirmation");
                             return String::from("Order buy mediator Confirmation");
                         } else {
