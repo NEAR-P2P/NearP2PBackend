@@ -24,7 +24,7 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use serde::Serialize;
 use serde::Deserialize;
 use near_sdk::collections::UnorderedMap;
-use near_sdk::{json_types::U128, env, near_bindgen, AccountId, Balance, Promise};
+use near_sdk::{json_types::U128, env, near_bindgen, AccountId, Balance, Promise, assert_one_yocto};
 use std::collections::HashMap;
 use near_sdk::json_types::ValidAccountId;
 
@@ -90,6 +90,7 @@ pub struct OfferObject {
     fiat_method: i128,
     is_merchant: bool,
     time: i64,
+    terms_conditions: String,
     status: i8, // 1: active, 2: closed
 }
 
@@ -110,6 +111,7 @@ pub struct OrderObject {
     confirmation_current: i8,
     time: i64,
     datetime: String,
+    terms_conditions: String,
     status: i8, // 1 = pending, 2 = completed, 3 = disputed
 }
 
@@ -270,39 +272,37 @@ impl NearP2P {
 
     /// Returns the users object loaded in contract
     /// Params: user_id: AccountId
-    pub fn get_user(self, user_id: AccountId) -> Vec<UserObject> {
-        if user_id == "%" {
-            self.users     
+    pub fn get_user(self, user_id: Option<AccountId>) -> Vec<UserObject> {
+        if user_id.is_some() {
+            let user = user_id.unwrap().clone();
+            self.users.iter().filter(|x| x.user_id == user.to_string())
+            .map(|x| UserObject {
+                user_id: x.user_id.to_string(),
+                name: x.name.to_string(),
+                last_name: x.last_name.to_string(),
+                phone: x.phone.to_string(),
+                email: x.email.to_string(),
+                country: x.country.to_string(),
+                mediator: x.mediator,
+                admin: x.admin,
+                is_active: x.is_active,
+            }).collect()
         } else {
-            let mut result: Vec<UserObject> = Vec::new();
-            for i in 0..self.users.len() {
-                if self.users[i].user_id == user_id.to_string() {
-                    result.push(UserObject {
-                        user_id: self.users[i].user_id.to_string(),
-                        name: self.users[i].name.to_string(),
-                        last_name: self.users[i].last_name.to_string(),
-                        phone: self.users[i].phone.to_string(),
-                        email: self.users[i].email.to_string(),
-                        country: self.users[i].country.to_string(),
-                        mediator: self.users[i].mediator,
-                        admin: self.users[i].admin,
-                        is_active: self.users[i].is_active,
-                    });
-                }
-            }
-            result
+            self.users
         }
     }
 
     /// Set the users object into the contract
     /// Params: user_id: String, name: String
     /// last_name: String, phone: String, email: String, country: String
+    #[payable]
     pub fn set_user(&mut self, user_id: AccountId,
         name: String,
         last_name: String,
         phone: String,
         email: String,
-        country: String) -> String{
+        country: String) -> String {
+        assert_one_yocto();
         let data = UserObject {
             user_id: user_id.to_string(),
             name: name.to_string(),
@@ -332,11 +332,13 @@ impl NearP2P {
     /// Set the users object into the contract
     /// Params: user_id: String, name: String
     /// name: String, last_name: String, phone: String, email: String, country: String
+    #[payable]
     pub fn put_user(&mut self, name: String
         , last_name: String
         , phone: String
         , email: String
         , country: String) {
+        assert_one_yocto();
         for i in 0..self.users.len() {
             if self.users[i].user_id == env::signer_account_id() {
                 self.users[i].name = name.to_string();
@@ -397,6 +399,7 @@ impl NearP2P {
     /// Params: owner_id: String, asset: String, exchange_rate: String, amount: String
     /// min_limit: String, max_limit: String, payment_method_id: String, status: i8
     /// This is a list of offers for sellings operations, will be called by the user
+    #[payable]
     pub fn set_offers_sell(&mut self, owner_id: AccountId
         , asset: String
         , exchange_rate: String
@@ -405,7 +408,9 @@ impl NearP2P {
         , max_limit: f64
         , payment_method: Vec<PaymentMethodsOfferObject>
         , fiat_method: i128
-        , time: i64) -> i128{
+        , time: i64
+        , terms_conditions: String) -> i128{
+        assert_one_yocto();
         self.offer_sell_id += 1;
         let mut merchant_valid: bool = false;
         match self.merchant.iter().find(|x| x.is_merchant == true && x.user_id == owner_id.to_string()) {
@@ -425,6 +430,7 @@ impl NearP2P {
             fiat_method: fiat_method,
             is_merchant: merchant_valid,
             time: time,
+            terms_conditions: terms_conditions,
             status: 1,
         };
         self.offers_sell.push(data);
@@ -454,7 +460,14 @@ impl NearP2P {
         , max_limit: f64
         , payment_method: Vec<PaymentMethodsOfferObject>
         , fiat_method: i128
-        , time: i64) -> i128{
+        , time: i64
+        , terms_conditions: String) -> i128{
+        let attached_deposit = env::attached_deposit();
+        assert!(
+            attached_deposit >= amount,
+            "the deposit attached is less than the quantity supplied : {}",
+            amount
+        );
         self.offer_buy_id += 1;
         let mut merchant_valid: bool = false;
         match self.merchant.iter().find(|x| x.is_merchant == true && x.user_id == owner_id.to_string()) {
@@ -474,6 +487,7 @@ impl NearP2P {
             fiat_method: fiat_method,
             is_merchant: merchant_valid,
             time: time,
+            terms_conditions: terms_conditions,
             status: 1,
         };
         self.offers_buy.push(data);
@@ -514,6 +528,8 @@ impl NearP2P {
         , orders_completed: i64 
         , badge: String
         , is_merchant: bool) {
+        self.users.iter().find(|x| x.user_id == env::signer_account_id().to_string() && x.admin == true).expect("User not admin");
+            
         for i in 0..self.merchant.len() {
             if self.merchant[i].user_id == user_id {
                 self.merchant[i].total_orders = total_orders;
@@ -543,6 +559,7 @@ impl NearP2P {
         , input3: String
         , input4: String
         , input5: String) -> i128 {
+        self.users.iter().find(|x| x.user_id == env::signer_account_id().to_string() && x.admin == true).expect("User not admin");
         self.payment_method_id += 1;
         let data = PaymentMethodsObject {
             id: self.payment_method_id,
@@ -568,6 +585,7 @@ impl NearP2P {
         , input3: String
         , input4: String
         , input5: String) {
+        self.users.iter().find(|x| x.user_id == env::signer_account_id().to_string() && x.admin == true).expect("User not admin");
         //self.payment_method[0].payment_method = String::from("Transferencia Bancaria 2");
         for i in 0..self.payment_method.len() {
             if self.payment_method.get(i).unwrap().id == id {
@@ -598,6 +616,7 @@ impl NearP2P {
     /// delete the Payment Method object into the contract
     /// Params: id: i128
     pub fn delete_payment_method(&mut self, id: i128) {
+        self.users.iter().find(|x| x.user_id == env::signer_account_id().to_string() && x.admin == true).expect("User not admin");
         for i in 0..self.payment_method.len() {
             if self.payment_method.get(i).unwrap().id == id {
                 self.payment_method.remove(i);
@@ -606,6 +625,7 @@ impl NearP2P {
         for i in 0..self.payment_method_user.len() {
             if self.payment_method_user.get(i).unwrap().payment_method_id == id {
                 self.payment_method_user.remove(i);
+                break;
             }
         }
         env::log(b"Payment Method Delete");
@@ -622,6 +642,7 @@ impl NearP2P {
     /// Params: fiat_method_id: String, flagcdn: String
     /// List of fiat methods, will be called by the user
     pub fn set_fiat_method(&mut self, fiat_method: String, flagcdn: String) -> i128 {
+        self.users.iter().find(|x| x.user_id == env::signer_account_id().to_string() && x.admin == true).expect("User not admin");
         self.fiat_method_id += 1;
         let data = FiatMethodsObject {
             id: self.fiat_method_id,
@@ -637,6 +658,7 @@ impl NearP2P {
     /// Params: id: i128, fiat_method: String, flagcdn: String
     pub fn put_fiat_method(&mut self, id: i128
         , fiat_method: String, flagcdn: String) {
+        self.users.iter().find(|x| x.user_id == env::signer_account_id().to_string() && x.admin == true).expect("User not admin");
         for i in 0..self.fiat_method.len() {
             if self.fiat_method.get(i).unwrap().id == id {
                 self.fiat_method[i].fiat_method = fiat_method.to_string();
@@ -684,13 +706,15 @@ impl NearP2P {
     }
 
     //Set the Payment Method User object into the contract
+    #[payable]
     pub fn set_payment_method_user(&mut self, user_id: ValidAccountId
         , payment_method_id: i128
         , input1: String
         , input2: String
         , input3: String
         , input4: String
-        , input5: String) -> String{
+        , input5: String) -> String {
+        assert_one_yocto();
         let mut duplicate: bool = false;
         for i in 0..self.payment_method_user.len() {
             if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == user_id.to_string() {
@@ -727,6 +751,7 @@ impl NearP2P {
     }
 
     /// put the Payment Method object into the contract
+    #[payable]
     pub fn put_payment_method_user(&mut self, user_id: AccountId
         , payment_method_id: i128
         , input1: String
@@ -734,6 +759,7 @@ impl NearP2P {
         , input3: String
         , input4: String
         , input5: String) {
+        assert_one_yocto();
         for i in 0..self.payment_method_user.len() {
             if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == user_id.to_string() {
                 self.payment_method_user[i].input1 = input1.to_string();
@@ -748,8 +774,10 @@ impl NearP2P {
     }
 
     /// delete the Payment Method user object into the contract
+    #[payable]
     pub fn delete_payment_method_user(&mut self, user_id: AccountId
         , payment_method_id: i128) {
+        assert_one_yocto();
         for i in 0..self.payment_method_user.len() {
             if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == user_id.to_string() {
                 self.payment_method_user.remove(i);
@@ -767,6 +795,7 @@ impl NearP2P {
         , amount: Balance
         , payment_method: i128
         , datetime: String) -> String {
+        assert_one_yocto();
         if offer_type == 1 {
             for i in 0..self.offers_sell.len() {
                 if self.offers_sell.get(i).unwrap().offer_id == offer_id {
@@ -794,6 +823,7 @@ impl NearP2P {
                             confirmation_current: 0,
                             time: self.offers_sell[i].time,
                             datetime: datetime,
+                            terms_conditions: self.offers_sell[i].terms_conditions.to_string(),
                             status: 1,
                         };
                         self.orders_sell.push(data);
@@ -839,6 +869,7 @@ impl NearP2P {
                             confirmation_current: 0,
                             time: self.offers_buy[i].time,
                             datetime: datetime,
+                            terms_conditions: self.offers_buy[i].terms_conditions.to_string(),
                             status: 1,
                         };
                         self.orders_buy.push(data);
@@ -879,6 +910,7 @@ impl NearP2P {
                 confirmation_current: x.confirmation_current,
                 time: x.time,
                 datetime: x.datetime.clone(),
+                terms_conditions: x.terms_conditions.clone(),
                 status: x.status,
             }).collect()
         } else {
@@ -897,6 +929,7 @@ impl NearP2P {
                 confirmation_current: x.confirmation_current,
                 time: x.time,
                 datetime: x.datetime.clone(),
+                terms_conditions: x.terms_conditions.clone(),
                 status: x.status,
             }).collect()
         }
@@ -919,6 +952,7 @@ impl NearP2P {
                 confirmation_current: x.confirmation_current,
                 time: x.time,
                 datetime: x.datetime.clone(),
+                terms_conditions: x.terms_conditions.clone(),
                 status: x.status,
             }).collect()
         } else {
@@ -937,6 +971,7 @@ impl NearP2P {
                 confirmation_current: x.confirmation_current,
                 time: x.time,
                 datetime: x.datetime.clone(),
+                terms_conditions: x.terms_conditions.clone(),
                 status: x.status,
             }).collect()
         }
@@ -947,6 +982,7 @@ impl NearP2P {
     /// Params: offer_type: 1 = sell, 2 = buy
     #[payable]
     pub fn order_confirmation(&mut self, offer_type: i8, order_id: i128) -> String {
+        assert_one_yocto();
         if offer_type == 1 {
             for i in 0..self.orders_sell.len() {
                 if self.orders_sell.get(i).unwrap().order_id == order_id {
@@ -1032,7 +1068,9 @@ impl NearP2P {
 
     /// dispute order into the contract
     /// Params: offer_type: 1 = sell, 2 = buy
+    #[payable]
     pub fn order_dispute(&mut self, offer_type: i8, order_id: i128) -> String {
+        assert_one_yocto();
         if offer_type == 1 {
             for i in 0..self.orders_sell.len() {
                 if self.orders_sell.get(i).unwrap().order_id == order_id {
@@ -1096,6 +1134,7 @@ impl NearP2P {
     /// Params: offer_type: 1 = sell, 2 = buy
     #[payable]
     pub fn order_confirmation_dispute(&mut self, offer_type: i8, order_id: i128, confirmation: bool) -> String {
+        assert_one_yocto();
         for i in 0..self.users.len() {    
             if self.users[i].user_id == env::signer_account_id().to_string() {
                 if self.users[i].admin == true || self.users[i].mediator == true {
@@ -1180,28 +1219,6 @@ impl NearP2P {
         env::panic(b"the user does not have permission");
     }
 
-
-    
-    pub fn prueba(self) -> String {
-        return String::from(env::signer_account_id().to_string() + " - " + &env::current_account_id().to_string());
-    }
-
-    pub fn prueba2(self) -> String {
-        let amount: U128 = U128::from(1000000000000000000000000);
-        Promise::new("hrpalencia2.testnet".to_string()).transfer(amount.0);
-        return String::from(env::signer_account_id().to_string() + " - " + &env::current_account_id().to_string());
-    }
-    
-    #[payable]
-    pub fn take_my_money(&mut self) -> Promise {
-        let amount: U128 = U128::from(1000000000000000000000000);
-        env::storage_usage();
-        env::attached_deposit();
-        env::log("Thanks!".as_bytes());
-        Promise::new("hrpalencia2.testnet".to_string()).transfer(amount.0)
-        //return String::from(env::signer_account_id().to_string() + " - " + &env::current_account_id().to_string() + " - " + env::storage_usage().to_string().as_str() + " - " + env::attached_deposit().to_string().as_str());
-        
-    }
 }
 
 
@@ -1223,6 +1240,7 @@ fn search_offer(data: Vec<OfferObject>, amount: Option<Balance>, fiat_method: Op
                         fiat_method: r.fiat_method,
                         is_merchant: r.is_merchant,
                         time: r.time,
+                        terms_conditions: r.terms_conditions.clone(),
                         status: r.status, // 1: active, 2: closed).collect()
                     }).collect();
     }
@@ -1241,6 +1259,7 @@ fn search_offer(data: Vec<OfferObject>, amount: Option<Balance>, fiat_method: Op
                         fiat_method: r.fiat_method,
                         is_merchant: r.is_merchant,
                         time: r.time,
+                        terms_conditions: r.terms_conditions.clone(),
                         status: r.status, // 1: active, 2: closed).collect()
                     }).collect();
     }
@@ -1259,6 +1278,7 @@ fn search_offer(data: Vec<OfferObject>, amount: Option<Balance>, fiat_method: Op
                         fiat_method: r.fiat_method,
                         is_merchant: r.is_merchant,
                         time: r.time,
+                        terms_conditions: r.terms_conditions.clone(),
                         status: r.status, // 1: active, 2: closed).collect()
                     }).collect();
     }
@@ -1277,6 +1297,7 @@ fn search_offer(data: Vec<OfferObject>, amount: Option<Balance>, fiat_method: Op
                         fiat_method: r.fiat_method,
                         is_merchant: r.is_merchant,
                         time: r.time,
+                        terms_conditions: r.terms_conditions.clone(),
                         status: r.status, // 1: active, 2: closed).collect()
                     }).collect();
     }
@@ -1294,6 +1315,7 @@ fn search_offer(data: Vec<OfferObject>, amount: Option<Balance>, fiat_method: Op
         fiat_method: r.fiat_method,
         is_merchant: r.is_merchant,
         time: r.time,
+        terms_conditions: r.terms_conditions.clone(),
         status: r.status, // 1: active, 2: closed).collect()
     }).collect()
     
