@@ -434,8 +434,51 @@ impl NearP2P {
             status: 1,
         };
         self.offers_sell.push(data);
-        env::log(b"Order Created");
+        env::log(b"Offer Created");
         self.offer_sell_id
+    }
+
+
+    #[payable]
+    pub fn put_offers_sell(&mut self, offer_id: i128
+        , asset: String
+        , exchange_rate: String
+        , remaining_amount: Balance
+        , min_limit: f64
+        , max_limit: f64
+        , payment_method: Vec<PaymentMethodsOfferObject>
+        , fiat_method: i128
+        , time: i64
+        , terms_conditions: String) -> OfferObject {
+        assert_one_yocto();
+        let offer = self.offers_sell.iter().position(|x| x.offer_id == offer_id).expect("Offer not found");
+        self.offers_sell[offer].asset = asset.clone();
+        self.offers_sell[offer].exchange_rate = exchange_rate.clone();
+        self.offers_sell[offer].remaining_amount = remaining_amount;
+        self.offers_sell[offer].min_limit = min_limit;
+        self.offers_sell[offer].max_limit = max_limit;
+        self.offers_sell[offer].payment_method = payment_method.iter().map(|x| PaymentMethodsOfferObject {id: x.id, payment_method: x.payment_method.clone()}).collect();
+        self.offers_sell[offer].fiat_method = fiat_method;
+        self.offers_sell[offer].time = time;
+        self.offers_sell[offer].terms_conditions = terms_conditions.clone();
+        
+        env::log(b"Offer updated");
+        OfferObject {
+            offer_id: offer_id,
+            owner_id: String::from(self.offers_sell[offer].owner_id.clone()),
+            asset: String::from(asset.clone()),
+            exchange_rate: String::from(exchange_rate.clone()),
+            amount: self.offers_sell[offer].amount,
+            remaining_amount: remaining_amount,
+            min_limit: min_limit,
+            max_limit: max_limit,
+            payment_method: payment_method.iter().map(|x| PaymentMethodsOfferObject {id: x.id, payment_method: x.payment_method.clone()}).collect(),
+            fiat_method: fiat_method,
+            is_merchant: self.offers_sell[offer].is_merchant,
+            time: time,
+            terms_conditions: String::from(terms_conditions.clone()),
+            status: self.offers_sell[offer].status,
+        }
     }
 
 
@@ -491,8 +534,51 @@ impl NearP2P {
             status: 1,
         };
         self.offers_buy.push(data);
-        env::log(b"Order Created");
+        env::log(b"Offer Created");
         self.offer_buy_id
+    }
+
+
+    #[payable]
+    pub fn put_offers_buy(&mut self, offer_id: i128
+        , asset: String
+        , exchange_rate: String
+        , remaining_amount: Balance
+        , min_limit: f64
+        , max_limit: f64
+        , payment_method: Vec<PaymentMethodsOfferObject>
+        , fiat_method: i128
+        , time: i64
+        , terms_conditions: String) -> OfferObject {
+        assert_one_yocto();
+        let offer = self.offers_buy.iter().position(|x| x.offer_id == offer_id).expect("Offer not found");
+        self.offers_buy[offer].asset = asset.clone();
+        self.offers_buy[offer].exchange_rate = exchange_rate.clone();
+        self.offers_buy[offer].remaining_amount = remaining_amount;
+        self.offers_buy[offer].min_limit = min_limit;
+        self.offers_buy[offer].max_limit = max_limit;
+        self.offers_buy[offer].payment_method = payment_method.iter().map(|x| PaymentMethodsOfferObject {id: x.id, payment_method: x.payment_method.clone()}).collect();
+        self.offers_buy[offer].fiat_method = fiat_method;
+        self.offers_buy[offer].time = time;
+        self.offers_buy[offer].terms_conditions = terms_conditions.clone();
+        
+        env::log(b"Offer updated");
+        OfferObject {
+            offer_id: offer_id,
+            owner_id: String::from(self.offers_buy[offer].owner_id.clone()),
+            asset: String::from(asset.clone()),
+            exchange_rate: String::from(exchange_rate.clone()),
+            amount: self.offers_buy[offer].amount,
+            remaining_amount: remaining_amount,
+            min_limit: min_limit,
+            max_limit: max_limit,
+            payment_method: payment_method.iter().map(|x| PaymentMethodsOfferObject {id: x.id, payment_method: x.payment_method.clone()}).collect(),
+            fiat_method: fiat_method,
+            is_merchant: self.offers_buy[offer].is_merchant,
+            time: time,
+            terms_conditions: String::from(terms_conditions.clone()),
+            status: self.offers_buy[offer].status,
+        }
     }
 
 
