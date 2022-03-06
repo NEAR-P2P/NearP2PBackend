@@ -250,7 +250,7 @@ impl Default for NearP2P {
             orders_buy: Vec::new(),
             order_buy_id: 0,
             merchant: vec![MerchantObject {
-                user_id: "hrpalencia.testnet".to_string(),
+                user_id: "info.testnet".to_string(),
                 total_orders: 0,
                 orders_completed: 0,
                 percentaje_completion: 0.0,
