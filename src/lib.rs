@@ -210,6 +210,8 @@ pub struct NearP2P {
     pub orders_buy: Vec<OrderObject>,
     //Order object
     pub order_buy_id: i128,
+    //Order History
+    pub order_history: UnorderedMap<i8, OrderObject>,
     ///Merchant object
     pub merchant: Vec<MerchantObject>,
     ///Payment Method object
@@ -249,6 +251,7 @@ impl Default for NearP2P {
             order_sell_id: 0,
             orders_buy: Vec::new(),
             order_buy_id: 0,
+            order_history: UnorderedMap::new(b"s".to_vec()),
             merchant: vec![MerchantObject {
                 user_id: "hrpalencia.testnet".to_string(),
                 total_orders: 0,
@@ -887,7 +890,7 @@ impl NearP2P {
                 if self.offers_sell.get(i).unwrap().offer_id == offer_id {
                     if self.offers_sell[i].remaining_amount >= amount {
                         ////////////////////////////////////////////////////////////////////
-                        /// colocar aqui el bloqueo de saldo del owner_id  cuando sea venta///
+                        /* colocar aqui el bloqueo de saldo del owner_id  cuando sea venta */
                         ////////////////////////////////////////////////////////////////////
                         let remaining: Balance = self.offers_sell[i].remaining_amount - amount;
                         if remaining == 0 {
@@ -933,8 +936,8 @@ impl NearP2P {
                 if self.offers_buy.get(i).unwrap().offer_id == offer_id {
                     if self.offers_buy[i].remaining_amount >= amount {
                         ////////////////////////////////////////////////////////////////////////
-                        /// colocar aqui el bloqueo de saldo del owner_id  cuando sea compra///
-                        /// ////////////////////////////////////////////////////////////////////
+                        /* colocar aqui el bloqueo de saldo del owner_id  cuando sea compra */
+                        ///////////////////////////////////////////////////////////////////////
                         let remaining: Balance = self.offers_buy[i].remaining_amount - amount;
                         if remaining == 0 {
                             self.offers_buy[i].status = 2;
@@ -1062,6 +1065,29 @@ impl NearP2P {
             }).collect()
         }
     }
+
+    pub fn get_order_history(&mut self, type_order: i8) -> Vec<OrderObject> {
+        self.order_history.iter().filter(|(k, s)| k == &type_order && (s.owner_id == env::signer_account_id().to_string() || s.signer_id == env::signer_account_id().to_string()))
+        .map(|(_k, s)| OrderObject {
+            offer_id: s.offer_id,
+            order_id: s.order_id,
+            owner_id: s.owner_id.clone(),
+            signer_id: s.signer_id.clone(),
+            exchange_rate: s.exchange_rate.clone(),
+            operation_amount: s.operation_amount,
+            payment_method: s.payment_method,
+            fiat_method: s.fiat_method,
+            confirmation_owner_id: s.confirmation_owner_id,
+            confirmation_signer_id: s.confirmation_signer_id,
+            confirmation_current: s.confirmation_current,
+            time: s.time,
+            datetime: s.datetime.clone(),
+            terms_conditions: s.terms_conditions.clone(),
+            status: s.status,
+        }).collect()
+        
+    }
+    
     
 
     /// confirmation order into the contract
@@ -1083,13 +1109,32 @@ impl NearP2P {
                     } else if self.orders_sell[i].signer_id == env::signer_account_id().to_string() {
                         if self.orders_sell[i].status == 3 {
                             self.orders_sell[i].confirmation_signer_id = 1;
-                            /////////////////////////////////////////////////////////////////////////
-                            // Aqui va la el codigo para transferir los near a la cuenta del ownwe_id
-                            /////////////////////////////////////////////////////////////////////////
+                            ////////////////////////////////////////////////////////////////////////////
+                            /* Aqui va la el codigo para transferir los near a la cuenta del ownwe_id */
+                             ///////////////////////////////////////////////////////////////////////////
                             
                             Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(self.orders_sell[i].operation_amount);
 
-                            self.orders_sell[i].status = 2;
+                            self.order_history.insert(&1, &OrderObject {
+                                offer_id:self.orders_sell[i].offer_id,
+                                order_id: self.orders_sell[i].order_id,
+                                owner_id: self.orders_sell[i].owner_id.to_string(),
+                                signer_id: self.orders_sell[i].signer_id.to_string(),
+                                exchange_rate: self.orders_sell[i].exchange_rate.to_string(),
+                                operation_amount: self.orders_sell[i].operation_amount,
+                                payment_method: self.orders_sell[i].payment_method,
+                                fiat_method: self.orders_sell[i].fiat_method,
+                                confirmation_owner_id: self.orders_sell[i].confirmation_owner_id,
+                                confirmation_signer_id: self.orders_sell[i].confirmation_signer_id,
+                                confirmation_current: self.orders_sell[i].confirmation_current,
+                                time: self.orders_sell[i].time,
+                                datetime: self.orders_sell[i].datetime.to_string(),
+                                terms_conditions: self.orders_sell[i].terms_conditions.to_string(),
+                                status: 2,
+                            });
+                            self.orders_sell.remove(i);
+                            //self.orders_sell[i].status = 2;
+                            
                             //actualizar transacciones culminadas owner_id
                             for j in 0..self.merchant.len() {
                                 if self.merchant.get(j).unwrap().user_id == self.offers_sell[i].owner_id {
@@ -1114,13 +1159,32 @@ impl NearP2P {
                     if self.orders_buy[i].owner_id == env::signer_account_id().to_string() {
                         if self.orders_buy[i].status == 3 {
                             self.orders_buy[i].confirmation_owner_id = 1;
-                            /////////////////////////////////////////////////////////////////////////
-                            // Aqui va la el codigo para transferir los near a la cuenta del signer_id
-                            /////////////////////////////////////////////////////////////////////////
+                            /////////////////////////////////////////////////////////////////////////////
+                            /* Aqui va la el codigo para transferir los near a la cuenta del signer_id */
+                            /////////////////////////////////////////////////////////////////////////////
                             
                             Promise::new(self.orders_buy[i].signer_id.to_string()).transfer(self.orders_buy[i].operation_amount);
                             
-                            self.orders_buy[i].status = 2;
+                            self.order_history.insert(&2, &OrderObject {
+                                offer_id:self.orders_buy[i].offer_id,
+                                order_id: self.orders_buy[i].order_id,
+                                owner_id: self.orders_buy[i].owner_id.to_string(),
+                                signer_id: self.orders_buy[i].signer_id.to_string(),
+                                exchange_rate: self.orders_buy[i].exchange_rate.to_string(),
+                                operation_amount: self.orders_buy[i].operation_amount,
+                                payment_method: self.orders_buy[i].payment_method,
+                                fiat_method: self.orders_buy[i].fiat_method,
+                                confirmation_owner_id: self.orders_buy[i].confirmation_owner_id,
+                                confirmation_signer_id: self.orders_buy[i].confirmation_signer_id,
+                                confirmation_current: self.orders_buy[i].confirmation_current,
+                                time: self.orders_buy[i].time,
+                                datetime: self.orders_buy[i].datetime.to_string(),
+                                terms_conditions: self.orders_buy[i].terms_conditions.to_string(),
+                                status: 2,
+                            });
+                            self.orders_buy.remove(i);
+                            //self.orders_buy[i].status = 2;
+                            
                             //actualizar transacciones culminadas owner_id
                             for j in 0..self.merchant.len() {
                                 if self.merchant.get(j).unwrap().user_id == self.offers_buy[i].owner_id {
@@ -1227,13 +1291,32 @@ impl NearP2P {
                     if confirmation == true {
                         if offer_type == 1 {
                             ////////////////////////////////////////////////////////////////////////////
-                            /// Aqui va el codigo para transferir los near a la cuenta del "ownwe_id"///
+                            /* Aqui va el codigo para transferir los near a la cuenta del "ownwe_id" */
                             ///////////////////////////////////////////////////////////////////////////
                             let mut tranfer_valid = false;
                             for i in 0..self.orders_sell.len() {
                                 if self.orders_sell.get(i).unwrap().order_id == order_id {
                                     Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(self.orders_sell[i].operation_amount);
+                                    self.order_history.insert(&1, &OrderObject {
+                                        offer_id:self.orders_sell[i].offer_id,
+                                        order_id: self.orders_sell[i].order_id,
+                                        owner_id: self.orders_sell[i].owner_id.to_string(),
+                                        signer_id: self.orders_sell[i].signer_id.to_string(),
+                                        exchange_rate: self.orders_sell[i].exchange_rate.to_string(),
+                                        operation_amount: self.orders_sell[i].operation_amount,
+                                        payment_method: self.orders_sell[i].payment_method,
+                                        fiat_method: self.orders_sell[i].fiat_method,
+                                        confirmation_owner_id: self.orders_sell[i].confirmation_owner_id,
+                                        confirmation_signer_id: self.orders_sell[i].confirmation_signer_id,
+                                        confirmation_current: self.orders_sell[i].confirmation_current,
+                                        time: self.orders_sell[i].time,
+                                        datetime: self.orders_sell[i].datetime.to_string(),
+                                        terms_conditions: self.orders_sell[i].terms_conditions.to_string(),
+                                        status: 2,
+                                    });
+                                    self.orders_sell.remove(i);
                                     tranfer_valid = true;
+                                    break;
                                 };
                             };
                             if tranfer_valid == false {
@@ -1243,14 +1326,33 @@ impl NearP2P {
                             return String::from("Order sell mediator Confirmation");
                         } else if offer_type == 2 {
                             /////////////////////////////////////////////////////////////////////////////
-                            /// Aqui va el codigo para transferir los near a la cuenta del "signer_id"///
+                            /* Aqui va el codigo para transferir los near a la cuenta del "signer_id" */
                             /////////////////////////////////////////////////////////////////////////////
                             
                             let mut tranfer_valid = false;
                             for i in 0..self.orders_buy.len() {
                                 if self.orders_buy.get(i).unwrap().order_id == order_id {
                                     Promise::new(self.orders_buy[i].owner_id.to_string()).transfer(self.orders_buy[i].operation_amount);
+                                    self.order_history.insert(&2, &OrderObject {
+                                        offer_id:self.orders_buy[i].offer_id,
+                                        order_id: self.orders_buy[i].order_id,
+                                        owner_id: self.orders_buy[i].owner_id.to_string(),
+                                        signer_id: self.orders_buy[i].signer_id.to_string(),
+                                        exchange_rate: self.orders_buy[i].exchange_rate.to_string(),
+                                        operation_amount: self.orders_buy[i].operation_amount,
+                                        payment_method: self.orders_buy[i].payment_method,
+                                        fiat_method: self.orders_buy[i].fiat_method,
+                                        confirmation_owner_id: self.orders_buy[i].confirmation_owner_id,
+                                        confirmation_signer_id: self.orders_buy[i].confirmation_signer_id,
+                                        confirmation_current: self.orders_buy[i].confirmation_current,
+                                        time: self.orders_buy[i].time,
+                                        datetime: self.orders_buy[i].datetime.to_string(),
+                                        terms_conditions: self.orders_buy[i].terms_conditions.to_string(),
+                                        status: 2,
+                                    });
+                                    self.orders_buy.remove(i);
                                     tranfer_valid = true;
+                                    break;
                                 };
                             };
                             if tranfer_valid == false {
@@ -1264,14 +1366,33 @@ impl NearP2P {
                     } else {
                         if offer_type == 1 {
                             /////////////////////////////////////////////////////////////////////////////
-                            /// Aqui va el codigo para transferir los near a la cuenta del "signer_id"///
+                            /* Aqui va el codigo para transferir los near a la cuenta del "signer_id" */
                             /////////////////////////////////////////////////////////////////////////////
                             
                             let mut tranfer_valid = false;
                             for i in 0..self.orders_sell.len() {
                                 if self.orders_sell.get(i).unwrap().order_id == order_id {
                                     Promise::new(self.orders_sell[i].signer_id.to_string()).transfer(self.orders_sell[i].operation_amount);
+                                    self.order_history.insert(&1, &OrderObject {
+                                        offer_id:self.orders_sell[i].offer_id,
+                                        order_id: self.orders_sell[i].order_id,
+                                        owner_id: self.orders_sell[i].owner_id.to_string(),
+                                        signer_id: self.orders_sell[i].signer_id.to_string(),
+                                        exchange_rate: self.orders_sell[i].exchange_rate.to_string(),
+                                        operation_amount: self.orders_sell[i].operation_amount,
+                                        payment_method: self.orders_sell[i].payment_method,
+                                        fiat_method: self.orders_sell[i].fiat_method,
+                                        confirmation_owner_id: self.orders_sell[i].confirmation_owner_id,
+                                        confirmation_signer_id: self.orders_sell[i].confirmation_signer_id,
+                                        confirmation_current: self.orders_sell[i].confirmation_current,
+                                        time: self.orders_sell[i].time,
+                                        datetime: self.orders_sell[i].datetime.to_string(),
+                                        terms_conditions: self.orders_sell[i].terms_conditions.to_string(),
+                                        status: 2,
+                                    });
+                                    self.orders_sell.remove(i);
                                     tranfer_valid = true;
+                                    break;
                                 };
                             };
 
@@ -1279,14 +1400,33 @@ impl NearP2P {
                             return String::from("Order sell mediator Confirmation");
                         } else if offer_type == 2 {
                             ////////////////////////////////////////////////////////////////////////////
-                            /// Aqui va el codigo para transferir los near a la cuenta del "ownwe_id"///
+                            /* Aqui va el codigo para transferir los near a la cuenta del "ownwe_id" */
                             ////////////////////////////////////////////////////////////////////////////
                             
                             let mut tranfer_valid = false;
                             for i in 0..self.orders_buy.len() {
                                 if self.orders_buy.get(i).unwrap().order_id == order_id {
                                     Promise::new(self.orders_buy[i].owner_id.to_string()).transfer(self.orders_buy[i].operation_amount);
+                                    self.order_history.insert(&2, &OrderObject {
+                                        offer_id:self.orders_buy[i].offer_id,
+                                        order_id: self.orders_buy[i].order_id,
+                                        owner_id: self.orders_buy[i].owner_id.to_string(),
+                                        signer_id: self.orders_buy[i].signer_id.to_string(),
+                                        exchange_rate: self.orders_buy[i].exchange_rate.to_string(),
+                                        operation_amount: self.orders_buy[i].operation_amount,
+                                        payment_method: self.orders_buy[i].payment_method,
+                                        fiat_method: self.orders_buy[i].fiat_method,
+                                        confirmation_owner_id: self.orders_buy[i].confirmation_owner_id,
+                                        confirmation_signer_id: self.orders_buy[i].confirmation_signer_id,
+                                        confirmation_current: self.orders_buy[i].confirmation_current,
+                                        time: self.orders_buy[i].time,
+                                        datetime: self.orders_buy[i].datetime.to_string(),
+                                        terms_conditions: self.orders_buy[i].terms_conditions.to_string(),
+                                        status: 3,
+                                    });
+                                    self.orders_buy.remove(i);
                                     tranfer_valid = true;
+                                    break;
                                 };
                             };
                             if tranfer_valid == false {
