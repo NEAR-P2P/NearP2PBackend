@@ -979,12 +979,12 @@ impl NearP2P {
         }
     }
 
-    pub fn get_order_sell(&mut self, order_id: Option<i128>, user_id: Option<AccountId>) -> Vec<OrderObject> {
+    pub fn get_order_sell(self, order_id: Option<i128>, user_id: Option<AccountId>) -> Vec<OrderObject> {
         let mut result: Vec<OrderObject> = Vec::new();
         if user_id.is_some() {
             let user = user_id.unwrap().clone();
             for i in 0..self.orders_sell.len() {
-                if self.orders_sell[i].owner_id == user || self.orders_sell[i].signer_id == user {
+                if self.orders_sell[i].owner_id == user.to_string() || self.orders_sell[i].signer_id == user.to_string() {
                     result.push(OrderObject {
                         offer_id: self.orders_sell[i].offer_id,
                         order_id: self.orders_sell[i].order_id,
@@ -1032,12 +1032,12 @@ impl NearP2P {
         result
     }
 
-    pub fn get_order_buy(&mut self, order_id: Option<i128>, user_id: Option<AccountId>) -> Vec<OrderObject> {
+    pub fn get_order_buy(self, order_id: Option<i128>, user_id: Option<AccountId>) -> Vec<OrderObject> {
         let mut result: Vec<OrderObject> = Vec::new();
         if user_id.is_some() {
             let user = user_id.unwrap().clone();
             for i in 0..self.orders_buy.len() {
-                if self.orders_buy[i].owner_id == user || self.orders_buy[i].signer_id == user {
+                if self.orders_buy[i].owner_id == user.to_string() || self.orders_buy[i].signer_id == user.to_string() {
                     result.push(OrderObject {
                         offer_id: self.orders_buy[i].offer_id,
                         order_id: self.orders_buy[i].order_id,
@@ -1085,7 +1085,7 @@ impl NearP2P {
         result
     }
 
-    pub fn get_order_history(&mut self, type_order: i8, user_id: AccountId) -> Vec<OrderObject> {
+    pub fn get_order_history(self, type_order: i8, user_id: AccountId) -> Vec<OrderObject> {
         self.order_history.iter().filter(|(k, s)| k == &type_order && (s.owner_id == user_id.to_string() || s.signer_id == user_id.to_string()))
         .map(|(_k, s)| OrderObject {
             offer_id: s.offer_id,
