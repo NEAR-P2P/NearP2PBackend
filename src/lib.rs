@@ -413,7 +413,6 @@ impl NearP2P {
         , fiat_method: i128
         , time: i64
         , terms_conditions: String) -> i128{
-        assert_one_yocto();
         self.offer_sell_id += 1;
         let mut merchant_valid: bool = false;
         match self.merchant.iter().find(|x| x.is_merchant == true && x.user_id == owner_id.to_string()) {
@@ -980,92 +979,114 @@ impl NearP2P {
         }
     }
 
-    pub fn get_order_sell(&mut self, order_id: Option<i128>) -> Vec<OrderObject> {
-        if order_id.is_none() {
-            self.orders_sell.iter().filter(|x| x.owner_id == env::signer_account_id().to_string() || x.signer_id == env::signer_account_id().to_string())
-            .map(|x| OrderObject {
-                offer_id: x.offer_id,
-                order_id: x.order_id,
-                owner_id: x.owner_id.clone(),
-                signer_id: x.signer_id.clone(),
-                exchange_rate: x.exchange_rate.clone(),
-                operation_amount: x.operation_amount,
-                payment_method: x.payment_method,
-                fiat_method: x.fiat_method,
-                confirmation_owner_id: x.confirmation_owner_id,
-                confirmation_signer_id: x.confirmation_signer_id,
-                confirmation_current: x.confirmation_current,
-                time: x.time,
-                datetime: x.datetime.clone(),
-                terms_conditions: x.terms_conditions.clone(),
-                status: x.status,
-            }).collect()
+    pub fn get_order_sell(&mut self, order_id: Option<i128>, user_id: Option<AccountId>) -> Vec<OrderObject> {
+        let mut result: Vec<OrderObject> = Vec::new();
+        if user_id.is_some() {
+            let user = user_id.unwrap().clone();
+            for i in 0..self.orders_sell.len() {
+                if self.orders_sell[i].owner_id == user || self.orders_sell[i].signer_id == user {
+                    result.push(OrderObject {
+                        offer_id: self.orders_sell[i].offer_id,
+                        order_id: self.orders_sell[i].order_id,
+                        owner_id: self.orders_sell[i].owner_id.to_string(),
+                        signer_id: self.orders_sell[i].signer_id.to_string(),
+                        exchange_rate: self.orders_sell[i].exchange_rate.to_string(),
+                        operation_amount: self.orders_sell[i].operation_amount,
+                        payment_method: self.orders_sell[i].payment_method,
+                        fiat_method: self.orders_sell[i].fiat_method,
+                        confirmation_owner_id: self.orders_sell[i].confirmation_owner_id,
+                        confirmation_signer_id: self.orders_sell[i].confirmation_signer_id,
+                        confirmation_current: self.orders_sell[i].confirmation_current,
+                        time: self.orders_sell[i].time,
+                        datetime: self.orders_sell[i].datetime.to_string(),
+                        terms_conditions: self.orders_sell[i].terms_conditions.to_string(),
+                        status: self.orders_sell[i].status,
+                    });
+                };
+            };
+        } else if order_id.is_some() {
+            for i in 0..self.orders_sell.len() {
+                if self.orders_sell[i].order_id == order_id.unwrap() {
+                    result.push(OrderObject {
+                        offer_id: self.orders_sell[i].offer_id,
+                        order_id: self.orders_sell[i].order_id,
+                        owner_id: self.orders_sell[i].owner_id.to_string(),
+                        signer_id: self.orders_sell[i].signer_id.to_string(),
+                        exchange_rate: self.orders_sell[i].exchange_rate.to_string(),
+                        operation_amount: self.orders_sell[i].operation_amount,
+                        payment_method: self.orders_sell[i].payment_method,
+                        fiat_method: self.orders_sell[i].fiat_method,
+                        confirmation_owner_id: self.orders_sell[i].confirmation_owner_id,
+                        confirmation_signer_id: self.orders_sell[i].confirmation_signer_id,
+                        confirmation_current: self.orders_sell[i].confirmation_current,
+                        time: self.orders_sell[i].time,
+                        datetime: self.orders_sell[i].datetime.to_string(),
+                        terms_conditions: self.orders_sell[i].terms_conditions.to_string(),
+                        status: self.orders_sell[i].status,
+                    });
+                };
+            };
         } else {
-            self.orders_sell.iter().filter(|x| x.order_id == order_id.unwrap())
-            .map(|x| OrderObject {
-                offer_id: x.offer_id,
-                order_id: x.order_id,
-                owner_id: x.owner_id.clone(),
-                signer_id: x.signer_id.clone(),
-                exchange_rate: x.exchange_rate.clone(),
-                operation_amount: x.operation_amount,
-                payment_method: x.payment_method,
-                fiat_method: x.fiat_method,
-                confirmation_owner_id: x.confirmation_owner_id,
-                confirmation_signer_id: x.confirmation_signer_id,
-                confirmation_current: x.confirmation_current,
-                time: x.time,
-                datetime: x.datetime.clone(),
-                terms_conditions: x.terms_conditions.clone(),
-                status: x.status,
-            }).collect()
-        }
+            env::panic(b"debe indicar un filtro");
+        };
+        result
     }
 
-    pub fn get_order_buy(&mut self, order_id: Option<i128>) -> Vec<OrderObject> {
-        if order_id.is_none() {
-            self.orders_buy.iter().filter(|x| x.owner_id == env::signer_account_id().to_string() || x.signer_id == env::signer_account_id().to_string())
-            .map(|x| OrderObject {
-                offer_id: x.offer_id,
-                order_id: x.order_id,
-                owner_id: x.owner_id.clone(),
-                signer_id: x.signer_id.clone(),
-                exchange_rate: x.exchange_rate.clone(),
-                operation_amount: x.operation_amount,
-                payment_method: x.payment_method,
-                fiat_method: x.fiat_method,
-                confirmation_owner_id: x.confirmation_owner_id,
-                confirmation_signer_id: x.confirmation_signer_id,
-                confirmation_current: x.confirmation_current,
-                time: x.time,
-                datetime: x.datetime.clone(),
-                terms_conditions: x.terms_conditions.clone(),
-                status: x.status,
-            }).collect()
+    pub fn get_order_buy(&mut self, order_id: Option<i128>, user_id: Option<AccountId>) -> Vec<OrderObject> {
+        let mut result: Vec<OrderObject> = Vec::new();
+        if user_id.is_some() {
+            let user = user_id.unwrap().clone();
+            for i in 0..self.orders_buy.len() {
+                if self.orders_buy[i].owner_id == user || self.orders_buy[i].signer_id == user {
+                    result.push(OrderObject {
+                        offer_id: self.orders_buy[i].offer_id,
+                        order_id: self.orders_buy[i].order_id,
+                        owner_id: self.orders_buy[i].owner_id.to_string(),
+                        signer_id: self.orders_buy[i].signer_id.to_string(),
+                        exchange_rate: self.orders_buy[i].exchange_rate.to_string(),
+                        operation_amount: self.orders_buy[i].operation_amount,
+                        payment_method: self.orders_buy[i].payment_method,
+                        fiat_method: self.orders_buy[i].fiat_method,
+                        confirmation_owner_id: self.orders_buy[i].confirmation_owner_id,
+                        confirmation_signer_id: self.orders_buy[i].confirmation_signer_id,
+                        confirmation_current: self.orders_buy[i].confirmation_current,
+                        time: self.orders_buy[i].time,
+                        datetime: self.orders_buy[i].datetime.to_string(),
+                        terms_conditions: self.orders_buy[i].terms_conditions.to_string(),
+                        status: self.orders_buy[i].status,
+                    });
+                };
+            };
+        } else if order_id.is_some() {
+            for i in 0..self.orders_buy.len() {
+                if self.orders_buy[i].order_id == order_id.unwrap() {
+                    result.push(OrderObject {
+                        offer_id: self.orders_buy[i].offer_id,
+                        order_id: self.orders_buy[i].order_id,
+                        owner_id: self.orders_buy[i].owner_id.to_string(),
+                        signer_id: self.orders_buy[i].signer_id.to_string(),
+                        exchange_rate: self.orders_buy[i].exchange_rate.to_string(),
+                        operation_amount: self.orders_buy[i].operation_amount,
+                        payment_method: self.orders_buy[i].payment_method,
+                        fiat_method: self.orders_buy[i].fiat_method,
+                        confirmation_owner_id: self.orders_buy[i].confirmation_owner_id,
+                        confirmation_signer_id: self.orders_buy[i].confirmation_signer_id,
+                        confirmation_current: self.orders_buy[i].confirmation_current,
+                        time: self.orders_buy[i].time,
+                        datetime: self.orders_buy[i].datetime.to_string(),
+                        terms_conditions: self.orders_buy[i].terms_conditions.to_string(),
+                        status: self.orders_buy[i].status,
+                    });
+                };
+            };
         } else {
-            self.orders_buy.iter().filter(|x| x.order_id == order_id.unwrap())
-            .map(|x| OrderObject {
-                offer_id: x.offer_id,
-                order_id: x.order_id,
-                owner_id: x.owner_id.clone(),
-                signer_id: x.signer_id.clone(),
-                exchange_rate: x.exchange_rate.clone(),
-                operation_amount: x.operation_amount,
-                payment_method: x.payment_method,
-                fiat_method: x.fiat_method,
-                confirmation_owner_id: x.confirmation_owner_id,
-                confirmation_signer_id: x.confirmation_signer_id,
-                confirmation_current: x.confirmation_current,
-                time: x.time,
-                datetime: x.datetime.clone(),
-                terms_conditions: x.terms_conditions.clone(),
-                status: x.status,
-            }).collect()
-        }
+            env::panic(b"debe indicar un filtro");
+        };
+        result
     }
 
-    pub fn get_order_history(&mut self, type_order: i8) -> Vec<OrderObject> {
-        self.order_history.iter().filter(|(k, s)| k == &type_order && (s.owner_id == env::signer_account_id().to_string() || s.signer_id == env::signer_account_id().to_string()))
+    pub fn get_order_history(&mut self, type_order: i8, user_id: AccountId) -> Vec<OrderObject> {
+        self.order_history.iter().filter(|(k, s)| k == &type_order && (s.owner_id == user_id.to_string() || s.signer_id == user_id.to_string()))
         .map(|(_k, s)| OrderObject {
             offer_id: s.offer_id,
             order_id: s.order_id,
