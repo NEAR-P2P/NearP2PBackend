@@ -453,7 +453,6 @@ impl NearP2P {
         , fiat_method: i128
         , time: i64
         , terms_conditions: String) -> OfferObject {
-        assert_one_yocto();
         let offer = self.offers_sell.iter().position(|x| x.offer_id == offer_id).expect("Offer not found");
         self.offers_sell[offer].asset = asset.clone();
         self.offers_sell[offer].exchange_rate = exchange_rate.clone();
@@ -1470,7 +1469,7 @@ fn search_offer(data: Vec<OfferObject>, amount: Option<Balance>, fiat_method: Op
                     }).collect();
     }
     if fiat_method.is_some() {
-        result = result.iter().filter(|x| x.fiat_method >= fiat_method.unwrap())
+        result = result.iter().filter(|x| x.fiat_method == fiat_method.unwrap())
                     .map(|r| OfferObject { 
                         offer_id: r.offer_id,
                         owner_id: r.owner_id.clone(),
