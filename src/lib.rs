@@ -881,7 +881,6 @@ impl NearP2P {
         , amount: Balance
         , payment_method: i128
         , datetime: String) -> String {
-        assert_one_yocto();
         if offer_type == 1 {
             for i in 0..self.offers_sell.len() {
                 if self.offers_sell.get(i).unwrap().offer_id == offer_id {
