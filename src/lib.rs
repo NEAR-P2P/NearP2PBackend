@@ -299,15 +299,19 @@ impl NearP2P {
     /// Params: user_id: String, name: String
     /// last_name: String, phone: String, email: String, country: String
     #[payable]
-    pub fn set_user(&mut self, user_id: AccountId,
+    pub fn set_user(&mut self,
         name: String,
         last_name: String,
         phone: String,
         email: String,
         country: String) -> String {
         assert_one_yocto();
+        let user = self.users.iter().find(|x| x.user_id == env::signer_account_id());
+        if user.is_none() {
+            env::panic(b"profile already exists");
+        }
         let data = UserObject {
-            user_id: user_id.to_string(),
+            user_id: env::signer_account_id().to_string(),
             name: name.to_string(),
             last_name: last_name.to_string(),
             phone: phone.to_string(),
@@ -319,7 +323,7 @@ impl NearP2P {
         };
         self.users.push(data);
         let data2 = MerchantObject {
-            user_id: user_id.to_string(),
+            user_id: env::signer_account_id().to_string(),
             total_orders: 0,
             orders_completed: 0,
             percentaje_completion: 0.0,
@@ -329,7 +333,7 @@ impl NearP2P {
         self.merchant.push(data2);
        // set_merchant(user_id: user_id.to_string(), total_orders: 0, orders_completed: 0 , badge: "".to_string());
         env::log(b"User Created");
-        user_id.to_string()
+        env::signer_account_id().to_string().to_string()
     }
     
     /// Set the users object into the contract
@@ -979,12 +983,35 @@ impl NearP2P {
         }
     }
 
-    pub fn get_order_sell(self, order_id: Option<i128>, user_id: Option<AccountId>) -> Vec<OrderObject> {
+    pub fn get_order_sell(self, order_id: Option<i128>, owner_id: Option<AccountId>, signer_id:Option<AccountId>) -> Vec<OrderObject> {
         let mut result: Vec<OrderObject> = Vec::new();
-        if user_id.is_some() {
-            let user = user_id.unwrap().clone();
+        if owner_id.is_some() {
+            let user = owner_id.unwrap().clone();
             for i in 0..self.orders_sell.len() {
-                if self.orders_sell[i].owner_id == user.to_string() || self.orders_sell[i].signer_id == user.to_string() {
+                if self.orders_sell[i].owner_id == user.to_string() {
+                    result.push(OrderObject {
+                        offer_id: self.orders_sell[i].offer_id,
+                        order_id: self.orders_sell[i].order_id,
+                        owner_id: self.orders_sell[i].owner_id.to_string(),
+                        signer_id: self.orders_sell[i].signer_id.to_string(),
+                        exchange_rate: self.orders_sell[i].exchange_rate.to_string(),
+                        operation_amount: self.orders_sell[i].operation_amount,
+                        payment_method: self.orders_sell[i].payment_method,
+                        fiat_method: self.orders_sell[i].fiat_method,
+                        confirmation_owner_id: self.orders_sell[i].confirmation_owner_id,
+                        confirmation_signer_id: self.orders_sell[i].confirmation_signer_id,
+                        confirmation_current: self.orders_sell[i].confirmation_current,
+                        time: self.orders_sell[i].time,
+                        datetime: self.orders_sell[i].datetime.to_string(),
+                        terms_conditions: self.orders_sell[i].terms_conditions.to_string(),
+                        status: self.orders_sell[i].status,
+                    });
+                };
+            };
+        } else if signer_id.is_some() {
+            let user = signer_id.unwrap().clone();
+            for i in 0..self.orders_sell.len() {
+                if self.orders_sell[i].signer_id == user.to_string() {
                     result.push(OrderObject {
                         offer_id: self.orders_sell[i].offer_id,
                         order_id: self.orders_sell[i].order_id,
@@ -1032,12 +1059,35 @@ impl NearP2P {
         result
     }
 
-    pub fn get_order_buy(self, order_id: Option<i128>, user_id: Option<AccountId>) -> Vec<OrderObject> {
+    pub fn get_order_buy(self, order_id: Option<i128>, owner_id: Option<AccountId>, signer_id: Option<AccountId>) -> Vec<OrderObject> {
         let mut result: Vec<OrderObject> = Vec::new();
-        if user_id.is_some() {
-            let user = user_id.unwrap().clone();
+        if owner_id.is_some() {
+            let user = owner_id.unwrap().clone();
             for i in 0..self.orders_buy.len() {
-                if self.orders_buy[i].owner_id == user.to_string() || self.orders_buy[i].signer_id == user.to_string() {
+                if self.orders_buy[i].owner_id == user.to_string() {
+                    result.push(OrderObject {
+                        offer_id: self.orders_buy[i].offer_id,
+                        order_id: self.orders_buy[i].order_id,
+                        owner_id: self.orders_buy[i].owner_id.to_string(),
+                        signer_id: self.orders_buy[i].signer_id.to_string(),
+                        exchange_rate: self.orders_buy[i].exchange_rate.to_string(),
+                        operation_amount: self.orders_buy[i].operation_amount,
+                        payment_method: self.orders_buy[i].payment_method,
+                        fiat_method: self.orders_buy[i].fiat_method,
+                        confirmation_owner_id: self.orders_buy[i].confirmation_owner_id,
+                        confirmation_signer_id: self.orders_buy[i].confirmation_signer_id,
+                        confirmation_current: self.orders_buy[i].confirmation_current,
+                        time: self.orders_buy[i].time,
+                        datetime: self.orders_buy[i].datetime.to_string(),
+                        terms_conditions: self.orders_buy[i].terms_conditions.to_string(),
+                        status: self.orders_buy[i].status,
+                    });
+                };
+            };
+        } else if signer_id.is_some() {
+            let user = signer_id.unwrap().clone();
+            for i in 0..self.orders_buy.len() {
+                if self.orders_buy[i].signer_id == user.to_string() {
                     result.push(OrderObject {
                         offer_id: self.orders_buy[i].offer_id,
                         order_id: self.orders_buy[i].order_id,
