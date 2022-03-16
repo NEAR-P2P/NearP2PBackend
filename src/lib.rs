@@ -798,8 +798,7 @@ impl NearP2P {
 
     //Set the Payment Method User object into the contract
     #[payable]
-    pub fn set_payment_method_user(&mut self, user_id: ValidAccountId
-        , payment_method_id: i128
+    pub fn set_payment_method_user(&mut self, payment_method_id: i128
         , input1: String
         , input2: String
         , input3: String
@@ -808,43 +807,38 @@ impl NearP2P {
         assert_one_yocto();
         let mut duplicate: bool = false;
         for i in 0..self.payment_method_user.len() {
-            if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == user_id.to_string() {
-                duplicate = true;
+            if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id().to_string() {
+                env::panic(b"Repeated payment methods are not allowed");
             }
         }
-        if duplicate == false {
-            for i in 0..self.payment_method.len() {
-                if self.payment_method[i].id == payment_method_id {
-                    let data = PaymentMethodUserObject {
-                        user_id: user_id.to_string(),
-                        payment_method_id: payment_method_id,
-                        payment_method: self.payment_method[i].payment_method.to_string(),
-                        desc1: self.payment_method[i].input1.to_string(),
-                        input1: input1,
-                        desc2: self.payment_method[i].input2.to_string(),
-                        input2: input2,
-                        desc3: self.payment_method[i].input3.to_string(),
-                        input3: input3,
-                        desc4: self.payment_method[i].input4.to_string(),
-                        input4: input4,
-                        desc5: self.payment_method[i].input5.to_string(),
-                        input5: input5,
-                    };
-                    self.payment_method_user.push(data);
-                    env::log(b"Payment Method User Created");
-                    return "".to_string();
-                }
+        for i in 0..self.payment_method.len() {
+            if self.payment_method[i].id == payment_method_id {
+                let data = PaymentMethodUserObject {
+                    user_id: env::signer_account_id().to_string(),
+                    payment_method_id: payment_method_id,
+                    payment_method: self.payment_method[i].payment_method.to_string(),
+                    desc1: self.payment_method[i].input1.to_string(),
+                    input1: input1,
+                    desc2: self.payment_method[i].input2.to_string(),
+                    input2: input2,
+                    desc3: self.payment_method[i].input3.to_string(),
+                    input3: input3,
+                    desc4: self.payment_method[i].input4.to_string(),
+                    input4: input4,
+                    desc5: self.payment_method[i].input5.to_string(),
+                    input5: input5,
+                };
+                self.payment_method_user.push(data);
+                env::log(b"Payment Method User Created");
+                return "".to_string();
             }
-            env::panic(b"the payment method provided does not exist");
-        } else {
-            env::panic(b"Repeated payment methods are not allowed");
         }
+        env::panic(b"the payment method provided does not exist");
     }
 
     /// put the Payment Method object into the contract
     #[payable]
-    pub fn put_payment_method_user(&mut self, user_id: AccountId
-        , payment_method_id: i128
+    pub fn put_payment_method_user(&mut self, payment_method_id: i128
         , input1: String
         , input2: String
         , input3: String
@@ -852,7 +846,7 @@ impl NearP2P {
         , input5: String) {
         assert_one_yocto();
         for i in 0..self.payment_method_user.len() {
-            if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == user_id.to_string() {
+            if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id().to_string() {
                 self.payment_method_user[i].input1 = input1.to_string();
                 self.payment_method_user[i].input2 = input2.to_string();
                 self.payment_method_user[i].input3 = input3.to_string();
@@ -866,11 +860,10 @@ impl NearP2P {
 
     /// delete the Payment Method user object into the contract
     #[payable]
-    pub fn delete_payment_method_user(&mut self, user_id: AccountId
-        , payment_method_id: i128) {
+    pub fn delete_payment_method_user(&mut self, payment_method_id: i128) {
         assert_one_yocto();
         for i in 0..self.payment_method_user.len() {
-            if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == user_id.to_string() {
+            if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id().to_string() {
                 self.payment_method_user.remove(i);
             }
         }
