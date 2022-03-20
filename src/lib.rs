@@ -762,6 +762,7 @@ impl NearP2P {
     /// Delete the Fiat Method object into the contract
     /// Params: id: i128
     pub fn delete_fiat_method(&mut self, id: i128) {
+        self.users.iter().find(|x| x.user_id == env::signer_account_id().to_string() && x.admin == true).expect("User not admin");
         for i in 0..self.fiat_method.len() {
             if self.fiat_method.get(i).unwrap().id == id {
                 self.fiat_method.remove(i);
