@@ -773,12 +773,12 @@ impl NearP2P {
 
 
      /// Returns the users object loaded in contract
-     pub fn get_payment_method_user(self, method_id: Option<i128> ) -> Vec<PaymentMethodUserObject> {
+     pub fn get_payment_method_user(self, user_id: AccountId, method_id: Option<i128>) -> Vec<PaymentMethodUserObject> {
         let mut result: Vec<PaymentMethodUserObject> = Vec::new();
         if self.payment_method_user.len() > 0 {
             for i in 0..self.payment_method_user.len() {
                 if method_id.is_some() {
-                    if self.payment_method_user.get(i).unwrap().payment_method_id == method_id.unwrap() && self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id().to_string() {
+                    if self.payment_method_user.get(i).unwrap().payment_method_id == method_id.unwrap() && self.payment_method_user.get(i).unwrap().user_id == user_id.to_string() {
                         result.push(PaymentMethodUserObject {
                             user_id: self.payment_method_user[i].user_id.to_string(),
                             payment_method_id: self.payment_method_user[i].payment_method_id,
@@ -796,7 +796,7 @@ impl NearP2P {
                         });
                     }
                 } else {
-                    if self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id().to_string() {
+                    if self.payment_method_user.get(i).unwrap().user_id == user_id.to_string() {
                         result.push(PaymentMethodUserObject {
                             user_id: self.payment_method_user[i].user_id.to_string(),
                             payment_method_id: self.payment_method_user[i].payment_method_id,
