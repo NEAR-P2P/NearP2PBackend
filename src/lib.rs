@@ -832,7 +832,7 @@ impl NearP2P {
             result
         }
     }
-
+    
     //Set the Payment Method User object into the contract
     #[payable]
     pub fn set_payment_method_user(&mut self, payment_method_id: i128
@@ -900,13 +900,9 @@ impl NearP2P {
     pub fn delete_payment_method_user(&mut self, payment_method_id: i128) {
         assert_one_yocto();
         for i in 0..self.payment_method_user.len() {
-            if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id {
-                if self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id().to_string() {
-                    self.payment_method_user.remove(i);
-                    break;
-                } else {
-                    env::panic(b"the payment method does not correspond to your user");
-                }
+            if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id().to_string() {
+                self.payment_method_user.remove(i);
+                break;
             }
         }
         /*for i in 0..self.payment_method_user.len() {
