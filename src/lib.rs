@@ -901,7 +901,7 @@ impl NearP2P {
         assert_one_yocto();
         for i in 0..self.payment_method_user.len() {
             if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id {
-                if self.payment_method_user.get(i).user_id == env::signer_account_id().to_string() {
+                if self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id().to_string() {
                     self.payment_method_user.remove(i);
                     break;
                 } else {
