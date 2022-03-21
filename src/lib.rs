@@ -396,8 +396,14 @@ impl NearP2P {
 
     /// Returns the order object loaded in contract
     /// Params: campo: String, valor: String
-    pub fn get_offers_sell(self, amount: Option<Balance>, fiat_method: Option<i128>, payment_method: Option<i128>, is_merchant: Option<bool>, owner_id: Option<AccountId>) -> Vec<OfferObject> {
-        search_offer(self.offers_sell, amount, fiat_method, payment_method, is_merchant, owner_id)
+    pub fn get_offers_sell(self, amount: Option<Balance>,
+        fiat_method: Option<i128>,
+        payment_method: Option<i128>,
+        is_merchant: Option<bool>,
+        owner_id: Option<AccountId>,
+        status: Option<i8>
+    ) -> Vec<OfferObject> {
+        search_offer(self.offers_sell, amount, fiat_method, payment_method, is_merchant, owner_id, status)
     }
 
 
@@ -488,8 +494,14 @@ impl NearP2P {
 
     /// Returns the order object loaded in contract
     /// Params: campo: String, valor: String
-    pub fn get_offers_buy(self, amount: Option<Balance>, fiat_method: Option<i128>, payment_method: Option<i128>, is_merchant: Option<bool>, owner_id: Option<AccountId>) -> Vec<OfferObject> {
-        search_offer(self.offers_buy, amount, fiat_method, payment_method, is_merchant, owner_id)
+    pub fn get_offers_buy(self, amount: Option<Balance>,
+        fiat_method: Option<i128>,
+        payment_method: Option<i128>,
+        is_merchant: Option<bool>,
+        owner_id: Option<AccountId>,
+        status: Option<i8>
+    ) -> Vec<OfferObject> {
+        search_offer(self.offers_buy, amount, fiat_method, payment_method, is_merchant, owner_id, status)
     }
 
 
@@ -889,7 +901,7 @@ impl NearP2P {
         assert_one_yocto();
         for i in 0..self.payment_method_user.len() {
             if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id {
-                if self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id().to_string() {
+                if self.payment_method_user.get(i).user_id == env::signer_account_id().to_string() {
                     self.payment_method_user.remove(i);
                     break;
                 } else {
@@ -1545,7 +1557,14 @@ impl NearP2P {
 }
 
 
-fn search_offer(data: Vec<OfferObject>, amount: Option<Balance>, fiat_method: Option<i128>, payment_method: Option<i128>, is_merchant: Option<bool>, owner_id: Option<AccountId>) -> Vec<OfferObject> {
+fn search_offer(data: Vec<OfferObject>,
+    amount: Option<Balance>,
+    fiat_method: Option<i128>,
+    payment_method: Option<i128>,
+    is_merchant: Option<bool>,
+    owner_id: Option<AccountId>,
+    status: Option<i8>
+) -> Vec<OfferObject> {
     let mut result: Vec<OfferObject> = data ;
 
     if amount.is_some() {
@@ -1643,7 +1662,26 @@ fn search_offer(data: Vec<OfferObject>, amount: Option<Balance>, fiat_method: Op
                         status: r.status, // 1: active, 2: closed).collect()
                     }).collect();
     }
-    
+    if status.is_some() {
+        result = result.iter().filter(|x| x.status == status.unwrap())
+                    .map(|r| OfferObject { 
+                        offer_id: r.offer_id,
+                        owner_id: r.owner_id.clone(),
+                        asset: r.asset.clone(), // NEAR, USD
+                        exchange_rate: r.exchange_rate.clone(),
+                        amount: r.amount,
+                        remaining_amount: r.remaining_amount,
+                        min_limit: r.min_limit,
+                        max_limit: r.max_limit,
+                        payment_method: r.payment_method.iter().map(|r| PaymentMethodsOfferObject {id: r.id, payment_method: r.payment_method.clone()}).collect(), // Info concerning to payment asociated to payment contract
+                        fiat_method: r.fiat_method,
+                        is_merchant: r.is_merchant,
+                        time: r.time,
+                        terms_conditions: r.terms_conditions.clone(),
+                        status: r.status, // 1: active, 2: closed).collect()
+                    }).collect();
+    }
+
     result.iter().map(|r| OfferObject { 
         offer_id: r.offer_id,
         owner_id: r.owner_id.clone(),
