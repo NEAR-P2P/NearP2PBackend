@@ -401,9 +401,10 @@ impl NearP2P {
         payment_method: Option<i128>,
         is_merchant: Option<bool>,
         owner_id: Option<AccountId>,
-        status: Option<i8>
+        status: Option<i8>,
+        offer_id: Option<i128>
     ) -> Vec<OfferObject> {
-        search_offer(self.offers_sell, amount, fiat_method, payment_method, is_merchant, owner_id, status)
+        search_offer(self.offers_sell, amount, fiat_method, payment_method, is_merchant, owner_id, status, offer_id)
     }
 
 
@@ -452,17 +453,44 @@ impl NearP2P {
 
     #[payable]
     pub fn put_offers_sell(&mut self, offer_id: i128
-        , asset: String
-        , exchange_rate: String
-        , remaining_amount: Balance
-        , min_limit: f64
-        , max_limit: f64
-        , payment_method: Vec<PaymentMethodsOfferObject>
-        , fiat_method: i128
-        , time: i64
-        , terms_conditions: String) -> OfferObject {
-        let offer = self.offers_sell.iter().position(|x| x.offer_id == offer_id).expect("Offer not found");
-        self.offers_sell[offer].asset = asset.clone();
+        , asset: Option<String>
+        , exchange_rate: Option<String>
+        , remaining_amount: Option<Balance>
+        , min_limit: Option<f64>
+        , max_limit: Option<f64>
+        , payment_method: Option<Vec<PaymentMethodsOfferObject>>
+        , fiat_method: Option<i128>
+        , time: Option<i64>
+        , terms_conditions: Option<String>) -> OfferObject {
+        let offer = self.offers_sell.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id().to_string()).expect("Offer not found");
+        if asset.is_some() {
+            self.offers_sell[offer].asset = asset.unwrap();
+        }
+        if exchange_rate.is_some() {
+            self.offers_sell[offer].exchange_rate = exchange_rate.unwrap();
+        }
+        if remaining_amount.is_some() {
+            self.offers_sell[offer].remaining_amount = remaining_amount.unwrap();
+        }
+        if min_limit.is_some() {
+            self.offers_sell[offer].min_limit = min_limit.unwrap();
+        }
+        if max_limit.is_some() {
+            self.offers_sell[offer].max_limit = max_limit.unwrap();
+        }
+        if payment_method.is_some() {
+            self.offers_sell[offer].payment_method = payment_method.unwrap().iter().map(|x| PaymentMethodsOfferObject {id: x.id, payment_method: x.payment_method.clone()}).collect();
+        }
+        if fiat_method.is_some() {
+            self.offers_sell[offer].fiat_method = fiat_method.unwrap();
+        }
+        if time.is_some() {
+            self.offers_sell[offer].time = time.unwrap();
+        }
+        if terms_conditions.is_some() {
+            self.offers_sell[offer].terms_conditions = terms_conditions.unwrap();
+        }
+        /*
         self.offers_sell[offer].exchange_rate = exchange_rate.clone();
         self.offers_sell[offer].remaining_amount = remaining_amount;
         self.offers_sell[offer].min_limit = min_limit;
@@ -470,25 +498,32 @@ impl NearP2P {
         self.offers_sell[offer].payment_method = payment_method.iter().map(|x| PaymentMethodsOfferObject {id: x.id, payment_method: x.payment_method.clone()}).collect();
         self.offers_sell[offer].fiat_method = fiat_method;
         self.offers_sell[offer].time = time;
-        self.offers_sell[offer].terms_conditions = terms_conditions.clone();
+        self.offers_sell[offer].terms_conditions = terms_conditions.clone(); */
         
         env::log(b"Offer updated");
         OfferObject {
             offer_id: offer_id,
             owner_id: String::from(self.offers_sell[offer].owner_id.clone()),
-            asset: String::from(asset.clone()),
-            exchange_rate: String::from(exchange_rate.clone()),
+            asset: String::from(self.offers_sell[offer].asset.clone()),
+            exchange_rate: String::from(self.offers_sell[offer].exchange_rate.clone()),
             amount: self.offers_sell[offer].amount,
-            remaining_amount: remaining_amount,
-            min_limit: min_limit,
-            max_limit: max_limit,
-            payment_method: payment_method.iter().map(|x| PaymentMethodsOfferObject {id: x.id, payment_method: x.payment_method.clone()}).collect(),
-            fiat_method: fiat_method,
+            remaining_amount: self.offers_sell[offer].remaining_amount,
+            min_limit: self.offers_sell[offer].min_limit,
+            max_limit: self.offers_sell[offer].max_limit,
+            payment_method: self.offers_sell[offer].payment_method.iter().map(|x| PaymentMethodsOfferObject {id: x.id, payment_method: x.payment_method.clone()}).collect(),
+            fiat_method: self.offers_sell[offer].fiat_method,
             is_merchant: self.offers_sell[offer].is_merchant,
-            time: time,
-            terms_conditions: String::from(terms_conditions.clone()),
+            time: self.offers_sell[offer].time,
+            terms_conditions: String::from(self.offers_sell[offer].terms_conditions.clone()),
             status: self.offers_sell[offer].status,
         }
+    }
+
+
+    pub fn delete_offers_sell(&mut self, offer_id: i128) {
+        let offer = self.offers_sell.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id().to_string()).expect("Offer not found");
+        self.offers_sell.remove(offer);
+        env::log(b"Offer Buy Delete");
     }
 
 
@@ -499,9 +534,10 @@ impl NearP2P {
         payment_method: Option<i128>,
         is_merchant: Option<bool>,
         owner_id: Option<AccountId>,
-        status: Option<i8>
+        status: Option<i8>,
+        offer_id: Option<i128>
     ) -> Vec<OfferObject> {
-        search_offer(self.offers_buy, amount, fiat_method, payment_method, is_merchant, owner_id, status)
+        search_offer(self.offers_buy, amount, fiat_method, payment_method, is_merchant, owner_id, status, offer_id)
     }
 
 
@@ -553,47 +589,70 @@ impl NearP2P {
         self.offer_buy_id
     }
 
-
     #[payable]
     pub fn put_offers_buy(&mut self, offer_id: i128
-        , asset: String
-        , exchange_rate: String
-        , remaining_amount: Balance
-        , min_limit: f64
-        , max_limit: f64
-        , payment_method: Vec<PaymentMethodsOfferObject>
-        , fiat_method: i128
-        , time: i64
-        , terms_conditions: String) -> OfferObject {
-        assert_one_yocto();
-        let offer = self.offers_buy.iter().position(|x| x.offer_id == offer_id).expect("Offer not found");
-        self.offers_buy[offer].asset = asset.clone();
-        self.offers_buy[offer].exchange_rate = exchange_rate.clone();
-        self.offers_buy[offer].remaining_amount = remaining_amount;
-        self.offers_buy[offer].min_limit = min_limit;
-        self.offers_buy[offer].max_limit = max_limit;
-        self.offers_buy[offer].payment_method = payment_method.iter().map(|x| PaymentMethodsOfferObject {id: x.id, payment_method: x.payment_method.clone()}).collect();
-        self.offers_buy[offer].fiat_method = fiat_method;
-        self.offers_buy[offer].time = time;
-        self.offers_buy[offer].terms_conditions = terms_conditions.clone();
+        , asset: Option<String>
+        , exchange_rate: Option<String>
+        , remaining_amount: Option<Balance>
+        , min_limit: Option<f64>
+        , max_limit: Option<f64>
+        , payment_method: Option<Vec<PaymentMethodsOfferObject>>
+        , fiat_method: Option<i128>
+        , time: Option<i64>
+        , terms_conditions: Option<String>) -> OfferObject {
+        let offer = self.offers_buy.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id().to_string()).expect("Offer not found");
+        if asset.is_some() {
+            self.offers_buy[offer].asset = asset.unwrap();
+        }
+        if exchange_rate.is_some() {
+            self.offers_buy[offer].exchange_rate = exchange_rate.unwrap();
+        }
+        if remaining_amount.is_some() {
+            self.offers_buy[offer].remaining_amount = remaining_amount.unwrap();
+        }
+        if min_limit.is_some() {
+            self.offers_buy[offer].min_limit = min_limit.unwrap();
+        }
+        if max_limit.is_some() {
+            self.offers_buy[offer].max_limit = max_limit.unwrap();
+        }
+        if payment_method.is_some() {
+            self.offers_buy[offer].payment_method = payment_method.unwrap().iter().map(|x| PaymentMethodsOfferObject {id: x.id, payment_method: x.payment_method.clone()}).collect();
+        }
+        if fiat_method.is_some() {
+            self.offers_buy[offer].fiat_method = fiat_method.unwrap();
+        }
+        if time.is_some() {
+            self.offers_buy[offer].time = time.unwrap();
+        }
+        if terms_conditions.is_some() {
+            self.offers_buy[offer].terms_conditions = terms_conditions.unwrap();
+        }
         
         env::log(b"Offer updated");
         OfferObject {
             offer_id: offer_id,
             owner_id: String::from(self.offers_buy[offer].owner_id.clone()),
-            asset: String::from(asset.clone()),
-            exchange_rate: String::from(exchange_rate.clone()),
+            asset: String::from(self.offers_buy[offer].asset.clone()),
+            exchange_rate: String::from(self.offers_buy[offer].exchange_rate.clone()),
             amount: self.offers_buy[offer].amount,
-            remaining_amount: remaining_amount,
-            min_limit: min_limit,
-            max_limit: max_limit,
-            payment_method: payment_method.iter().map(|x| PaymentMethodsOfferObject {id: x.id, payment_method: x.payment_method.clone()}).collect(),
-            fiat_method: fiat_method,
+            remaining_amount: self.offers_buy[offer].remaining_amount,
+            min_limit: self.offers_buy[offer].min_limit,
+            max_limit: self.offers_buy[offer].max_limit,
+            payment_method: self.offers_buy[offer].payment_method.iter().map(|x| PaymentMethodsOfferObject {id: x.id, payment_method: x.payment_method.clone()}).collect(),
+            fiat_method: self.offers_buy[offer].fiat_method,
             is_merchant: self.offers_buy[offer].is_merchant,
-            time: time,
-            terms_conditions: String::from(terms_conditions.clone()),
+            time: self.offers_buy[offer].time,
+            terms_conditions: String::from(self.offers_buy[offer].terms_conditions.clone()),
             status: self.offers_buy[offer].status,
         }
+    }
+    
+
+    pub fn delete_offers_buy(&mut self, offer_id: i128) {
+        let offer = self.offers_buy.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id().to_string()).expect("Offer not found");
+        self.offers_buy.remove(offer);
+        env::log(b"Offer Buy Delete");
     }
 
 
@@ -1198,188 +1257,139 @@ impl NearP2P {
     /// confirmation order into the contract
     /// Params: offer_type: 1 = sell, 2 = buy
     #[payable]
-    pub fn order_confirmation(&mut self, offer_type: i8, order_id: i128) -> String {
+    pub fn order_confirmation(&mut self, offer_type: i8, order_id: i128) {
         assert_one_yocto();
         if offer_type == 1 {
-            for i in 0..self.orders_sell.len() {
-                if self.orders_sell.get(i).unwrap().order_id == order_id {
-                    if self.orders_sell[i].owner_id == env::signer_account_id().to_string() {
-                        if self.orders_sell[i].status == 3 {
-                            self.orders_sell[i].confirmation_owner_id = 1;
-                            env::log(b"Order sell Confirmation");
-                            return String::from("Order sell Confirmation");
-                        } else {
-                            env::panic(b"Order sell in dispute");
-                        }
-                    } else if self.orders_sell[i].signer_id == env::signer_account_id().to_string() {
-                        if self.orders_sell[i].status == 3 {
-                            self.orders_sell[i].confirmation_signer_id = 1;
-                            ////////////////////////////////////////////////////////////////////////////
-                            /* Aqui va la el codigo para transferir los near a la cuenta del ownwe_id */
-                             ///////////////////////////////////////////////////////////////////////////
-                            
-                            Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(self.orders_sell[i].operation_amount);
+            let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
+            if self.orders_sell[i].owner_id == env::signer_account_id().to_string() {
+                self.orders_sell[i].confirmation_owner_id = 1;
+                env::log(b"Order sell Confirmation");
+            } else if self.orders_sell[i].signer_id == env::signer_account_id().to_string() {
+                self.orders_sell[i].confirmation_signer_id = 1;
+                ////////////////////////////////////////////////////////////////////////////
+                /*   Aqui va el codigo para transferir los near a la cuenta del ownwe_id  */
+                ////////////////////////////////////////////////////////////////////////////
+                
+                Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(self.orders_sell[i].operation_amount);
 
-                            self.order_history.insert(&1, &OrderObject {
-                                offer_id:self.orders_sell[i].offer_id,
-                                order_id: self.orders_sell[i].order_id,
-                                owner_id: self.orders_sell[i].owner_id.to_string(),
-                                signer_id: self.orders_sell[i].signer_id.to_string(),
-                                exchange_rate: self.orders_sell[i].exchange_rate.to_string(),
-                                operation_amount: self.orders_sell[i].operation_amount,
-                                payment_method: self.orders_sell[i].payment_method,
-                                fiat_method: self.orders_sell[i].fiat_method,
-                                confirmation_owner_id: self.orders_sell[i].confirmation_owner_id,
-                                confirmation_signer_id: self.orders_sell[i].confirmation_signer_id,
-                                confirmation_current: self.orders_sell[i].confirmation_current,
-                                time: self.orders_sell[i].time,
-                                datetime: self.orders_sell[i].datetime.to_string(),
-                                terms_conditions: self.orders_sell[i].terms_conditions.to_string(),
-                                status: 2,
-                            });
-                            self.orders_sell.remove(i);
-                            //self.orders_sell[i].status = 2;
-                            
-                            //actualizar transacciones culminadas owner_id
-                            for j in 0..self.merchant.len() {
-                                if self.merchant.get(j).unwrap().user_id == self.offers_sell[i].owner_id {
-                                    self.merchant[j].orders_completed = self.merchant[j].orders_completed + 1;
-                                    self.merchant[j].percentaje_completion = (self.merchant[j].orders_completed as f64 / self.merchant[j].total_orders as f64) * 100.0;
-                                }
-                            }
-                            env::log(b"Order sell Completed");
-                            return String::from("Order sell Completed");
-                        } else {
-                            env::panic(b"Order sell in dispute");
-                        }
-                    } else {
-                        env::panic(b"Server internar error, signer not found or order id not found");
+                self.order_history.insert(&1, &OrderObject {
+                    offer_id:self.orders_sell[i].offer_id,
+                    order_id: self.orders_sell[i].order_id,
+                    owner_id: self.orders_sell[i].owner_id.to_string(),
+                    signer_id: self.orders_sell[i].signer_id.to_string(),
+                    exchange_rate: self.orders_sell[i].exchange_rate.to_string(),
+                    operation_amount: self.orders_sell[i].operation_amount,
+                    payment_method: self.orders_sell[i].payment_method,
+                    fiat_method: self.orders_sell[i].fiat_method,
+                    confirmation_owner_id: self.orders_sell[i].confirmation_owner_id,
+                    confirmation_signer_id: self.orders_sell[i].confirmation_signer_id,
+                    confirmation_current: self.orders_sell[i].confirmation_current,
+                    time: self.orders_sell[i].time,
+                    datetime: self.orders_sell[i].datetime.to_string(),
+                    terms_conditions: self.orders_sell[i].terms_conditions.to_string(),
+                    status: 2,
+                });
+                self.orders_sell.remove(i);
+                
+                //actualizar transacciones culminadas owner_id
+                for j in 0..self.merchant.len() {
+                    if self.merchant.get(j).unwrap().user_id == self.offers_sell[i].owner_id {
+                        self.merchant[j].orders_completed = self.merchant[j].orders_completed + 1;
+                        self.merchant[j].percentaje_completion = (self.merchant[j].orders_completed as f64 / self.merchant[j].total_orders as f64) * 100.0;
                     }
                 }
+                env::log(b"Order sell Completed");
+            } else {
+                env::panic(b"Server internar error, signer not found");
             }
-            env::panic(b"Order sell not found");
         } else if offer_type == 2 {
-            for i in 0..self.orders_buy.len() {
-                if self.orders_buy.get(i).unwrap().order_id == order_id {
-                    if self.orders_buy[i].owner_id == env::signer_account_id().to_string() {
-                        if self.orders_buy[i].status == 3 {
-                            self.orders_buy[i].confirmation_owner_id = 1;
-                            /////////////////////////////////////////////////////////////////////////////
-                            /* Aqui va la el codigo para transferir los near a la cuenta del signer_id */
-                            /////////////////////////////////////////////////////////////////////////////
-                            
-                            Promise::new(self.orders_buy[i].signer_id.to_string()).transfer(self.orders_buy[i].operation_amount);
-                            
-                            self.order_history.insert(&2, &OrderObject {
-                                offer_id:self.orders_buy[i].offer_id,
-                                order_id: self.orders_buy[i].order_id,
-                                owner_id: self.orders_buy[i].owner_id.to_string(),
-                                signer_id: self.orders_buy[i].signer_id.to_string(),
-                                exchange_rate: self.orders_buy[i].exchange_rate.to_string(),
-                                operation_amount: self.orders_buy[i].operation_amount,
-                                payment_method: self.orders_buy[i].payment_method,
-                                fiat_method: self.orders_buy[i].fiat_method,
-                                confirmation_owner_id: self.orders_buy[i].confirmation_owner_id,
-                                confirmation_signer_id: self.orders_buy[i].confirmation_signer_id,
-                                confirmation_current: self.orders_buy[i].confirmation_current,
-                                time: self.orders_buy[i].time,
-                                datetime: self.orders_buy[i].datetime.to_string(),
-                                terms_conditions: self.orders_buy[i].terms_conditions.to_string(),
-                                status: 2,
-                            });
-                            self.orders_buy.remove(i);
-                            //self.orders_buy[i].status = 2;
-                            
-                            //actualizar transacciones culminadas owner_id
-                            for j in 0..self.merchant.len() {
-                                if self.merchant.get(j).unwrap().user_id == self.offers_buy[i].owner_id {
-                                    self.merchant[j].orders_completed = self.merchant[j].orders_completed + 1;
-                                    self.merchant[j].percentaje_completion = (self.merchant[j].orders_completed as f64 / self.merchant[j].total_orders as f64) * 100.0;
-                                }
-                            }
-                            env::log(b"Order buy Completed");
-                            return String::from("Order buy Completed");
-                        } else {
-                            env::panic(b"Order buy in dispute");
-                        }
-                    } else if self.orders_buy[i].signer_id == env::signer_account_id().to_string() {
-                        if self.orders_buy[i].status == 3 {
-                            self.orders_buy[i].confirmation_signer_id = 1;
-                            env::log(b"Order buy Confirmation");
-                            return String::from("Order buy Confirmation");
-                        } else {
-                            env::panic(b"Order buy in dispute");
-                        }
-                    } else {
-                        env::panic(b"Server internar error, signer not found or order id not found");  
+            let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order buy not found");
+            if self.orders_buy[i].signer_id == env::signer_account_id().to_string() {
+                self.orders_buy[i].confirmation_signer_id = 1;
+                env::log(b"Order buy Confirmation");
+            } else if self.orders_buy[i].owner_id == env::signer_account_id().to_string() {
+                self.orders_buy[i].confirmation_owner_id = 1;
+                ////////////////////////////////////////////////////////////////////////////
+                /*   Aqui va el codigo para transferir los near a la cuenta del ownwe_id  */
+                ////////////////////////////////////////////////////////////////////////////
+                
+                Promise::new(self.orders_buy[i].owner_id.to_string()).transfer(self.orders_buy[i].operation_amount);
+
+                self.order_history.insert(&1, &OrderObject {
+                    offer_id:self.orders_buy[i].offer_id,
+                    order_id: self.orders_buy[i].order_id,
+                    owner_id: self.orders_buy[i].owner_id.to_string(),
+                    signer_id: self.orders_buy[i].signer_id.to_string(),
+                    exchange_rate: self.orders_buy[i].exchange_rate.to_string(),
+                    operation_amount: self.orders_buy[i].operation_amount,
+                    payment_method: self.orders_buy[i].payment_method,
+                    fiat_method: self.orders_buy[i].fiat_method,
+                    confirmation_owner_id: self.orders_buy[i].confirmation_owner_id,
+                    confirmation_signer_id: self.orders_buy[i].confirmation_signer_id,
+                    confirmation_current: self.orders_buy[i].confirmation_current,
+                    time: self.orders_buy[i].time,
+                    datetime: self.orders_buy[i].datetime.to_string(),
+                    terms_conditions: self.orders_buy[i].terms_conditions.to_string(),
+                    status: 2,
+                });
+                self.orders_buy.remove(i);
+                
+                //actualizar transacciones culminadas owner_id
+                for j in 0..self.merchant.len() {
+                    if self.merchant.get(j).unwrap().user_id == self.offers_buy[i].owner_id {
+                        self.merchant[j].orders_completed = self.merchant[j].orders_completed + 1;
+                        self.merchant[j].percentaje_completion = (self.merchant[j].orders_completed as f64 / self.merchant[j].total_orders as f64) * 100.0;
                     }
                 }
+                env::log(b"Order buy Completed");
+            } else {
+                env::panic(b"Server internar error, signer not found");
             }
-            env::panic(b"Order buy not found");
         }  else {
             env::panic(b"Invalid offer type");
         }
     }
 
+
     /// dispute order into the contract
     /// Params: offer_type: 1 = sell, 2 = buy
     #[payable]
-    pub fn order_dispute(&mut self, offer_type: i8, order_id: i128) -> String {
+    pub fn order_dispute(&mut self, offer_type: i8, order_id: i128) {
         assert_one_yocto();
         if offer_type == 1 {
-            for i in 0..self.orders_sell.len() {
-                if self.orders_sell.get(i).unwrap().order_id == order_id {
-                    if self.orders_sell[i].owner_id == env::signer_account_id().to_string() {
-                        if self.orders_sell[i].confirmation_owner_id != 1 {
-                            self.orders_sell[i].status = 3;
-                            self.orders_sell[i].confirmation_owner_id = 2;
-                        } else {
-                            env::log(b"The user already confirmed");
-                            return String::from("The user already confirmed");
-                        }
-                    } else if self.orders_sell[i].signer_id == env::signer_account_id().to_string() {
-                        if self.orders_sell[i].confirmation_signer_id != 1 {
-                            self.orders_sell[i].status = 3;
-                            self.orders_sell[i].confirmation_signer_id = 2;
-                        } else {
-                            env::log(b"The user already confirmed");
-                            return String::from("The user already confirmed");
-                        }
-                    } else {
-                        env::panic(b"Server internar error, signer not found or order id not found");  
-                    }
+            let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
+            if self.orders_sell[i].status == 1 {
+                if self.orders_sell[i].owner_id == env::signer_account_id().to_string() {
+                    self.orders_sell[i].status = 3;
+                    self.orders_sell[i].confirmation_owner_id = 2;
                     env::log(b"Order sell in dispute");
-                    return String::from("Order sell in Dispute");
+                } else if self.orders_sell[i].signer_id == env::signer_account_id().to_string() {
+                    self.orders_sell[i].status = 3;
+                    self.orders_sell[i].confirmation_signer_id = 2;
+                    env::log(b"Order sell in dispute");
+                } else {
+                    env::panic(b"Server internar error, signer not found");  
                 }
+            } else {
+                env::panic(b"The sales order is already in dispute");
             }
-            env::panic(b"Order sell not found");
         } else if offer_type == 2 {
-            for i in 0..self.orders_buy.len() {
-                if self.orders_buy.get(i).unwrap().order_id == order_id {
-                    if self.orders_buy[i].owner_id == env::signer_account_id().to_string() {
-                        if self.orders_buy[i].confirmation_owner_id != 1 {
-                            self.orders_buy[i].status = 3;
-                            self.orders_buy[i].confirmation_owner_id = 2;
-                        } else {
-                            env::log(b"The user already confirmed");
-                            return String::from("The user already confirmed");
-                        }
-                    } else if self.orders_buy[i].signer_id == env::signer_account_id().to_string() {
-                        if self.orders_buy[i].confirmation_signer_id != 1 {
-                            self.orders_buy[i].status = 3;
-                            self.orders_buy[i].confirmation_signer_id = 2;
-                        } else {
-                            env::log(b"The user already confirmed");
-                            return String::from("The user already confirmed");
-                        }
-                    } else {
-                        env::panic(b"Server internar error, signer not found or order id not found");
-                    }
+            let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order buy not found");
+            if self.orders_buy[i].status == 1 {
+                if self.orders_buy[i].owner_id == env::signer_account_id().to_string() {
+                    self.orders_buy[i].status = 3;
+                    self.orders_buy[i].confirmation_owner_id = 2;
                     env::log(b"Order buy in dispute");
-                    return String::from("Order buy Dispute");
+                } else if self.orders_buy[i].signer_id == env::signer_account_id().to_string() {
+                    self.orders_buy[i].status = 3;
+                    self.orders_buy[i].confirmation_signer_id = 2;
+                    env::log(b"Order buy in dispute");
+                } else {
+                    env::panic(b"Server internar error, signer not found");  
                 }
+            } else {
+                env::panic(b"The sales order is already in dispute");
             }
-            env::panic(b"Order buy not found");
         }  else {
             env::panic(b"Invalid offer type");
         }
@@ -1559,7 +1569,8 @@ fn search_offer(data: Vec<OfferObject>,
     payment_method: Option<i128>,
     is_merchant: Option<bool>,
     owner_id: Option<AccountId>,
-    status: Option<i8>
+    status: Option<i8>,
+    offer_id: Option<i128>
 ) -> Vec<OfferObject> {
     let mut result: Vec<OfferObject> = data ;
 
@@ -1660,6 +1671,25 @@ fn search_offer(data: Vec<OfferObject>,
     }
     if status.is_some() {
         result = result.iter().filter(|x| x.status == status.unwrap())
+                    .map(|r| OfferObject { 
+                        offer_id: r.offer_id,
+                        owner_id: r.owner_id.clone(),
+                        asset: r.asset.clone(), // NEAR, USD
+                        exchange_rate: r.exchange_rate.clone(),
+                        amount: r.amount,
+                        remaining_amount: r.remaining_amount,
+                        min_limit: r.min_limit,
+                        max_limit: r.max_limit,
+                        payment_method: r.payment_method.iter().map(|r| PaymentMethodsOfferObject {id: r.id, payment_method: r.payment_method.clone()}).collect(), // Info concerning to payment asociated to payment contract
+                        fiat_method: r.fiat_method,
+                        is_merchant: r.is_merchant,
+                        time: r.time,
+                        terms_conditions: r.terms_conditions.clone(),
+                        status: r.status, // 1: active, 2: closed).collect()
+                    }).collect();
+    }
+    if offer_id.is_some() {
+        result = result.iter().filter(|x| x.offer_id == offer_id.unwrap())
                     .map(|r| OfferObject { 
                         offer_id: r.offer_id,
                         owner_id: r.owner_id.clone(),
