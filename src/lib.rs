@@ -955,11 +955,6 @@ impl NearP2P {
                 break;
             }
         }
-        /*for i in 0..self.payment_method_user.len() {
-            if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id().to_string() {
-                self.payment_method_user.remove(i);
-            }
-        }*/
         env::log(b"Payment Method User Delete");
     }
 
@@ -981,11 +976,11 @@ impl NearP2P {
         if offer_type == 1 {
             for i in 0..self.offers_sell.len() {
                 if self.offers_sell.get(i).unwrap().offer_id == offer_id {
-                    if self.offers_sell[i].remaining_amount >= attached_deposit {
+                    if self.offers_sell[i].remaining_amount >= amount {
                         ////////////////////////////////////////////////////////////////////
                         /* colocar aqui el bloqueo de saldo del owner_id  cuando sea venta */
                         ////////////////////////////////////////////////////////////////////
-                        let remaining: Balance = self.offers_sell[i].remaining_amount - attached_deposit;
+                        let remaining: Balance = self.offers_sell[i].remaining_amount - amount;
                         if remaining == 0 {
                             self.offers_sell[i].status = 2;
                         }
@@ -997,7 +992,7 @@ impl NearP2P {
                             owner_id: self.offers_sell[i].owner_id.to_string(),
                             signer_id: env::signer_account_id(),
                             exchange_rate: self.offers_sell[i].exchange_rate.to_string(),
-                            operation_amount: attached_deposit,
+                            operation_amount: amount,
                             payment_method: payment_method,
                             fiat_method: self.offers_sell[i].fiat_method,
                             confirmation_owner_id: 0,
@@ -1016,14 +1011,14 @@ impl NearP2P {
                                 self.merchant[j].percentaje_completion = (self.merchant[j].orders_completed as f64 / self.merchant[j].total_orders as f64) * 100.0;
                             }
                         }
-                        env::log(b"Offer accepted");
-                        return String::from("Offer accepted");
+                        env::log(b"Offer sell accepted");
+                        return String::from("Offer sell accepted");
                     } else {
-                        env::panic(b"the quantity is greater than the offer amount");
+                        env::panic(b"the quantity is greater than the offer sell amount");
                     }
                 }
             }
-            return String::from("Offer not found");
+            return String::from("Offer sell not found");
         } else if offer_type == 2 {
             for i in 0..self.offers_buy.len() {
                 if self.offers_buy.get(i).unwrap().offer_id == offer_id {
@@ -1062,14 +1057,14 @@ impl NearP2P {
                                 self.merchant[j].percentaje_completion = (self.merchant[j].orders_completed as f64 / self.merchant[j].total_orders as f64) * 100.0;
                             }
                         }
-                        env::log(b"Offer accepted");
-                        return String::from("Offer accepted");
+                        env::log(b"Offer buy accepted");
+                        return String::from("Offer buy accepted");
                     } else {
-                        env::panic(b"the quantity is greater than the offer amount");
+                        env::panic(b"the quantity is greater than the offer buy amount");
                     }
                 }
             }
-            env::panic(b"Offer not found");
+            env::panic(b"Offer buy not found");
         }   else {
             env::panic(b"Invalid offer type");
         }
@@ -1079,164 +1074,11 @@ impl NearP2P {
         search_order(self.orders_sell, order_id, owner_id, signer_id)
     }
 
-    /* pub fn get_order_sell(self, order_id: Option<i128>, owner_id: Option<AccountId>, signer_id:Option<AccountId>) -> Vec<OrderObject> {
-        let mut result: Vec<OrderObject> = Vec::new();
-        if owner_id.is_some() {
-            let user = owner_id.unwrap().clone();
-            for i in 0..self.orders_sell.len() {
-                if self.orders_sell[i].owner_id == user.to_string() {
-                    result.push(OrderObject {
-                        offer_id: self.orders_sell[i].offer_id,
-                        order_id: self.orders_sell[i].order_id,
-                        owner_id: self.orders_sell[i].owner_id.to_string(),
-                        signer_id: self.orders_sell[i].signer_id.to_string(),
-                        exchange_rate: self.orders_sell[i].exchange_rate.to_string(),
-                        operation_amount: self.orders_sell[i].operation_amount,
-                        payment_method: self.orders_sell[i].payment_method,
-                        fiat_method: self.orders_sell[i].fiat_method,
-                        confirmation_owner_id: self.orders_sell[i].confirmation_owner_id,
-                        confirmation_signer_id: self.orders_sell[i].confirmation_signer_id,
-                        confirmation_current: self.orders_sell[i].confirmation_current,
-                        time: self.orders_sell[i].time,
-                        datetime: self.orders_sell[i].datetime.to_string(),
-                        terms_conditions: self.orders_sell[i].terms_conditions.to_string(),
-                        status: self.orders_sell[i].status,
-                    });
-                };
-            };
-        } else if signer_id.is_some() {
-            let user = signer_id.unwrap().clone();
-            for i in 0..self.orders_sell.len() {
-                if self.orders_sell[i].signer_id == user.to_string() {
-                    result.push(OrderObject {
-                        offer_id: self.orders_sell[i].offer_id,
-                        order_id: self.orders_sell[i].order_id,
-                        owner_id: self.orders_sell[i].owner_id.to_string(),
-                        signer_id: self.orders_sell[i].signer_id.to_string(),
-                        exchange_rate: self.orders_sell[i].exchange_rate.to_string(),
-                        operation_amount: self.orders_sell[i].operation_amount,
-                        payment_method: self.orders_sell[i].payment_method,
-                        fiat_method: self.orders_sell[i].fiat_method,
-                        confirmation_owner_id: self.orders_sell[i].confirmation_owner_id,
-                        confirmation_signer_id: self.orders_sell[i].confirmation_signer_id,
-                        confirmation_current: self.orders_sell[i].confirmation_current,
-                        time: self.orders_sell[i].time,
-                        datetime: self.orders_sell[i].datetime.to_string(),
-                        terms_conditions: self.orders_sell[i].terms_conditions.to_string(),
-                        status: self.orders_sell[i].status,
-                    });
-                };
-            };
-        } else if order_id.is_some() {
-            for i in 0..self.orders_sell.len() {
-                if self.orders_sell[i].order_id == order_id.unwrap() {
-                    result.push(OrderObject {
-                        offer_id: self.orders_sell[i].offer_id,
-                        order_id: self.orders_sell[i].order_id,
-                        owner_id: self.orders_sell[i].owner_id.to_string(),
-                        signer_id: self.orders_sell[i].signer_id.to_string(),
-                        exchange_rate: self.orders_sell[i].exchange_rate.to_string(),
-                        operation_amount: self.orders_sell[i].operation_amount,
-                        payment_method: self.orders_sell[i].payment_method,
-                        fiat_method: self.orders_sell[i].fiat_method,
-                        confirmation_owner_id: self.orders_sell[i].confirmation_owner_id,
-                        confirmation_signer_id: self.orders_sell[i].confirmation_signer_id,
-                        confirmation_current: self.orders_sell[i].confirmation_current,
-                        time: self.orders_sell[i].time,
-                        datetime: self.orders_sell[i].datetime.to_string(),
-                        terms_conditions: self.orders_sell[i].terms_conditions.to_string(),
-                        status: self.orders_sell[i].status,
-                    });
-                };
-            };
-        } else {
-            env::panic(b"debe indicar un filtro");
-        };
-        result
-    } */
 
     pub fn get_order_buy(self, order_id: Option<i128>, owner_id: Option<AccountId>, signer_id: Option<AccountId>) -> Vec<OrderObject> {
         search_order(self.orders_buy, order_id, owner_id, signer_id)
     }
-    /*pub fn get_order_buy(self, order_id: Option<i128>, owner_id: Option<AccountId>, signer_id: Option<AccountId>) -> Vec<OrderObject> {
-        let mut result: Vec<OrderObject> = Vec::new();
-        if owner_id.is_some() {
-            let user = owner_id.unwrap().clone();
-            for i in 0..self.orders_buy.len() {
-                if self.orders_buy[i].owner_id == user.to_string() {
-                    result.push(OrderObject {
-                        offer_id: self.orders_buy[i].offer_id,
-                        order_id: self.orders_buy[i].order_id,
-                        owner_id: self.orders_buy[i].owner_id.to_string(),
-                        signer_id: self.orders_buy[i].signer_id.to_string(),
-                        exchange_rate: self.orders_buy[i].exchange_rate.to_string(),
-                        operation_amount: self.orders_buy[i].operation_amount,
-                        payment_method: self.orders_buy[i].payment_method,
-                        fiat_method: self.orders_buy[i].fiat_method,
-                        confirmation_owner_id: self.orders_buy[i].confirmation_owner_id,
-                        confirmation_signer_id: self.orders_buy[i].confirmation_signer_id,
-                        confirmation_current: self.orders_buy[i].confirmation_current,
-                        time: self.orders_buy[i].time,
-                        datetime: self.orders_buy[i].datetime.to_string(),
-                        terms_conditions: self.orders_buy[i].terms_conditions.to_string(),
-                        status: self.orders_buy[i].status,
-                    });
-                };
-            };
-        }
-        
-        if signer_id.is_some() {
-            let user = signer_id.unwrap().clone();
-            for i in 0..self.orders_buy.len() {
-                if self.orders_buy[i].signer_id == user.to_string() {
-                    result.push(OrderObject {
-                        offer_id: self.orders_buy[i].offer_id,
-                        order_id: self.orders_buy[i].order_id,
-                        owner_id: self.orders_buy[i].owner_id.to_string(),
-                        signer_id: self.orders_buy[i].signer_id.to_string(),
-                        exchange_rate: self.orders_buy[i].exchange_rate.to_string(),
-                        operation_amount: self.orders_buy[i].operation_amount,
-                        payment_method: self.orders_buy[i].payment_method,
-                        fiat_method: self.orders_buy[i].fiat_method,
-                        confirmation_owner_id: self.orders_buy[i].confirmation_owner_id,
-                        confirmation_signer_id: self.orders_buy[i].confirmation_signer_id,
-                        confirmation_current: self.orders_buy[i].confirmation_current,
-                        time: self.orders_buy[i].time,
-                        datetime: self.orders_buy[i].datetime.to_string(),
-                        terms_conditions: self.orders_buy[i].terms_conditions.to_string(),
-                        status: self.orders_buy[i].status,
-                    });
-                };
-            };
-        }
-        
-        if order_id.is_some() {
-            for i in 0..self.orders_buy.len() {
-                if self.orders_buy[i].order_id == order_id.unwrap() {
-                    result.push(OrderObject {
-                        offer_id: self.orders_buy[i].offer_id,
-                        order_id: self.orders_buy[i].order_id,
-                        owner_id: self.orders_buy[i].owner_id.to_string(),
-                        signer_id: self.orders_buy[i].signer_id.to_string(),
-                        exchange_rate: self.orders_buy[i].exchange_rate.to_string(),
-                        operation_amount: self.orders_buy[i].operation_amount,
-                        payment_method: self.orders_buy[i].payment_method,
-                        fiat_method: self.orders_buy[i].fiat_method,
-                        confirmation_owner_id: self.orders_buy[i].confirmation_owner_id,
-                        confirmation_signer_id: self.orders_buy[i].confirmation_signer_id,
-                        confirmation_current: self.orders_buy[i].confirmation_current,
-                        time: self.orders_buy[i].time,
-                        datetime: self.orders_buy[i].datetime.to_string(),
-                        terms_conditions: self.orders_buy[i].terms_conditions.to_string(),
-                        status: self.orders_buy[i].status,
-                    });
-                };
-            };
-        } else {
-            env::panic(b"debe indicar un filtro");
-        };
-        result
-    } */
+    
 
     pub fn get_order_history(self, type_order: i8, user_id: AccountId) -> Vec<OrderObject> {
         self.order_history.iter().filter(|(k, s)| k == &type_order && (s.owner_id == user_id.to_string() || s.signer_id == user_id.to_string()))
