@@ -416,7 +416,7 @@ impl NearP2P {
     pub fn set_offers_sell(&mut self, owner_id: AccountId
         , asset: String
         , exchange_rate: String
-        , amount: Balance
+        , amount: U128
         , min_limit: f64
         , max_limit: f64
         , payment_method: Vec<PaymentMethodsOfferObject>
@@ -434,8 +434,8 @@ impl NearP2P {
             owner_id: String::from(owner_id),
             asset: String::from(asset),
             exchange_rate: String::from(exchange_rate),
-            amount: amount,
-            remaining_amount: amount,
+            amount: amount.0,
+            remaining_amount: amount.0,
             min_limit: min_limit,
             max_limit: max_limit,
             payment_method: payment_method,
@@ -455,7 +455,7 @@ impl NearP2P {
     pub fn put_offers_sell(&mut self, offer_id: i128
         , asset: Option<String>
         , exchange_rate: Option<String>
-        , remaining_amount: Option<Balance>
+        , remaining_amount: Option<U128>
         , min_limit: Option<f64>
         , max_limit: Option<f64>
         , payment_method: Option<Vec<PaymentMethodsOfferObject>>
@@ -470,7 +470,7 @@ impl NearP2P {
             self.offers_sell[offer].exchange_rate = exchange_rate.unwrap();
         }
         if remaining_amount.is_some() {
-            self.offers_sell[offer].remaining_amount = remaining_amount.unwrap();
+            self.offers_sell[offer].remaining_amount = remaining_amount.unwrap().0;
         }
         if min_limit.is_some() {
             self.offers_sell[offer].min_limit = min_limit.unwrap();
@@ -540,7 +540,7 @@ impl NearP2P {
     pub fn set_offers_buy(&mut self, owner_id: AccountId
         , asset: String
         , exchange_rate: String
-        , amount: Balance
+        , amount: U128
         , min_limit: f64
         , max_limit: f64
         , payment_method: Vec<PaymentMethodsOfferObject>
@@ -549,9 +549,9 @@ impl NearP2P {
         , terms_conditions: String) -> i128{
         let attached_deposit = env::attached_deposit();
         assert!(
-            attached_deposit >= amount,
+            attached_deposit >= amount.0,
             "the deposit attached is less than the quantity supplied : {}",
-            amount
+            amount.0
         );
         self.offer_buy_id += 1;
         let mut merchant_valid: bool = false;
@@ -564,8 +564,8 @@ impl NearP2P {
             owner_id: String::from(owner_id),
             asset: String::from(asset),
             exchange_rate: String::from(exchange_rate),
-            amount: amount,
-            remaining_amount: amount,
+            amount: amount.0,
+            remaining_amount: amount.0,
             min_limit: min_limit,
             max_limit: max_limit,
             payment_method: payment_method,
@@ -584,7 +584,7 @@ impl NearP2P {
     pub fn put_offers_buy(&mut self, offer_id: i128
         , asset: Option<String>
         , exchange_rate: Option<String>
-        , remaining_amount: Option<Balance>
+        , remaining_amount: Option<U128>
         , min_limit: Option<f64>
         , max_limit: Option<f64>
         , payment_method: Option<Vec<PaymentMethodsOfferObject>>
@@ -599,7 +599,7 @@ impl NearP2P {
             self.offers_buy[offer].exchange_rate = exchange_rate.unwrap();
         }
         if remaining_amount.is_some() {
-            self.offers_buy[offer].remaining_amount = remaining_amount.unwrap();
+            self.offers_buy[offer].remaining_amount = remaining_amount.unwrap().0;
         }
         if min_limit.is_some() {
             self.offers_buy[offer].min_limit = min_limit.unwrap();
@@ -1012,8 +1012,8 @@ impl NearP2P {
                             }
                         }
                         env::log(b"Offer sell accepted");
-                        let msg: String = format!("Offer sell accepted - remaining: {} - Attached: {} - Amount: {}", self.offers_buy[i].remaining_amount, attached_deposit, amount.0);
-                        //let msg: String = "Offer sell accepted".to_string();
+                        // let msg: String = format!("Offer sell accepted - remaining: {} - Attached: {} - Amount: {}", self.offers_buy[i].remaining_amount, attached_deposit, amount.0);
+                        let msg: String = "Offer sell accepted".to_string();
                         return String::from(msg);
                     } else {
                         // let error: String = format!("the quantity is greater than the offer sell amount - Remaining: {} - Attached: {}", self.offers_buy[i].remaining_amount, attached_deposit);
@@ -1062,13 +1062,13 @@ impl NearP2P {
                             }
                         }
                         env::log(b"Offer buy accepted");
-                        let msg: String = format!("Offer buy accepted - remaining: {} - Amount: {} - Amount: ", self.offers_buy[i].remaining_amount, amount.0);
-                        // let msg: String = "Offer buy accepted".to_string();
+                        // let msg: String = format!("Offer buy accepted - remaining: {} - Amount: {} - Amount: ", self.offers_buy[i].remaining_amount, amount.0);
+                        let msg: String = "Offer buy accepted".to_string();
                         return String::from(msg);
                     } else {
-                        let error: String = format!("the quantity is greater than the offer buy amount - Remaining: {} - Amount: {}", self.offers_buy[i].remaining_amount, amount.0);
-                        env::panic(error.as_ref());
-                        // env::panic(b"the quantity is greater than the offer buy amount");
+                        // let error: String = format!("the quantity is greater than the offer buy amount - Remaining: {} - Amount: {}", self.offers_buy[i].remaining_amount, amount.0);
+                        // env::panic(error.as_ref());
+                        env::panic(b"the quantity is greater than the offer buy amount");
                     }
                 }
             }
