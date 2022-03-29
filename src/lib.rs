@@ -1009,12 +1009,14 @@ impl NearP2P {
                         };
                         self.orders_sell.push(data);
                         //actualizar total ordenes owner_id
-                        for j in 0..self.merchant.len() {
-                            if self.merchant.get(j).unwrap().user_id == self.offers_sell[i].owner_id {
-                                self.merchant[j].total_orders = self.merchant[j].total_orders + 1;
-                                self.merchant[j].percentaje_completion = (self.merchant[j].orders_completed as f64 / self.merchant[j].total_orders as f64) * 100.0;
-                            }
-                        }
+                        let mut index = self.merchant.iter().position(|x| x.user_id == self.offers_sell[i].owner_id.clone()).expect("owner not merchant");
+                        self.merchant[index].total_orders = self.merchant[index].total_orders + 1;
+                        self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+                        index = self.merchant.iter().position(|x| x.user_id == env::signer_account_id().clone()).expect("owner not merchant");
+                        self.merchant[index].total_orders = self.merchant[index].total_orders + 1;
+                        self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+                         
+                            
                         env::log(b"Offer sell accepted");
                         // let msg: String = format!("Offer sell accepted - remaining: {} - Attached: {} - Amount: {}", self.offers_buy[i].remaining_amount, attached_deposit, amount.0);
                         let msg: String = "Offer sell accepted".to_string();
@@ -1059,12 +1061,13 @@ impl NearP2P {
                         };
                         self.orders_buy.push(data);
                         //actualizar total ordenes owner_id
-                        for j in 0..self.merchant.len() {
-                            if self.merchant.get(j).unwrap().user_id == self.offers_buy[i].owner_id {
-                                self.merchant[j].total_orders = self.merchant[j].total_orders + 1;
-                                self.merchant[j].percentaje_completion = (self.merchant[j].orders_completed as f64 / self.merchant[j].total_orders as f64) * 100.0;
-                            }
-                        }
+                        let mut index = self.merchant.iter().position(|x| x.user_id == self.offers_buy[i].owner_id.clone()).expect("owner not merchant");
+                        self.merchant[index].total_orders = self.merchant[index].total_orders + 1;
+                        self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+                        index = self.merchant.iter().position(|x| x.user_id == env::signer_account_id().clone()).expect("owner not merchant");
+                        self.merchant[index].total_orders = self.merchant[index].total_orders + 1;
+                        self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+
                         env::log(b"Offer buy accepted");
                         // let msg: String = format!("Offer buy accepted - remaining: {} - Amount: {} - Amount: ", self.offers_buy[i].remaining_amount, amount.0);
                         let msg: String = "Offer buy accepted".to_string();
@@ -1081,6 +1084,7 @@ impl NearP2P {
             env::panic(b"Invalid offer type");
         }
     }
+
 
     pub fn get_order_sell(self, order_id: Option<i128>, owner_id: Option<AccountId>, signer_id: Option<AccountId>) -> Vec<OrderObject> {
         search_order(self.orders_sell, order_id, owner_id, signer_id)
@@ -1156,6 +1160,13 @@ impl NearP2P {
                 ////////////////////////////////////////////////////////////////////////////
                 // let index = self.merchant.iter().position(|x| x.user_id == self.offers_sell[i].owner_id.to_string()).expect("owner not merchant");
 
+                let mut index = self.merchant.iter().position(|x| x.user_id == self.orders_sell[i].owner_id.clone()).expect("owner not merchant");
+                self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
+                self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+                index = self.merchant.iter().position(|x| x.user_id == self.orders_sell[i].signer_id.clone()).expect("owner not merchant");
+                self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
+                self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+
                 Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(self.orders_sell[i].operation_amount * YOCTO_NEAR);
 
                 self.order_history.insert(&1, &OrderObject {
@@ -1198,7 +1209,14 @@ impl NearP2P {
                 ////////////////////////////////////////////////////////////////////////////
                 /*   Aqui va el codigo para transferir los near a la cuenta del ownwe_id  */
                 ////////////////////////////////////////////////////////////////////////////
-                let index = self.merchant.iter().position(|x| x.user_id == self.offers_buy[i].owner_id).expect("owner not merchant");
+                // let index = self.merchant.iter().position(|x| x.user_id == self.orders_buy[i].owner_id).expect("owner not merchant");
+
+                let mut index = self.merchant.iter().position(|x| x.user_id == self.orders_buy[i].owner_id.clone()).expect("owner not merchant");
+                self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
+                self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+                index = self.merchant.iter().position(|x| x.user_id == self.orders_buy[i].signer_id.clone()).expect("owner not merchant");
+                self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
+                self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
 
                 Promise::new(self.orders_buy[i].signer_id.to_string()).transfer(self.orders_buy[i].operation_amount * YOCTO_NEAR);
 
@@ -1224,8 +1242,8 @@ impl NearP2P {
                 //actualizar transacciones culminadas owner_id
                 // for j in 0..self.merchant.len() {
                     // if self.merchant.get(j).unwrap().user_id == self.offers_buy[i].owner_id {
-                self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
-                self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+                // self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
+                // self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
                     // }
                 // }
                 env::log(b"Order buy Completed");
