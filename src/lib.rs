@@ -30,6 +30,9 @@ use near_sdk::json_types::ValidAccountId;
 
 near_sdk::setup_alloc!();
 
+const YOCTO_NEAR: u128 = 1000000000000000000000000;
+
+
 #[derive(Default, BorshDeserialize, BorshSerialize)]
 pub struct Account {
     /// Current unlocked balance.
@@ -416,7 +419,7 @@ impl NearP2P {
     pub fn set_offers_sell(&mut self, owner_id: AccountId
         , asset: String
         , exchange_rate: String
-        , amount: String
+        , amount: Balance
         , min_limit: f64
         , max_limit: f64
         , payment_method: Vec<PaymentMethodsOfferObject>
@@ -434,8 +437,8 @@ impl NearP2P {
             owner_id: String::from(owner_id),
             asset: String::from(asset),
             exchange_rate: String::from(exchange_rate),
-            amount: amount.parse::<u128>().unwrap(),
-            remaining_amount: amount.parse::<u128>().unwrap(),
+            amount: amount,
+            remaining_amount: amount,
             min_limit: min_limit,
             max_limit: max_limit,
             payment_method: payment_method,
@@ -964,7 +967,7 @@ impl NearP2P {
     #[payable]
     pub fn accept_offer(&mut self, offer_type: i8
         , offer_id: i128
-        , amount: U128
+        , amount: u128
         , payment_method: i128
         , datetime: String
     ) -> String {
@@ -973,14 +976,15 @@ impl NearP2P {
             attached_deposit >= 1,
             "you have to deposit a minimum of one yoctoNear"
         );
+        
         if offer_type == 1 {
             for i in 0..self.offers_sell.len() {
                 if self.offers_sell.get(i).unwrap().offer_id == offer_id {
-                    if self.offers_sell[i].remaining_amount >= attached_deposit {
+                    if (self.offers_sell[i].remaining_amount * YOCTO_NEAR) >= attached_deposit {
                         ////////////////////////////////////////////////////////////////////
                         /* colocar aqui el bloqueo de saldo del owner_id  cuando sea venta */
                         ////////////////////////////////////////////////////////////////////
-                        let remaining: Balance = self.offers_sell[i].remaining_amount - attached_deposit;
+                        let remaining: Balance = self.offers_sell[i].remaining_amount  - (attached_deposit / YOCTO_NEAR);
                         if remaining == 0 {
                             self.offers_sell[i].status = 2;
                         }
@@ -992,7 +996,7 @@ impl NearP2P {
                             owner_id: self.offers_sell[i].owner_id.to_string(),
                             signer_id: env::signer_account_id(),
                             exchange_rate: self.offers_sell[i].exchange_rate.to_string(),
-                            operation_amount: attached_deposit,
+                            operation_amount: (attached_deposit / YOCTO_NEAR),
                             payment_method: payment_method,
                             fiat_method: self.offers_sell[i].fiat_method,
                             confirmation_owner_id: 0,
@@ -1026,11 +1030,11 @@ impl NearP2P {
         } else if offer_type == 2 {
             for i in 0..self.offers_buy.len() {
                 if self.offers_buy.get(i).unwrap().offer_id == offer_id {
-                    if self.offers_buy[i].remaining_amount >= amount.0 {
+                    if self.offers_buy[i].remaining_amount >= amount  {
                         ////////////////////////////////////////////////////////////////////////
                         /* colocar aqui el bloqueo de saldo del owner_id  cuando sea compra */
                         ///////////////////////////////////////////////////////////////////////
-                        let remaining: Balance = self.offers_buy[i].remaining_amount - amount.0;
+                        let remaining: Balance = self.offers_buy[i].remaining_amount - amount;
                         if remaining == 0 {
                             self.offers_buy[i].status = 2;
                         }
@@ -1042,7 +1046,7 @@ impl NearP2P {
                             owner_id: self.offers_buy[i].owner_id.to_string(),
                             signer_id: env::signer_account_id(),
                             exchange_rate: self.offers_buy[i].exchange_rate.to_string(),
-                            operation_amount: amount.0,
+                            operation_amount: amount,
                             payment_method: payment_method,
                             fiat_method: self.offers_buy[i].fiat_method,
                             confirmation_owner_id: 0,
@@ -1151,7 +1155,7 @@ impl NearP2P {
                 /*   Aqui va el codigo para transferir los near a la cuenta del ownwe_id  */
                 ////////////////////////////////////////////////////////////////////////////
                 
-                Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(self.orders_sell[i].operation_amount);
+                Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(self.orders_sell[i].operation_amount * YOCTO_NEAR);
 
                 self.order_history.insert(&1, &OrderObject {
                     offer_id:self.orders_sell[i].offer_id,
@@ -1194,7 +1198,7 @@ impl NearP2P {
                 /*   Aqui va el codigo para transferir los near a la cuenta del ownwe_id  */
                 ////////////////////////////////////////////////////////////////////////////
                 
-                Promise::new(self.orders_buy[i].signer_id.to_string()).transfer(self.orders_buy[i].operation_amount);
+                Promise::new(self.orders_buy[i].signer_id.to_string()).transfer(self.orders_buy[i].operation_amount * YOCTO_NEAR);
 
                 self.order_history.insert(&1, &OrderObject {
                     offer_id:self.orders_buy[i].offer_id,
@@ -1286,7 +1290,7 @@ impl NearP2P {
                 let j = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer Sell not found");
                 self.orders_sell[i].confirmation_owner_id = 3;
 
-                Promise::new(self.orders_sell[i].signer_id.to_string()).transfer(self.orders_sell[i].operation_amount);
+                Promise::new(self.orders_sell[i].signer_id.to_string()).transfer(self.orders_sell[i].operation_amount * YOCTO_NEAR);
 
                 self.order_history.insert(&1, &OrderObject {
                     offer_id:self.orders_sell[i].offer_id,
@@ -1324,7 +1328,7 @@ impl NearP2P {
                 let j = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer Sell not found");
                 self.orders_buy[i].confirmation_signer_id = 3;
 
-                Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(self.orders_sell[i].operation_amount);
+                Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(self.orders_sell[i].operation_amount * YOCTO_NEAR);
 
                 self.order_history.insert(&1, &OrderObject {
                     offer_id:self.orders_sell[i].offer_id,
@@ -1372,7 +1376,7 @@ impl NearP2P {
                             let mut tranfer_valid = false;
                             for i in 0..self.orders_sell.len() {
                                 if self.orders_sell.get(i).unwrap().order_id == order_id {
-                                    Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(self.orders_sell[i].operation_amount);
+                                    Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(self.orders_sell[i].operation_amount * YOCTO_NEAR);
                                     self.order_history.insert(&1, &OrderObject {
                                         offer_id:self.orders_sell[i].offer_id,
                                         order_id: self.orders_sell[i].order_id,
@@ -1408,7 +1412,7 @@ impl NearP2P {
                             let mut tranfer_valid = false;
                             for i in 0..self.orders_buy.len() {
                                 if self.orders_buy.get(i).unwrap().order_id == order_id {
-                                    Promise::new(self.orders_buy[i].owner_id.to_string()).transfer(self.orders_buy[i].operation_amount);
+                                    Promise::new(self.orders_buy[i].owner_id.to_string()).transfer(self.orders_buy[i].operation_amount * YOCTO_NEAR);
                                     self.order_history.insert(&2, &OrderObject {
                                         offer_id:self.orders_buy[i].offer_id,
                                         order_id: self.orders_buy[i].order_id,
@@ -1448,7 +1452,7 @@ impl NearP2P {
                             let mut tranfer_valid = false;
                             for i in 0..self.orders_sell.len() {
                                 if self.orders_sell.get(i).unwrap().order_id == order_id {
-                                    Promise::new(self.orders_sell[i].signer_id.to_string()).transfer(self.orders_sell[i].operation_amount);
+                                    Promise::new(self.orders_sell[i].signer_id.to_string()).transfer(self.orders_sell[i].operation_amount * YOCTO_NEAR);
                                     self.order_history.insert(&1, &OrderObject {
                                         offer_id:self.orders_sell[i].offer_id,
                                         order_id: self.orders_sell[i].order_id,
@@ -1482,7 +1486,7 @@ impl NearP2P {
                             let mut tranfer_valid = false;
                             for i in 0..self.orders_buy.len() {
                                 if self.orders_buy.get(i).unwrap().order_id == order_id {
-                                    Promise::new(self.orders_buy[i].owner_id.to_string()).transfer(self.orders_buy[i].operation_amount);
+                                    Promise::new(self.orders_buy[i].owner_id.to_string()).transfer(self.orders_buy[i].operation_amount * YOCTO_NEAR);
                                     self.order_history.insert(&2, &OrderObject {
                                         offer_id:self.orders_buy[i].offer_id,
                                         order_id: self.orders_buy[i].order_id,
