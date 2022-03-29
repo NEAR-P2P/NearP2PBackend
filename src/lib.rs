@@ -416,7 +416,7 @@ impl NearP2P {
     pub fn set_offers_sell(&mut self, owner_id: AccountId
         , asset: String
         , exchange_rate: String
-        , amount: Balance
+        , amount: String
         , min_limit: f64
         , max_limit: f64
         , payment_method: Vec<PaymentMethodsOfferObject>
@@ -434,8 +434,8 @@ impl NearP2P {
             owner_id: String::from(owner_id),
             asset: String::from(asset),
             exchange_rate: String::from(exchange_rate),
-            amount: amount,
-            remaining_amount: amount,
+            amount: amount.parse::<u128>().unwrap(),
+            remaining_amount: amount.parse::<u128>().unwrap(),
             min_limit: min_limit,
             max_limit: max_limit,
             payment_method: payment_method,
@@ -893,7 +893,6 @@ impl NearP2P {
         , input4: String
         , input5: String) -> String {
         assert_one_yocto();
-        let mut duplicate: bool = false;
         for i in 0..self.payment_method_user.len() {
             if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id().to_string() {
                 env::panic(b"Repeated payment methods are not allowed");
