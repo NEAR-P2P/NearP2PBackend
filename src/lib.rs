@@ -24,9 +24,9 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use serde::Serialize;
 use serde::Deserialize;
 use near_sdk::collections::UnorderedMap;
-use near_sdk::{json_types::U128, env, near_bindgen, AccountId, Balance, Promise, assert_one_yocto};
+use near_sdk::{env, near_bindgen, AccountId, Balance, Promise, assert_one_yocto}; // json_types::U128, 
 use std::collections::HashMap;
-use near_sdk::json_types::ValidAccountId;
+// use near_sdk::json_types::ValidAccountId;
 
 near_sdk::setup_alloc!();
 
@@ -552,7 +552,7 @@ impl NearP2P {
         , terms_conditions: String) -> i128{
         let attached_deposit = env::attached_deposit();
         assert!(
-            attached_deposit >= (amount * YOCTO_NEAR),
+            (attached_deposit / YOCTO_NEAR) >= amount,
             "the deposit attached is less than the quantity supplied : {}",
             amount
         );
@@ -1385,6 +1385,7 @@ impl NearP2P {
     #[payable]
     pub fn order_confirmation_dispute(&mut self, offer_type: i8, order_id: i128, confirmation: bool) -> String {
         assert_one_yocto();
+        let mut tranfer_valid = false;
         for i in 0..self.users.len() {    
             if self.users[i].user_id == env::signer_account_id().to_string() {
                 if self.users[i].admin == true || self.users[i].mediator == true {
@@ -1393,7 +1394,7 @@ impl NearP2P {
                             ////////////////////////////////////////////////////////////////////////////
                             /* Aqui va el codigo para transferir los near a la cuenta del "ownwe_id" */
                             ///////////////////////////////////////////////////////////////////////////
-                            let mut tranfer_valid = false;
+                            // let mut tranfer_valid = false;
                             for i in 0..self.orders_sell.len() {
                                 if self.orders_sell.get(i).unwrap().order_id == order_id {
                                     Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(self.orders_sell[i].operation_amount * YOCTO_NEAR);
@@ -1428,8 +1429,6 @@ impl NearP2P {
                             /////////////////////////////////////////////////////////////////////////////
                             /* Aqui va el codigo para transferir los near a la cuenta del "signer_id" */
                             /////////////////////////////////////////////////////////////////////////////
-                            
-                            let mut tranfer_valid = false;
                             for i in 0..self.orders_buy.len() {
                                 if self.orders_buy.get(i).unwrap().order_id == order_id {
                                     Promise::new(self.orders_buy[i].owner_id.to_string()).transfer(self.orders_buy[i].operation_amount * YOCTO_NEAR);
@@ -1468,8 +1467,6 @@ impl NearP2P {
                             /////////////////////////////////////////////////////////////////////////////
                             /* Aqui va el codigo para transferir los near a la cuenta del "signer_id" */
                             /////////////////////////////////////////////////////////////////////////////
-                            
-                            let mut tranfer_valid = false;
                             for i in 0..self.orders_sell.len() {
                                 if self.orders_sell.get(i).unwrap().order_id == order_id {
                                     Promise::new(self.orders_sell[i].signer_id.to_string()).transfer(self.orders_sell[i].operation_amount * YOCTO_NEAR);
@@ -1502,8 +1499,6 @@ impl NearP2P {
                             ////////////////////////////////////////////////////////////////////////////
                             /* Aqui va el codigo para transferir los near a la cuenta del "ownwe_id" */
                             ////////////////////////////////////////////////////////////////////////////
-                            
-                            let mut tranfer_valid = false;
                             for i in 0..self.orders_buy.len() {
                                 if self.orders_buy.get(i).unwrap().order_id == order_id {
                                     Promise::new(self.orders_buy[i].owner_id.to_string()).transfer(self.orders_buy[i].operation_amount * YOCTO_NEAR);
