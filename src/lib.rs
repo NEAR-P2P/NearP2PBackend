@@ -976,11 +976,11 @@ impl NearP2P {
         if offer_type == 1 {
             for i in 0..self.offers_sell.len() {
                 if self.offers_sell.get(i).unwrap().offer_id == offer_id {
-                    if self.offers_sell[i].remaining_amount >= amount {
+                    if self.offers_sell[i].remaining_amount >= attached_deposit {
                         ////////////////////////////////////////////////////////////////////
                         /* colocar aqui el bloqueo de saldo del owner_id  cuando sea venta */
                         ////////////////////////////////////////////////////////////////////
-                        let remaining: Balance = self.offers_sell[i].remaining_amount - amount;
+                        let remaining: Balance = self.offers_sell[i].remaining_amount - attached_deposit;
                         if remaining == 0 {
                             self.offers_sell[i].status = 2;
                         }
@@ -992,7 +992,7 @@ impl NearP2P {
                             owner_id: self.offers_sell[i].owner_id.to_string(),
                             signer_id: env::signer_account_id(),
                             exchange_rate: self.offers_sell[i].exchange_rate.to_string(),
-                            operation_amount: amount,
+                            operation_amount: attached_deposit,
                             payment_method: payment_method,
                             fiat_method: self.offers_sell[i].fiat_method,
                             confirmation_owner_id: 0,
@@ -1012,9 +1012,11 @@ impl NearP2P {
                             }
                         }
                         env::log(b"Offer sell accepted");
-                        return String::from("Offer sell accepted");
+                        let msg: String = format!("Offer sell accepted - remaining: {} - Attached: {} - Amount: {}", self.offers_buy[i].remaining_amount, attached_deposit, amount);
+                        return String::from(msg);
                     } else {
-                        env::panic(b"the quantity is greater than the offer sell amount");
+                        let error: String = format!("the quantity is greater than the offer sell amount - Remaining: {} - Attached: {}", self.offers_buy[i].remaining_amount, attached_deposit);
+                        env::panic(error.as_ref());
                     }
                 }
             }
@@ -1022,11 +1024,11 @@ impl NearP2P {
         } else if offer_type == 2 {
             for i in 0..self.offers_buy.len() {
                 if self.offers_buy.get(i).unwrap().offer_id == offer_id {
-                    if self.offers_buy[i].remaining_amount >= attached_deposit {
+                    if self.offers_buy[i].remaining_amount >= amount {
                         ////////////////////////////////////////////////////////////////////////
                         /* colocar aqui el bloqueo de saldo del owner_id  cuando sea compra */
                         ///////////////////////////////////////////////////////////////////////
-                        let remaining: Balance = self.offers_buy[i].remaining_amount - attached_deposit;
+                        let remaining: Balance = self.offers_buy[i].remaining_amount - amount;
                         if remaining == 0 {
                             self.offers_buy[i].status = 2;
                         }
@@ -1038,7 +1040,7 @@ impl NearP2P {
                             owner_id: self.offers_buy[i].owner_id.to_string(),
                             signer_id: env::signer_account_id(),
                             exchange_rate: self.offers_buy[i].exchange_rate.to_string(),
-                            operation_amount: attached_deposit,
+                            operation_amount: amount,
                             payment_method: payment_method,
                             fiat_method: self.offers_buy[i].fiat_method,
                             confirmation_owner_id: 0,
@@ -1058,9 +1060,11 @@ impl NearP2P {
                             }
                         }
                         env::log(b"Offer buy accepted");
-                        return String::from("Offer buy accepted");
+                        let msg: String = format!("Offer buy accepted - remaining: {} - Amount: {} - Amount: ", self.offers_buy[i].remaining_amount, amount);
+                        return String::from(msg);
                     } else {
-                        env::panic(b"the quantity is greater than the offer buy amount");
+                        let error: String = format!("the quantity is greater than the offer buy amount - Remaining: {} - Amount: {}", self.offers_buy[i].remaining_amount, amount);
+                        env::panic(error.as_ref());
                     }
                 }
             }
@@ -1080,8 +1084,8 @@ impl NearP2P {
     }
     
 
-    pub fn get_order_history(self, type_order: i8, user_id: AccountId) -> Vec<OrderObject> {
-        self.order_history.iter().filter(|(k, s)| k == &type_order && (s.owner_id == user_id.to_string() || s.signer_id == user_id.to_string()))
+    pub fn get_order_history(self, type_order: Option<i8>, user_id: Option<AccountId>) -> Vec<OrderObject> {
+        let mut result = self.order_history.iter()
         .map(|(_k, s)| OrderObject {
             offer_id: s.offer_id,
             order_id: s.order_id,
@@ -1098,8 +1102,31 @@ impl NearP2P {
             datetime: s.datetime.clone(),
             terms_conditions: s.terms_conditions.clone(),
             status: s.status,
-        }).collect()
-        
+        }).collect();
+
+        if type_order.is_some() && user_id.is_some() {
+            let user = user_id.unwrap().clone();
+            result = self.order_history.iter().filter(|(k, s)| k == &type_order.unwrap() && (s.owner_id == user.to_string() || s.signer_id == user.to_string()))
+                    .map(|(_k, s)| OrderObject {
+                        offer_id: s.offer_id,
+                        order_id: s.order_id,
+                        owner_id: s.owner_id.clone(),
+                        signer_id: s.signer_id.clone(),
+                        exchange_rate: s.exchange_rate.clone(),
+                        operation_amount: s.operation_amount,
+                        payment_method: s.payment_method,
+                        fiat_method: s.fiat_method,
+                        confirmation_owner_id: s.confirmation_owner_id,
+                        confirmation_signer_id: s.confirmation_signer_id,
+                        confirmation_current: s.confirmation_current,
+                        time: s.time,
+                        datetime: s.datetime.clone(),
+                        terms_conditions: s.terms_conditions.clone(),
+                        status: s.status,
+                    }).collect();
+        }
+
+        result
     }
     
     
