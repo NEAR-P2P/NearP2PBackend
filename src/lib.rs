@@ -1154,7 +1154,7 @@ impl NearP2P {
                 ////////////////////////////////////////////////////////////////////////////
                 /*   Aqui va el codigo para transferir los near a la cuenta del ownwe_id  */
                 ////////////////////////////////////////////////////////////////////////////
-                let index = self.merchant.iter().position(|x| x.user_id == self.offers_sell[i].owner_id).expect("owner not merchant");
+                // let index = self.merchant.iter().position(|x| x.user_id == self.offers_sell[i].owner_id.to_string()).expect("owner not merchant");
 
                 Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(self.orders_sell[i].operation_amount * YOCTO_NEAR);
 
@@ -1180,8 +1180,8 @@ impl NearP2P {
                 //actualizar transacciones culminadas owner_id
                 // for j in 0..self.merchant.len() {
                     // if self.merchant.get(j).unwrap().user_id == self.offers_sell[i].owner_id {
-                self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
-                self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+                // self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
+                // self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
                     // }
                 // }
                 env::log(b"Order sell Completed");
