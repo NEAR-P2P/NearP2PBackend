@@ -458,7 +458,7 @@ impl NearP2P {
     pub fn put_offers_sell(&mut self, offer_id: i128
         , asset: Option<String>
         , exchange_rate: Option<String>
-        , remaining_amount: Option<U128>
+        , remaining_amount: Option<Balance>
         , min_limit: Option<f64>
         , max_limit: Option<f64>
         , payment_method: Option<Vec<PaymentMethodsOfferObject>>
@@ -473,7 +473,7 @@ impl NearP2P {
             self.offers_sell[offer].exchange_rate = exchange_rate.unwrap();
         }
         if remaining_amount.is_some() {
-            self.offers_sell[offer].remaining_amount = remaining_amount.unwrap().0;
+            self.offers_sell[offer].remaining_amount = remaining_amount.unwrap();
         }
         if min_limit.is_some() {
             self.offers_sell[offer].min_limit = min_limit.unwrap();
@@ -543,7 +543,7 @@ impl NearP2P {
     pub fn set_offers_buy(&mut self, owner_id: AccountId
         , asset: String
         , exchange_rate: String
-        , amount: U128
+        , amount: Balance
         , min_limit: f64
         , max_limit: f64
         , payment_method: Vec<PaymentMethodsOfferObject>
@@ -552,9 +552,9 @@ impl NearP2P {
         , terms_conditions: String) -> i128{
         let attached_deposit = env::attached_deposit();
         assert!(
-            attached_deposit >= amount.0,
+            attached_deposit >= amount,
             "the deposit attached is less than the quantity supplied : {}",
-            amount.0
+            amount
         );
         self.offer_buy_id += 1;
         let mut merchant_valid: bool = false;
@@ -567,8 +567,8 @@ impl NearP2P {
             owner_id: String::from(owner_id),
             asset: String::from(asset),
             exchange_rate: String::from(exchange_rate),
-            amount: amount.0,
-            remaining_amount: amount.0,
+            amount: amount,
+            remaining_amount: amount,
             min_limit: min_limit,
             max_limit: max_limit,
             payment_method: payment_method,
@@ -587,7 +587,7 @@ impl NearP2P {
     pub fn put_offers_buy(&mut self, offer_id: i128
         , asset: Option<String>
         , exchange_rate: Option<String>
-        , remaining_amount: Option<U128>
+        , remaining_amount: Option<Balance>
         , min_limit: Option<f64>
         , max_limit: Option<f64>
         , payment_method: Option<Vec<PaymentMethodsOfferObject>>
@@ -602,7 +602,7 @@ impl NearP2P {
             self.offers_buy[offer].exchange_rate = exchange_rate.unwrap();
         }
         if remaining_amount.is_some() {
-            self.offers_buy[offer].remaining_amount = remaining_amount.unwrap().0;
+            self.offers_buy[offer].remaining_amount = remaining_amount.unwrap();
         }
         if min_limit.is_some() {
             self.offers_buy[offer].min_limit = min_limit.unwrap();
