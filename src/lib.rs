@@ -964,7 +964,7 @@ impl NearP2P {
     #[payable]
     pub fn accept_offer(&mut self, offer_type: i8
         , offer_id: i128
-        , amount: Balance
+        , amount: U128
         , payment_method: i128
         , datetime: String
     ) -> String {
@@ -1012,13 +1012,13 @@ impl NearP2P {
                             }
                         }
                         env::log(b"Offer sell accepted");
-                        // let msg: String = format!("Offer sell accepted - remaining: {} - Attached: {} - Amount: {}", self.offers_buy[i].remaining_amount, attached_deposit, amount);
-                        let msg: String = "Offer sell accepted".to_string();
+                        let msg: String = format!("Offer sell accepted - remaining: {} - Attached: {} - Amount: {}", self.offers_buy[i].remaining_amount, attached_deposit, amount.0);
+                        //let msg: String = "Offer sell accepted".to_string();
                         return String::from(msg);
                     } else {
-                        // let error: String = format!("the quantity is greater than the offer sell amount - Remaining: {} - Attached: {}", self.offers_buy[i].remaining_amount, attached_deposit);
-                        // env::panic(error.as_ref());
-                        env::panic(b"the quantity is greater than the offer sell amount");
+                        let error: String = format!("the quantity is greater than the offer sell amount - Remaining: {} - Attached: {}", self.offers_buy[i].remaining_amount, attached_deposit);
+                        env::panic(error.as_ref());
+                        // env::panic(b"the quantity is greater than the offer sell amount");
                     }
                 }
             }
@@ -1026,11 +1026,11 @@ impl NearP2P {
         } else if offer_type == 2 {
             for i in 0..self.offers_buy.len() {
                 if self.offers_buy.get(i).unwrap().offer_id == offer_id {
-                    if self.offers_buy[i].remaining_amount >= amount {
+                    if self.offers_buy[i].remaining_amount >= amount.0 {
                         ////////////////////////////////////////////////////////////////////////
                         /* colocar aqui el bloqueo de saldo del owner_id  cuando sea compra */
                         ///////////////////////////////////////////////////////////////////////
-                        let remaining: Balance = self.offers_buy[i].remaining_amount - amount;
+                        let remaining: Balance = self.offers_buy[i].remaining_amount - amount.0;
                         if remaining == 0 {
                             self.offers_buy[i].status = 2;
                         }
@@ -1042,7 +1042,7 @@ impl NearP2P {
                             owner_id: self.offers_buy[i].owner_id.to_string(),
                             signer_id: env::signer_account_id(),
                             exchange_rate: self.offers_buy[i].exchange_rate.to_string(),
-                            operation_amount: amount,
+                            operation_amount: amount.0,
                             payment_method: payment_method,
                             fiat_method: self.offers_buy[i].fiat_method,
                             confirmation_owner_id: 0,
@@ -1062,13 +1062,13 @@ impl NearP2P {
                             }
                         }
                         env::log(b"Offer buy accepted");
-                        // let msg: String = format!("Offer buy accepted - remaining: {} - Amount: {} - Amount: ", self.offers_buy[i].remaining_amount, amount);
-                        let msg: String = "Offer buy accepted".to_string();
+                        let msg: String = format!("Offer buy accepted - remaining: {} - Amount: {} - Amount: ", self.offers_buy[i].remaining_amount, amount.0);
+                        // let msg: String = "Offer buy accepted".to_string();
                         return String::from(msg);
                     } else {
-                        // let error: String = format!("the quantity is greater than the offer buy amount - Remaining: {} - Amount: {}", self.offers_buy[i].remaining_amount, amount);
-                        // env::panic(error.as_ref());
-                        env::panic(b"the quantity is greater than the offer buy amount");
+                        let error: String = format!("the quantity is greater than the offer buy amount - Remaining: {} - Amount: {}", self.offers_buy[i].remaining_amount, amount.0);
+                        env::panic(error.as_ref());
+                        // env::panic(b"the quantity is greater than the offer buy amount");
                     }
                 }
             }
