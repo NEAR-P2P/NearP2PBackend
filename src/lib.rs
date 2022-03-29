@@ -1012,11 +1012,13 @@ impl NearP2P {
                             }
                         }
                         env::log(b"Offer sell accepted");
-                        let msg: String = format!("Offer sell accepted - remaining: {} - Attached: {} - Amount: {}", self.offers_buy[i].remaining_amount, attached_deposit, amount);
+                        // let msg: String = format!("Offer sell accepted - remaining: {} - Attached: {} - Amount: {}", self.offers_buy[i].remaining_amount, attached_deposit, amount);
+                        let msg: String = "Offer sell accepted".to_string();
                         return String::from(msg);
                     } else {
-                        let error: String = format!("the quantity is greater than the offer sell amount - Remaining: {} - Attached: {}", self.offers_buy[i].remaining_amount, attached_deposit);
-                        env::panic(error.as_ref());
+                        // let error: String = format!("the quantity is greater than the offer sell amount - Remaining: {} - Attached: {}", self.offers_buy[i].remaining_amount, attached_deposit);
+                        // env::panic(error.as_ref());
+                        env::panic(b"the quantity is greater than the offer sell amount");
                     }
                 }
             }
@@ -1060,11 +1062,13 @@ impl NearP2P {
                             }
                         }
                         env::log(b"Offer buy accepted");
-                        let msg: String = format!("Offer buy accepted - remaining: {} - Amount: {} - Amount: ", self.offers_buy[i].remaining_amount, amount);
+                        // let msg: String = format!("Offer buy accepted - remaining: {} - Amount: {} - Amount: ", self.offers_buy[i].remaining_amount, amount);
+                        let msg: String = "Offer buy accepted".to_string();
                         return String::from(msg);
                     } else {
-                        let error: String = format!("the quantity is greater than the offer buy amount - Remaining: {} - Amount: {}", self.offers_buy[i].remaining_amount, amount);
-                        env::panic(error.as_ref());
+                        // let error: String = format!("the quantity is greater than the offer buy amount - Remaining: {} - Amount: {}", self.offers_buy[i].remaining_amount, amount);
+                        // env::panic(error.as_ref());
+                        env::panic(b"the quantity is greater than the offer buy amount");
                     }
                 }
             }
