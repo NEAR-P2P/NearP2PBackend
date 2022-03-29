@@ -416,7 +416,7 @@ impl NearP2P {
     pub fn set_offers_sell(&mut self, owner_id: AccountId
         , asset: String
         , exchange_rate: String
-        , amount: U128
+        , amount: Balance
         , min_limit: f64
         , max_limit: f64
         , payment_method: Vec<PaymentMethodsOfferObject>
@@ -434,8 +434,8 @@ impl NearP2P {
             owner_id: String::from(owner_id),
             asset: String::from(asset),
             exchange_rate: String::from(exchange_rate),
-            amount: amount.0,
-            remaining_amount: amount.0,
+            amount: amount,
+            remaining_amount: amount,
             min_limit: min_limit,
             max_limit: max_limit,
             payment_method: payment_method,
@@ -698,6 +698,7 @@ impl NearP2P {
     pub fn get_payment_method(self) -> Vec<PaymentMethodsObject> {
         self.payment_method
     }
+
 
     /// Set the Payment Method object into the contract
     /// Params: payment_method_id: String, input1: String, input2: String
