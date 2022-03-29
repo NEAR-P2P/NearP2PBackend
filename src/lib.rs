@@ -552,7 +552,7 @@ impl NearP2P {
         , terms_conditions: String) -> i128{
         let attached_deposit = env::attached_deposit();
         assert!(
-            attached_deposit >= amount,
+            attached_deposit >= (amount * YOCTO_NEAR),
             "the deposit attached is less than the quantity supplied : {}",
             amount
         );
