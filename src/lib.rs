@@ -1154,7 +1154,8 @@ impl NearP2P {
                 ////////////////////////////////////////////////////////////////////////////
                 /*   Aqui va el codigo para transferir los near a la cuenta del ownwe_id  */
                 ////////////////////////////////////////////////////////////////////////////
-                
+                let index = self.merchant.iter().position(|x| x.user_id == self.offers_sell[i].owner_id).expect("owner not merchant");
+
                 Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(self.orders_sell[i].operation_amount * YOCTO_NEAR);
 
                 self.order_history.insert(&1, &OrderObject {
@@ -1177,12 +1178,12 @@ impl NearP2P {
                 self.orders_sell.remove(i);
                 
                 //actualizar transacciones culminadas owner_id
-                for j in 0..self.merchant.len() {
-                    if self.merchant.get(j).unwrap().user_id == self.offers_sell[i].owner_id {
-                        self.merchant[j].orders_completed = self.merchant[j].orders_completed + 1;
-                        self.merchant[j].percentaje_completion = (self.merchant[j].orders_completed as f64 / self.merchant[j].total_orders as f64) * 100.0;
-                    }
-                }
+                // for j in 0..self.merchant.len() {
+                    // if self.merchant.get(j).unwrap().user_id == self.offers_sell[i].owner_id {
+                self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
+                self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+                    // }
+                // }
                 env::log(b"Order sell Completed");
             } else {
                 env::panic(b"Server internar error, signer not found");
@@ -1197,7 +1198,8 @@ impl NearP2P {
                 ////////////////////////////////////////////////////////////////////////////
                 /*   Aqui va el codigo para transferir los near a la cuenta del ownwe_id  */
                 ////////////////////////////////////////////////////////////////////////////
-                
+                let index = self.merchant.iter().position(|x| x.user_id == self.offers_buy[i].owner_id).expect("owner not merchant");
+
                 Promise::new(self.orders_buy[i].signer_id.to_string()).transfer(self.orders_buy[i].operation_amount * YOCTO_NEAR);
 
                 self.order_history.insert(&1, &OrderObject {
@@ -1220,12 +1222,12 @@ impl NearP2P {
                 self.orders_buy.remove(i);
                 
                 //actualizar transacciones culminadas owner_id
-                for j in 0..self.merchant.len() {
-                    if self.merchant.get(j).unwrap().user_id == self.offers_buy[i].owner_id {
-                        self.merchant[j].orders_completed = self.merchant[j].orders_completed + 1;
-                        self.merchant[j].percentaje_completion = (self.merchant[j].orders_completed as f64 / self.merchant[j].total_orders as f64) * 100.0;
-                    }
-                }
+                // for j in 0..self.merchant.len() {
+                    // if self.merchant.get(j).unwrap().user_id == self.offers_buy[i].owner_id {
+                self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
+                self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+                    // }
+                // }
                 env::log(b"Order buy Completed");
             } else {
                 env::panic(b"Server internar error, signer not found");
