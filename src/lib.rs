@@ -1016,9 +1016,9 @@ impl NearP2P {
                         //let msg: String = "Offer sell accepted".to_string();
                         return String::from(msg);
                     } else {
-                        let error: String = format!("the quantity is greater than the offer sell amount - Remaining: {} - Attached: {}", self.offers_buy[i].remaining_amount, attached_deposit);
-                        env::panic(error.as_ref());
-                        // env::panic(b"the quantity is greater than the offer sell amount");
+                        // let error: String = format!("the quantity is greater than the offer sell amount - Remaining: {} - Attached: {}", self.offers_buy[i].remaining_amount, attached_deposit);
+                        // nv::panic(error.as_ref());
+                        env::panic(b"the quantity is greater than the offer sell amount");
                     }
                 }
             }
