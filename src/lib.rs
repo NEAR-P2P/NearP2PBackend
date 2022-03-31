@@ -316,7 +316,7 @@ impl NearP2P {
         country: String) -> String {
         assert_one_yocto();
         let user = self.users.iter().find(|x| x.user_id == env::signer_account_id());
-        if user.is_none() {
+        if user.is_some() {
             env::panic(b"profile already exists");
         }
         let data = UserObject {
