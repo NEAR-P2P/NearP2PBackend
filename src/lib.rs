@@ -696,7 +696,7 @@ impl NearP2P {
         self.merchant[i].percentaje_completion = (orders_completed as f64 / total_orders as f64) * 100.0;
         self.merchant[i].badge = badge.to_string();
         self.merchant[i].is_merchant = is_merchant;
-        
+
         /*for i in 0..self.merchant.len() {
             if self.merchant[i].user_id == user_id {
                 self.merchant[i].total_orders = total_orders;
@@ -1308,9 +1308,10 @@ impl NearP2P {
                     terms_conditions: self.orders_sell[i].terms_conditions.to_string(),
                     status: 4,
                 });
-                self.orders_sell.remove(i);
+    
                 self.offers_sell[j].remaining_amount = self.offers_sell[j].remaining_amount + self.orders_sell[i].operation_amount;
                 self.offers_sell[j].status = 1;
+                self.orders_sell.remove(i);
                 env::log(b"Order sell canceled");
             } else if self.orders_sell[i].signer_id == env::signer_account_id().to_string() {
                 self.orders_sell[i].confirmation_signer_id = 3;
@@ -1349,9 +1350,10 @@ impl NearP2P {
                     terms_conditions: self.orders_sell[i].terms_conditions.to_string(),
                     status: 4,
                 });
-                self.orders_buy.remove(i);
+                
                 self.offers_buy[j].remaining_amount = self.offers_buy[j].remaining_amount + self.orders_buy[i].operation_amount;
                 self.offers_buy[j].status = 1;
+                self.orders_buy.remove(i);
                 env::log(b"Order sell canceled");
             } else {
                 env::panic(b"Server internar error, signer not found");  
