@@ -690,7 +690,14 @@ impl NearP2P {
         , is_merchant: bool) {
         self.users.iter().find(|x| x.user_id == env::signer_account_id().to_string() && x.admin == true).expect("User not admin");
             
-        for i in 0..self.merchant.len() {
+        let i = self.merchant.iter().position(|x| x.user_id == user_id.to_string()).expect("Merchant not found");
+        self.merchant[i].total_orders = total_orders;
+        self.merchant[i].orders_completed = orders_completed;
+        self.merchant[i].percentaje_completion = (orders_completed as f64 / total_orders as f64) * 100.0;
+        self.merchant[i].badge = badge.to_string();
+        self.merchant[i].is_merchant = is_merchant;
+        
+        /*for i in 0..self.merchant.len() {
             if self.merchant[i].user_id == user_id {
                 self.merchant[i].total_orders = total_orders;
                 self.merchant[i].orders_completed = orders_completed;
@@ -698,7 +705,7 @@ impl NearP2P {
                 self.merchant[i].badge = badge.to_string();
                 self.merchant[i].is_merchant = is_merchant;
             }
-        }
+        }*/
         env::log(b"Merchant Updated");
     }
 
