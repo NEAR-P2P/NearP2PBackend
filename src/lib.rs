@@ -259,8 +259,8 @@ impl Default for NearP2P {
             orders_buy: Vec::new(),
             order_buy_id: 0,
             order_history: UnorderedMap::new(b"s".to_vec()),
-            order_history_sell: UnorderedMap::new(b"s".to_vec()),
-            order_history_buy: UnorderedMap::new(b"s".to_vec()),
+            order_history_sell: UnorderedMap::new(b"0".to_vec()),
+            order_history_buy: UnorderedMap::new(b"0".to_vec()),
             merchant: vec![MerchantObject {
                 user_id: "info.testnet".to_string(),
                 total_orders: 0,
@@ -1213,7 +1213,7 @@ impl NearP2P {
                 env::log(self.orders_buy[i].datetime.to_string().as_bytes());
                 env::log(self.orders_buy[i].terms_conditions.to_string().as_bytes());
             
-                self.order_history_buy.insert(&self.orders_buy[i].order_id, &OrderObject {
+                self.order_history_buy.insert(&self.orders_buy[i].order_id.clone(), &OrderObject {
                     offer_id: self.orders_buy[i].offer_id,
                     order_id: self.orders_buy[i].order_id,
                     owner_id: self.orders_buy[i].owner_id.to_string(),
