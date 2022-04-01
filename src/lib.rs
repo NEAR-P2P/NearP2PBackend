@@ -1197,7 +1197,7 @@ impl NearP2P {
                 self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
                 self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
                 */
-                /*Promise::new(self.orders_buy[i].signer_id.to_string()).transfer(self.orders_buy[i].operation_amount * YOCTO_NEAR);
+                // Promise::new(self.orders_buy[i].signer_id.to_string()).transfer(self.orders_buy[i].operation_amount * YOCTO_NEAR);
 
                 self.order_history_buy.insert(&self.orders_buy[i].order_id, &OrderObject {
                     offer_id:self.orders_buy[i].offer_id,
@@ -1216,7 +1216,7 @@ impl NearP2P {
                     terms_conditions: self.orders_buy[i].terms_conditions.to_string(),
                     status: 2,
                 });
-                self.orders_buy.remove(i);*/
+                self.orders_buy.remove(i);
                 
                 //actualizar transacciones culminadas owner_id
                 // for j in 0..self.merchant.len() {
