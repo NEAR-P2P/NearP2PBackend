@@ -1199,8 +1199,22 @@ impl NearP2P {
                 */
                 // Promise::new(self.orders_buy[i].signer_id.to_string()).transfer(self.orders_buy[i].operation_amount * YOCTO_NEAR);
                 env::log(self.orders_buy[i].order_id.to_string().as_bytes());
+                env::log(self.orders_buy[i].offer_id.to_string().as_bytes());
+                env::log(self.orders_buy[i].owner_id.to_string().as_bytes());
+                env::log(self.orders_buy[i].signer_id.to_string().as_bytes());
+                env::log(self.orders_buy[i].exchange_rate.to_string().as_bytes());
+                env::log(self.orders_buy[i].operation_amount.to_string().as_bytes());
+                env::log(self.orders_buy[i].payment_method.to_string().as_bytes());
+                env::log(self.orders_buy[i].fiat_method.to_string().as_bytes());
+                env::log(self.orders_buy[i].confirmation_owner_id.to_string().as_bytes());
+                env::log(self.orders_buy[i].confirmation_signer_id.to_string().as_bytes());
+                env::log(self.orders_buy[i].confirmation_current.to_string().as_bytes());
+                env::log(self.orders_buy[i].time.to_string().as_bytes());
+                env::log(self.orders_buy[i].datetime.to_string().as_bytes());
+                env::log(self.orders_buy[i].terms_conditions.to_string().as_bytes());
+            
                 self.order_history_buy.insert(&self.orders_buy[i].order_id, &OrderObject {
-                    offer_id:self.orders_buy[i].offer_id,
+                    offer_id: self.orders_buy[i].offer_id,
                     order_id: self.orders_buy[i].order_id,
                     owner_id: self.orders_buy[i].owner_id.to_string(),
                     signer_id: self.orders_buy[i].signer_id.to_string(),
