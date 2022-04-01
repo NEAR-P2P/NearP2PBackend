@@ -1108,12 +1108,12 @@ impl NearP2P {
         search_order(self.orders_buy, order_id, owner_id, signer_id)
     }
     
-    pub fn get_order_history_sell(self, user_id: Option<AccountId>, order_id: Option<i128>) -> Vec<OrderObject> {
-        search_order_history(self.order_history_sell, user_id, order_id)
+    pub fn get_order_history_sell(self, user_id: Option<AccountId>, order_id: Option<i128>, status: Option<i8>) -> Vec<OrderObject> {
+        search_order_history(self.order_history_sell, user_id, order_id, status)
     }
 
-    pub fn get_order_history_buy(self, user_id: Option<AccountId>, order_id: Option<i128>) -> Vec<OrderObject> {
-        search_order_history(self.order_history_buy, user_id, order_id)
+    pub fn get_order_history_buy(self, user_id: Option<AccountId>, order_id: Option<i128>, status: Option<i8>) -> Vec<OrderObject> {
+        search_order_history(self.order_history_buy, user_id, order_id, status)
     }
     
     
@@ -1183,20 +1183,20 @@ impl NearP2P {
                 self.orders_buy[i].status = 2;
                 env::log(b"Order buy Confirmation");
             } else if self.orders_buy[i].owner_id == env::signer_account_id().to_string() {
-                self.orders_buy[i].confirmation_owner_id = 0;
+                self.orders_buy[i].confirmation_owner_id = 1;
                 self.orders_buy[i].status = 2;
                 ////////////////////////////////////////////////////////////////////////////
                 /*   Aqui va el codigo para transferir los near a la cuenta del ownwe_id  */
                 ////////////////////////////////////////////////////////////////////////////
                 // let index = self.merchant.iter().position(|x| x.user_id == self.orders_buy[i].owner_id).expect("owner not merchant");
 
-                /*let mut index = self.merchant.iter().position(|x| x.user_id == self.orders_buy[i].owner_id.clone()).expect("owner not merchant");
+                let mut index = self.merchant.iter().position(|x| x.user_id == self.orders_buy[i].owner_id.clone()).expect("owner not merchant");
                 self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
                 self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
                 index = self.merchant.iter().position(|x| x.user_id == self.orders_buy[i].signer_id.clone()).expect("owner not merchant");
                 self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
                 self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
-                */
+                
                 // Promise::new(self.orders_buy[i].signer_id.to_string()).transfer(self.orders_buy[i].operation_amount * YOCTO_NEAR);
                 env::log(self.orders_buy[i].order_id.to_string().as_bytes());
                 env::log(self.orders_buy[i].offer_id.to_string().as_bytes());
@@ -1213,7 +1213,7 @@ impl NearP2P {
                 env::log(self.orders_buy[i].datetime.to_string().as_bytes());
                 env::log(self.orders_buy[i].terms_conditions.to_string().as_bytes());
             
-                self.order_history_buy.insert(&self.orders_buy[i].order_id.clone(), &OrderObject {
+                self.order_history_buy.insert(&(self.orders_buy[i].order_id as i128), &OrderObject {
                     offer_id: self.orders_buy[i].offer_id,
                     order_id: self.orders_buy[i].order_id,
                     owner_id: self.orders_buy[i].owner_id.to_string(),
@@ -1796,7 +1796,7 @@ fn search_order(data: Vec<OrderObject>,
     }).collect()
 }
 
-fn search_order_history(data: UnorderedMap<i128, OrderObject>, user_id: Option<AccountId>, order_id: Option<i128>) -> Vec<OrderObject> {
+fn search_order_history(data: UnorderedMap<i128, OrderObject>, user_id: Option<AccountId>, order_id: Option<i128>, status: Option<i8>) -> Vec<OrderObject> {
     let mut result = data.iter()
     .map(|(_k, s)| OrderObject {
         offer_id: s.offer_id,
@@ -1840,6 +1840,27 @@ fn search_order_history(data: UnorderedMap<i128, OrderObject>, user_id: Option<A
 
     if order_id.is_some() {
         result = data.iter().filter(|(k, _s)| *k == order_id.unwrap())
+                .map(|(_k, s)| OrderObject {
+                    offer_id: s.offer_id,
+                    order_id: s.order_id,
+                    owner_id: s.owner_id.clone(),
+                    signer_id: s.signer_id.clone(),
+                    exchange_rate: s.exchange_rate.clone(),
+                    operation_amount: s.operation_amount,
+                    payment_method: s.payment_method,
+                    fiat_method: s.fiat_method,
+                    confirmation_owner_id: s.confirmation_owner_id,
+                    confirmation_signer_id: s.confirmation_signer_id,
+                    confirmation_current: s.confirmation_current,
+                    time: s.time,
+                    datetime: s.datetime.clone(),
+                    terms_conditions: s.terms_conditions.clone(),
+                    status: s.status,
+                }).collect();
+    }
+
+    if status.is_some() {
+        result = data.iter().filter(|(_k, s)| s.status == status.unwrap())
                 .map(|(_k, s)| OrderObject {
                     offer_id: s.offer_id,
                     order_id: s.order_id,
