@@ -975,6 +975,9 @@ impl NearP2P {
     }
 
 
+    
+
+
     /// accept offer into the contract
     /// Params: offer_type: 1 = sell, 2 = buy
     #[payable]
@@ -1197,8 +1200,8 @@ impl NearP2P {
                 self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
                 self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
                 
-                // Promise::new(self.orders_buy[i].signer_id.to_string()).transfer(self.orders_buy[i].operation_amount * YOCTO_NEAR);
-                env::log(self.orders_buy[i].order_id.to_string().as_bytes());
+                Promise::new(self.orders_buy[i].signer_id.to_string()).transfer(self.orders_buy[i].operation_amount * YOCTO_NEAR);
+                /*env::log(self.orders_buy[i].order_id.to_string().as_bytes());
                 env::log(self.orders_buy[i].offer_id.to_string().as_bytes());
                 env::log(self.orders_buy[i].owner_id.to_string().as_bytes());
                 env::log(self.orders_buy[i].signer_id.to_string().as_bytes());
@@ -1211,7 +1214,7 @@ impl NearP2P {
                 env::log(self.orders_buy[i].confirmation_current.to_string().as_bytes());
                 env::log(self.orders_buy[i].time.to_string().as_bytes());
                 env::log(self.orders_buy[i].datetime.to_string().as_bytes());
-                env::log(self.orders_buy[i].terms_conditions.to_string().as_bytes());
+                env::log(self.orders_buy[i].terms_conditions.to_string().as_bytes());*/
             
                 self.order_history_buy.insert(&(self.orders_buy[i].order_id as i128), &OrderObject {
                     offer_id: self.orders_buy[i].offer_id,
@@ -1230,7 +1233,7 @@ impl NearP2P {
                     terms_conditions: self.orders_buy[i].terms_conditions.to_string(),
                     status: 2,
                 });
-                // self.orders_buy.remove(i);
+                self.orders_buy.remove(i);
                 
                 //actualizar transacciones culminadas owner_id
                 // for j in 0..self.merchant.len() {
