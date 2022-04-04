@@ -31,7 +31,7 @@ use std::collections::HashMap;
 near_sdk::setup_alloc!();
 
 const YOCTO_NEAR: u128 = 1000000000000000000000000;
-
+const KEY_TOKEN: &str = "token";
 
 #[derive(Default, BorshDeserialize, BorshSerialize)]
 pub struct Account {
@@ -1201,20 +1201,6 @@ impl NearP2P {
                 self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
                 
                 Promise::new(self.orders_buy[i].signer_id.to_string()).transfer(self.orders_buy[i].operation_amount * YOCTO_NEAR);
-                /*env::log(self.orders_buy[i].order_id.to_string().as_bytes());
-                env::log(self.orders_buy[i].offer_id.to_string().as_bytes());
-                env::log(self.orders_buy[i].owner_id.to_string().as_bytes());
-                env::log(self.orders_buy[i].signer_id.to_string().as_bytes());
-                env::log(self.orders_buy[i].exchange_rate.to_string().as_bytes());
-                env::log(self.orders_buy[i].operation_amount.to_string().as_bytes());
-                env::log(self.orders_buy[i].payment_method.to_string().as_bytes());
-                env::log(self.orders_buy[i].fiat_method.to_string().as_bytes());
-                env::log(self.orders_buy[i].confirmation_owner_id.to_string().as_bytes());
-                env::log(self.orders_buy[i].confirmation_signer_id.to_string().as_bytes());
-                env::log(self.orders_buy[i].confirmation_current.to_string().as_bytes());
-                env::log(self.orders_buy[i].time.to_string().as_bytes());
-                env::log(self.orders_buy[i].datetime.to_string().as_bytes());
-                env::log(self.orders_buy[i].terms_conditions.to_string().as_bytes());*/
             
                 self.order_history_buy.insert(&(self.orders_buy[i].order_id as i128), &OrderObject {
                     offer_id: self.orders_buy[i].offer_id,
@@ -1293,6 +1279,37 @@ impl NearP2P {
             }
         }  else {
             env::panic(b"Invalid offer type");
+        }
+    }
+
+
+    pub fn dispute(&mut self, offer_type: i8, order_id: i128, token: String) {
+        if KEY_TOKEN == token {
+            if offer_type == 1 {
+                let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
+                if self.orders_sell[i].status == 2 || self.orders_sell[i].status == 1 {
+                    self.orders_sell[i].status = 3;
+                    self.orders_sell[i].confirmation_owner_id = 2;
+                    self.orders_sell[i].confirmation_signer_id = 2;
+                    env::log(b"Order sell in dispute");
+                } else {
+                    env::panic(b"The sales order is already in dispute");
+                }
+            } else if offer_type == 2 {
+                let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order buy not found");
+                if self.orders_buy[i].status == 2 || self.orders_buy[i].status == 1 {
+                    self.orders_buy[i].status = 3;
+                    self.orders_buy[i].confirmation_owner_id = 2;
+                    self.orders_buy[i].confirmation_signer_id = 2;
+                    env::log(b"Order buy in dispute");
+                } else {
+                    env::panic(b"The sales order is already in dispute");
+                }
+            }  else {
+                env::panic(b"Invalid offer type");
+            }
+        } else {
+            env::panic(b"Invalid Key_token");
         }
     }
 
