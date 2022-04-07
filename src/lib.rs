@@ -31,7 +31,7 @@ use std::collections::HashMap;
 near_sdk::setup_alloc!();
 
 const YOCTO_NEAR: u128 = 1000000000000000000000000;
-const KEY_TOKEN: &str = "token";
+const KEY_TOKEN: &str = "161ldxfuXXOuzTPrpnNad08XCOF0ZNxK";
 
 #[derive(Default, BorshDeserialize, BorshSerialize)]
 pub struct Account {
@@ -240,11 +240,11 @@ impl Default for NearP2P {
         Self {
             accounts: UnorderedMap::new(b"a"),
             users: vec![UserObject {
-                user_id: "info.testnet".to_string(),
+                user_id: "p2p-testnet.testnet".to_string(),
                 name: "info".to_string(),
                 last_name: "info".to_string(),
                 phone: "0413-4158733".to_string(),
-                email: "info@gmail.com".to_string(),
+                email: "adominguez@dvconsultores.com".to_string(),
                 country: "Venezuela".to_string(),
                 mediator: true,
                 admin: true,
@@ -1940,7 +1940,7 @@ mod tests {
         testing_env!(context);
         //let attached_deposit = env::attached_deposit();
         let mut contract = NearP2P::default();
-        let account_id = "info.testnet".to_string();
+        let account_id = "p2p-testnet.testnet".to_string();
         let asset = "NEAR".to_string();
         let price = "14.5".to_string();
         let amount = "100".to_string();
@@ -1962,7 +1962,7 @@ mod tests {
         //let attached_deposit = env::attached_deposit();
         let mut contract = NearP2P::default();
         let escrow_account_id = env::predecessor_account_id();
-        let account_id = "info.testnet".to_string();
+        let account_id = "p2p-testnet.testnet".to_string();
         //contract.lock(account_id.to_string());
         //print!("Locked balance: {}", contract.get_locked_balance(account_id.to_string(), escrow_account_id));
     }
