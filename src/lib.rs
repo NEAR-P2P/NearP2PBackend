@@ -31,7 +31,7 @@ use std::collections::HashMap;
 near_sdk::setup_alloc!();
 
 const YOCTO_NEAR: u128 = 1000000000000000000000000;
-const KEY_TOKEN: &str = "qbogcyqiqO7Utwqm3VgKhxrmQIc0ROjj";
+const KEY_TOKEN: &str = "xx";
 
 #[derive(Default, BorshDeserialize, BorshSerialize)]
 pub struct Account {
