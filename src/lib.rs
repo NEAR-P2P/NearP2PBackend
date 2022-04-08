@@ -1004,6 +1004,14 @@ impl NearP2P {
                         if remaining == 0 {
                             self.offers_sell[i].status = 2;
                         }
+                        
+                        if self.offers_sell[i].max_limit as u128 > remaining {
+                            self.offers_sell[i].max_limit = remaining as f64;
+                        }
+                        if self.offers_sell[i].min_limit as u128 > remaining {
+                            self.offers_sell[i].min_limit = 1.0;
+                        }
+
                         self.offers_sell[i].remaining_amount = remaining;
                         self.order_sell_id += 1;
                         let data = OrderObject {
@@ -1056,6 +1064,14 @@ impl NearP2P {
                         if remaining == 0 {
                             self.offers_buy[i].status = 2;
                         }
+
+                        if self.offers_buy[i].max_limit as u128 > remaining {
+                            self.offers_buy[i].max_limit = remaining as f64;
+                        }
+                        if self.offers_buy[i].min_limit as u128 > remaining {
+                            self.offers_buy[i].min_limit = 1.0;
+                        }
+
                         self.offers_buy[i].remaining_amount = remaining;
                         self.order_buy_id += 1;
                         let data = OrderObject {
@@ -1143,7 +1159,9 @@ impl NearP2P {
                 self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
                 self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
 
-                Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(self.orders_sell[i].operation_amount * YOCTO_NEAR);
+                let fee_deducted = (self.orders_sell[i].operation_amount * YOCTO_NEAR) * (0.003 as u128 / 10_000u128);
+                
+                Promise::new(self.orders_sell[i].owner_id.to_string()).transfer((self.orders_sell[i].operation_amount * YOCTO_NEAR) - fee_deducted);
 
                 self.order_history_sell.insert(&self.orders_sell[i].order_id, &OrderObject {
                     offer_id:self.orders_sell[i].offer_id,
@@ -1185,7 +1203,9 @@ impl NearP2P {
                 self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
                 self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
                 
-                Promise::new(self.orders_buy[i].signer_id.to_string()).transfer(self.orders_buy[i].operation_amount * YOCTO_NEAR);
+                let fee_deducted = (self.orders_buy[i].operation_amount * YOCTO_NEAR) * (0.003 as u128 / 10_000u128);
+
+                Promise::new(self.orders_buy[i].signer_id.to_string()).transfer((self.orders_buy[i].operation_amount * YOCTO_NEAR) - fee_deducted);
             
                 self.order_history_buy.insert(&self.orders_buy[i].order_id, &OrderObject {
                     offer_id: self.orders_buy[i].offer_id,
