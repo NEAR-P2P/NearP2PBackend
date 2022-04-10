@@ -61,7 +61,6 @@ pub struct UserObject {
     email: String,
     country: String,
     mediator: bool,
-    admin: bool,
     is_active: bool,
 }
 
@@ -239,6 +238,8 @@ pub struct NearP2P {
     pub fiat_method_id: i128,
 
     pub royalties: Vec<RoyaltiesObject>,
+
+    pub administrators: Vec<AccountId>,
 }
 
 /// Initializing deafult impl
@@ -255,7 +256,6 @@ impl Default for NearP2P {
                 email: "adominguez@dvconsultores.com".to_string(),
                 country: "Venezuela".to_string(),
                 mediator: true,
-                admin: true,
                 is_active: true,
             }],
             offers_sell: Vec::new(),
@@ -286,6 +286,9 @@ impl Default for NearP2P {
                             {RoyaltiesObject { account_id: "hrpalencia.testnet".to_string(), percentage: 0}},
                             {RoyaltiesObject { account_id: "info.testnet".to_string(), percentage: 0}},
                         ],
+            administrators: vec![
+                            "info.testnet".to_string(),
+                        ],
         }
     }
 }
@@ -293,6 +296,21 @@ impl Default for NearP2P {
 /// Implementing Struct
 #[near_bindgen]
 impl NearP2P {
+
+    pub fn set_admin(&mut self, user_id: AccountId) {      
+        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
+        let valid = self.administrators.iter().find(|&x| x == &user_id);
+        if valid.is_some() {
+            env::panic(b"the user is already in the list of administrators");
+        }
+        self.administrators.push(user_id);
+    }
+
+    pub fn delete_admin(&mut self, user_id: AccountId) {      
+        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
+        let index = self.administrators.iter().position(|x| x == &user_id.to_string()).expect("the user is not in the list of administrators");
+        self.administrators.remove(index);
+    }
 
     /// Returns the users object loaded in contract
     /// Params: user_id: AccountId
@@ -308,7 +326,6 @@ impl NearP2P {
                 email: x.email.to_string(),
                 country: x.country.to_string(),
                 mediator: x.mediator,
-                admin: x.admin,
                 is_active: x.is_active,
             }).collect()
         } else {
@@ -339,7 +356,6 @@ impl NearP2P {
             email: email.to_string(),
             country: country.to_string(),
             mediator: false,
-            admin: false,
             is_active: true,
         };
         self.users.push(data);
@@ -375,7 +391,6 @@ impl NearP2P {
                 self.users[i].email = email.to_string();
                 self.users[i].country = country.to_string();
                 self.users[i].mediator = self.users[i].mediator;
-                self.users[i].admin = self.users[i].admin;
                 self.users[i].is_active = self.users[i].is_active;
             }
         }
@@ -389,30 +404,19 @@ impl NearP2P {
         , email: String
         , country: String
         , mediator: bool
-        , admin: bool
-        , is_active: bool) {
-        for i in 0..self.users.len() {    
-            if self.users[i].user_id == env::signer_account_id().to_string() {
-                if self.users[i].admin == true {
-                    for i in 0..self.users.len() {
-                        if self.users[i].user_id == user_id {
-                            self.users[i].name = name.to_string();
-                            self.users[i].last_name = last_name.to_string();
-                            self.users[i].phone = phone.to_string();
-                            self.users[i].email = email.to_string();
-                            self.users[i].country = country.to_string();
-                            self.users[i].mediator = mediator;
-                            self.users[i].admin = admin;
-                            self.users[i].is_active = is_active;
-                            break;
-                        }
-                    }
-                    env::log(b"User Updated");
-                }
-                break;
-            }
-        }
-
+        , is_active: bool
+    ) {
+        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
+        let i = self.users.iter().position(|x| x.user_id == user_id.to_string()).expect("the user is not in the list of users");
+        self.users[i].name = name.to_string();
+        self.users[i].last_name = last_name.to_string();
+        self.users[i].phone = phone.to_string();
+        self.users[i].email = email.to_string();
+        self.users[i].country = country.to_string();
+        self.users[i].mediator = mediator;
+        self.users[i].is_active = is_active;
+                            
+        env::log(b"User Updated");
     }
 
     /// Returns the order object loaded in contract
@@ -443,7 +447,8 @@ impl NearP2P {
         , payment_method: Vec<PaymentMethodsOfferObject>
         , fiat_method: i128
         , time: i64
-        , terms_conditions: String) -> i128{
+        , terms_conditions: String
+    ) -> i128 {
         self.offer_sell_id += 1;
         let mut merchant_valid: bool = false;
         match self.merchant.iter().find(|x| x.is_merchant == true && x.user_id == owner_id.to_string()) {
@@ -482,7 +487,8 @@ impl NearP2P {
         , payment_method: Option<Vec<PaymentMethodsOfferObject>>
         , fiat_method: Option<i128>
         , time: Option<i64>
-        , terms_conditions: Option<String>) -> OfferObject {
+        , terms_conditions: Option<String>
+    ) -> OfferObject {
         let offer = self.offers_sell.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id().to_string()).expect("Offer not found");
         if asset.is_some() {
             self.offers_sell[offer].asset = asset.unwrap();
@@ -567,7 +573,8 @@ impl NearP2P {
         , payment_method: Vec<PaymentMethodsOfferObject>
         , fiat_method: i128
         , time: i64
-        , terms_conditions: String) -> i128{
+        , terms_conditions: String
+    ) -> i128{
         let attached_deposit = env::attached_deposit();
         assert!(
             (attached_deposit / YOCTO_NEAR) >= amount,
@@ -611,7 +618,8 @@ impl NearP2P {
         , payment_method: Option<Vec<PaymentMethodsOfferObject>>
         , fiat_method: Option<i128>
         , time: Option<i64>
-        , terms_conditions: Option<String>) -> OfferObject {
+        , terms_conditions: Option<String>
+    ) -> OfferObject {
         let offer = self.offers_buy.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id().to_string()).expect("Offer not found");
         if asset.is_some() {
             self.offers_buy[offer].asset = asset.unwrap();
@@ -699,8 +707,9 @@ impl NearP2P {
         , total_orders: i64
         , orders_completed: i64 
         , badge: String
-        , is_merchant: bool) {
-        self.users.iter().find(|x| x.user_id == env::signer_account_id().to_string() && x.admin == true).expect("User not admin");
+        , is_merchant: bool
+    ) {
+        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
             
         let i = self.merchant.iter().position(|x| x.user_id == user_id.to_string()).expect("Merchant not found");
         self.merchant[i].total_orders = total_orders;
@@ -709,15 +718,6 @@ impl NearP2P {
         self.merchant[i].badge = badge.to_string();
         self.merchant[i].is_merchant = is_merchant;
 
-        /*for i in 0..self.merchant.len() {
-            if self.merchant[i].user_id == user_id {
-                self.merchant[i].total_orders = total_orders;
-                self.merchant[i].orders_completed = orders_completed;
-                self.merchant[i].percentaje_completion = (orders_completed as f64 / total_orders as f64) * 100.0;
-                self.merchant[i].badge = badge.to_string();
-                self.merchant[i].is_merchant = is_merchant;
-            }
-        }*/
         env::log(b"Merchant Updated");
     }
 
@@ -738,8 +738,9 @@ impl NearP2P {
         , input2: String
         , input3: String
         , input4: String
-        , input5: String) -> i128 {
-        self.users.iter().find(|x| x.user_id == env::signer_account_id().to_string() && x.admin == true).expect("User not admin");
+        , input5: String
+    ) -> i128 {
+        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
         self.payment_method_id += 1;
         let data = PaymentMethodsObject {
             id: self.payment_method_id,
@@ -764,8 +765,9 @@ impl NearP2P {
         , input2: String
         , input3: String
         , input4: String
-        , input5: String) {
-        self.users.iter().find(|x| x.user_id == env::signer_account_id().to_string() && x.admin == true).expect("User not admin");
+        , input5: String
+    ) {
+        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
         //self.payment_method[0].payment_method = String::from("Transferencia Bancaria 2");
         for i in 0..self.payment_method.len() {
             if self.payment_method.get(i).unwrap().id == id {
@@ -796,7 +798,7 @@ impl NearP2P {
     /// delete the Payment Method object into the contract
     /// Params: id: i128
     pub fn delete_payment_method(&mut self, id: i128) {
-        self.users.iter().find(|x| x.user_id == env::signer_account_id().to_string() && x.admin == true).expect("User not admin");
+        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
         for i in 0..self.payment_method.len() {
             if self.payment_method.get(i).unwrap().id == id {
                 self.payment_method.remove(i);
@@ -823,7 +825,7 @@ impl NearP2P {
     /// Params: fiat_method_id: String, flagcdn: String
     /// List of fiat methods, will be called by the user
     pub fn set_fiat_method(&mut self, fiat_method: String, flagcdn: String) -> i128 {
-        self.users.iter().find(|x| x.user_id == env::signer_account_id().to_string() && x.admin == true).expect("User not admin");
+        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
         self.fiat_method_id += 1;
         let data = FiatMethodsObject {
             id: self.fiat_method_id,
@@ -838,8 +840,9 @@ impl NearP2P {
     /// Put the Fiat Method object into the contract
     /// Params: id: i128, fiat_method: String, flagcdn: String
     pub fn put_fiat_method(&mut self, id: i128
-        , fiat_method: String, flagcdn: String) {
-        self.users.iter().find(|x| x.user_id == env::signer_account_id().to_string() && x.admin == true).expect("User not admin");
+        , fiat_method: String, flagcdn: String
+    ) {
+        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
         for i in 0..self.fiat_method.len() {
             if self.fiat_method.get(i).unwrap().id == id {
                 self.fiat_method[i].fiat_method = fiat_method.to_string();
@@ -852,7 +855,7 @@ impl NearP2P {
     /// Delete the Fiat Method object into the contract
     /// Params: id: i128
     pub fn delete_fiat_method(&mut self, id: i128) {
-        self.users.iter().find(|x| x.user_id == env::signer_account_id().to_string() && x.admin == true).expect("User not admin");
+        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
         for i in 0..self.fiat_method.len() {
             if self.fiat_method.get(i).unwrap().id == id {
                 self.fiat_method.remove(i);
