@@ -181,6 +181,12 @@ pub struct FiatMethodsObject {
     flagcdn: String,
 }
 
+#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize)]
+#[serde(crate = "near_sdk::serde")]
+pub struct RoyaltiesObject {
+    account_id: String,
+    percentage: u128,
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /// Objects Definition////////////////////////////////////////////////////////////////////////////
@@ -231,6 +237,8 @@ pub struct NearP2P {
     pub fiat_method: Vec<FiatMethodsObject>,
     // Payment Method Id
     pub fiat_method_id: i128,
+
+    pub royalties: Vec<RoyaltiesObject>,
 }
 
 /// Initializing deafult impl
@@ -274,6 +282,10 @@ impl Default for NearP2P {
             payment_method_id: 0,
             fiat_method: Vec::new(),
             fiat_method_id: 0,
+            royalties: vec![
+                            {RoyaltiesObject { account_id: "hrpalencia.testnet".to_string(), percentage: 0}},
+                            {RoyaltiesObject { account_id: "info.testnet".to_string(), percentage: 0}},
+                        ],
         }
     }
 }
@@ -1163,6 +1175,13 @@ impl NearP2P {
                 
                 Promise::new(self.orders_sell[i].owner_id.to_string()).transfer((self.orders_sell[i].operation_amount * YOCTO_NEAR) - fee_deducted);
 
+                let percentage =  fee_deducted / self.royalties.len() as u128;
+
+                for i in 0..self.royalties.len() {
+                    Promise::new(self.royalties[i].account_id.to_string()).transfer(percentage);
+                }
+
+                
                 self.order_history_sell.insert(&self.orders_sell[i].order_id, &OrderObject {
                     offer_id:self.orders_sell[i].offer_id,
                     order_id: self.orders_sell[i].order_id,
@@ -1206,6 +1225,12 @@ impl NearP2P {
                 let fee_deducted = (self.orders_buy[i].operation_amount * YOCTO_NEAR) * (0.003 as u128 / 10_000u128);
 
                 Promise::new(self.orders_buy[i].signer_id.to_string()).transfer((self.orders_buy[i].operation_amount * YOCTO_NEAR) - fee_deducted);
+
+                let percentage =  fee_deducted / self.royalties.len() as u128;
+
+                for i in 0..self.royalties.len() {
+                    Promise::new(self.royalties[i].account_id.to_string()).transfer(percentage);
+                }
             
                 self.order_history_buy.insert(&self.orders_buy[i].order_id, &OrderObject {
                     offer_id: self.orders_buy[i].offer_id,
