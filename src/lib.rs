@@ -25,7 +25,7 @@ use serde::Serialize;
 use serde::Deserialize;
 // use near_sdk::collections::UnorderedMap;
 use near_sdk::{env, near_bindgen, AccountId, Balance, Promise, assert_one_yocto}; // json_types::U128, 
-use std::collections::HashMap;
+// use std::collections::HashMap;
 // use near_sdk::json_types::ValidAccountId;
 
 near_sdk::setup_alloc!();
@@ -211,9 +211,9 @@ pub struct NearP2P {
     //Order object
     pub order_buy_id: i128,
     //Order History sell
-    pub order_history_sell: HashMap<i128, OrderObject>,
+    pub order_history_sell: Vec<OrderObject>,
     //Order History buy
-    pub order_history_buy: HashMap<i128, OrderObject>,
+    pub order_history_buy: Vec<OrderObject>,
     ///Merchant object
     pub merchant: Vec<MerchantObject>,
     ///Payment Method object
@@ -255,8 +255,8 @@ impl Default for NearP2P {
             order_sell_id: 0,
             orders_buy: Vec::new(),
             order_buy_id: 0,
-            order_history_sell: HashMap::new(),
-            order_history_buy: HashMap::new(),
+            order_history_sell: Vec::new(),
+            order_history_buy: Vec::new(),
             merchant: vec![MerchantObject {
                 user_id: "info.testnet".to_string(),
                 total_orders: 0,
@@ -1187,7 +1187,7 @@ impl NearP2P {
                     status: 2,
                 };
                 
-                self.order_history_sell.insert(self.orders_sell[i].order_id, data);
+                self.order_history_sell.push(data);
                 
                 self.orders_sell.remove(i);
                 
@@ -1241,7 +1241,7 @@ impl NearP2P {
                     status: 2,
                 };
 
-                self.order_history_buy.insert(self.orders_buy[i].order_id.clone(), data);
+                self.order_history_buy.push(data);
                 self.orders_buy.remove(i);
                 
                 env::log(b"Order buy Completed");
@@ -1361,7 +1361,7 @@ impl NearP2P {
                     status: 4,
                 };
 
-                self.order_history_sell.insert(self.orders_sell[i].order_id, data);
+                self.order_history_sell.push(data);
     
                 self.offers_sell[j].remaining_amount = self.offers_sell[j].remaining_amount + self.orders_sell[i].operation_amount;
                 self.offers_sell[j].status = 1;
@@ -1411,7 +1411,7 @@ impl NearP2P {
                     status: 4,
                 };
 
-                self.order_history_buy.insert(self.orders_buy[i].order_id, data);
+                self.order_history_buy.push(data);
                 
                 self.offers_buy[j].remaining_amount = self.offers_buy[j].remaining_amount + self.orders_buy[i].operation_amount;
                 self.offers_buy[j].status = 1;
@@ -1871,9 +1871,9 @@ fn search_order(data: Vec<OrderObject>,
     result
 }
 
-fn search_order_history(data: HashMap<i128, OrderObject>, user_id: Option<AccountId>, order_id: Option<i128>, status: Option<i8>) -> Vec<OrderObject> {
+fn search_order_history(data: Vec<OrderObject>, user_id: Option<AccountId>, order_id: Option<i128>, status: Option<i8>) -> Vec<OrderObject> {
     let mut result = data.iter()
-    .map(|(_k, s)| OrderObject {
+    .map(|s| OrderObject {
         offer_id: s.offer_id,
         order_id: s.order_id,
         owner_id: s.owner_id.clone(),
@@ -1893,8 +1893,8 @@ fn search_order_history(data: HashMap<i128, OrderObject>, user_id: Option<Accoun
 
     if user_id.is_some() {
         let user = user_id.unwrap().clone();
-        result = data.iter().filter(|(_k, s)| s.owner_id == user.to_string() || s.signer_id == user.to_string())
-                .map(|(_k, s)| OrderObject {
+        result = data.iter().filter(|s| s.owner_id == user.to_string() || s.signer_id == user.to_string())
+                .map(|s| OrderObject {
                     offer_id: s.offer_id,
                     order_id: s.order_id,
                     owner_id: s.owner_id.clone(),
@@ -1914,8 +1914,8 @@ fn search_order_history(data: HashMap<i128, OrderObject>, user_id: Option<Accoun
     }
 
     if order_id.is_some() {
-        result = data.iter().filter(|(&k, _s)| k == order_id.unwrap())
-                .map(|(_k, s)| OrderObject {
+        result = data.iter().filter(|s| s.order_id == order_id.unwrap())
+                .map(|s| OrderObject {
                     offer_id: s.offer_id,
                     order_id: s.order_id,
                     owner_id: s.owner_id.clone(),
@@ -1935,8 +1935,8 @@ fn search_order_history(data: HashMap<i128, OrderObject>, user_id: Option<Accoun
     }
 
     if status.is_some() {
-        result = data.iter().filter(|(_k, s)| s.status == status.unwrap())
-                .map(|(_k, s)| OrderObject {
+        result = data.iter().filter(|s| s.status == status.unwrap())
+                .map(|s| OrderObject {
                     offer_id: s.offer_id,
                     order_id: s.order_id,
                     owner_id: s.owner_id.clone(),
