@@ -1122,13 +1122,13 @@ impl NearP2P {
     }
 
 
-    pub fn get_order_sell(self, order_id: Option<i128>, owner_id: Option<AccountId>, signer_id: Option<AccountId>) -> Vec<OrderObject> {
-        search_order(self.orders_sell, order_id, owner_id, signer_id)
+    pub fn get_order_sell(self, order_id: Option<i128>, offer_id: Option<i128>, owner_id: Option<AccountId>, signer_id: Option<AccountId>, status: Option<i8>) -> Vec<OrderObject> {
+        search_order(self.orders_sell, order_id, offer_id, owner_id, signer_id, status)
     }
 
 
-    pub fn get_order_buy(self, order_id: Option<i128>, owner_id: Option<AccountId>, signer_id: Option<AccountId>) -> Vec<OrderObject> {
-        search_order(self.orders_buy, order_id, owner_id, signer_id)
+    pub fn get_order_buy(self, order_id: Option<i128>, offer_id: Option<i128>, owner_id: Option<AccountId>, signer_id: Option<AccountId>, status: Option<i8>) -> Vec<OrderObject> {
+        search_order(self.orders_buy, order_id, offer_id, owner_id, signer_id, status)
     }
     
     pub fn get_order_history_sell(self, user_id: Option<AccountId>, order_id: Option<i128>, status: Option<i8>) -> Vec<OrderObject> {
@@ -1739,10 +1739,55 @@ fn search_offer(data: Vec<OfferObject>,
 
 fn search_order(data: Vec<OrderObject>,
     order_id: Option<i128>,
+    offer_id: Option<i128>,
     owner_id: Option<AccountId>,
-    signer_id: Option<AccountId>
+    signer_id: Option<AccountId>,
+    status: Option<i8>,
 ) -> Vec<OrderObject> {
     let mut result: Vec<OrderObject> = data;
+    
+    if order_id.is_some() {
+        result = result.iter().filter(|x| x.order_id == order_id.unwrap())
+                    .map(|r| OrderObject {
+                        offer_id: r.offer_id,
+                        order_id: r.order_id,
+                        owner_id: r.owner_id.clone(),
+                        signer_id: r.signer_id.clone(),
+                        exchange_rate: r.exchange_rate.clone(),
+                        operation_amount: r.operation_amount,
+                        payment_method: r.payment_method,
+                        fiat_method: r.fiat_method,
+                        confirmation_owner_id: r.confirmation_owner_id,
+                        confirmation_signer_id: r.confirmation_signer_id,
+                        confirmation_current: r.confirmation_current,
+                        time: r.time,
+                        datetime: r.datetime.clone(),
+                        terms_conditions: r.terms_conditions.clone(),
+                        status: r.status,
+                    }).collect();
+    }
+    
+    if offer_id.is_some() {
+        result = result.iter().filter(|x| x.offer_id == offer_id.unwrap())
+                    .map(|r| OrderObject {
+                        offer_id: r.offer_id,
+                        order_id: r.order_id,
+                        owner_id: r.owner_id.clone(),
+                        signer_id: r.signer_id.clone(),
+                        exchange_rate: r.exchange_rate.clone(),
+                        operation_amount: r.operation_amount,
+                        payment_method: r.payment_method,
+                        fiat_method: r.fiat_method,
+                        confirmation_owner_id: r.confirmation_owner_id,
+                        confirmation_signer_id: r.confirmation_signer_id,
+                        confirmation_current: r.confirmation_current,
+                        time: r.time,
+                        datetime: r.datetime.clone(),
+                        terms_conditions: r.terms_conditions.clone(),
+                        status: r.status,
+                    }).collect();
+    }
+
     if owner_id.is_some() {
         let user = owner_id.unwrap().clone();
         result = result.iter().filter(|x| x.owner_id == user.to_string())
@@ -1787,8 +1832,8 @@ fn search_order(data: Vec<OrderObject>,
                     }).collect();
     }
     
-    if order_id.is_some() {
-        result = result.iter().filter(|x| x.order_id == order_id.unwrap())
+    if status.is_some() {
+        result = result.iter().filter(|x| x.status == status.unwrap())
                     .map(|r| OrderObject {
                         offer_id: r.offer_id,
                         order_id: r.order_id,
@@ -1806,25 +1851,9 @@ fn search_order(data: Vec<OrderObject>,
                         terms_conditions: r.terms_conditions.clone(),
                         status: r.status,
                     }).collect();
-    } 
+    }
 
-    result.iter().map(|r| OrderObject {
-        offer_id: r.offer_id,
-        order_id: r.order_id,
-        owner_id: r.owner_id.clone(),
-        signer_id: r.signer_id.clone(),
-        exchange_rate: r.exchange_rate.clone(),
-        operation_amount: r.operation_amount,
-        payment_method: r.payment_method,
-        fiat_method: r.fiat_method,
-        confirmation_owner_id: r.confirmation_owner_id,
-        confirmation_signer_id: r.confirmation_signer_id,
-        confirmation_current: r.confirmation_current,
-        time: r.time,
-        datetime: r.datetime.clone(),
-        terms_conditions: r.terms_conditions.clone(),
-        status: r.status,
-    }).collect()
+    result
 }
 
 fn search_order_history(data: UnorderedMap<i128, OrderObject>, user_id: Option<AccountId>, order_id: Option<i128>, status: Option<i8>) -> Vec<OrderObject> {
