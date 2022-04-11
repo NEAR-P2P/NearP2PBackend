@@ -1145,11 +1145,15 @@ impl NearP2P {
             let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
             if self.orders_sell[i].owner_id == env::signer_account_id().to_string() {
                 self.orders_sell[i].confirmation_owner_id = 1;
-                self.orders_sell[i].status = 2;
+                if self.orders_sell[i].status == 0 {
+                    self.orders_sell[i].status = 2;
+                }
                 env::log(b"Order sell Confirmation");
             } else if self.orders_sell[i].signer_id == env::signer_account_id().to_string() {
                 self.orders_sell[i].confirmation_signer_id = 1;
-                self.orders_sell[i].status = 2;
+                if self.orders_sell[i].status == 0 {
+                    self.orders_sell[i].status = 2;
+                }
 
                 let mut index = self.merchant.iter().position(|x| x.user_id == self.orders_sell[i].owner_id.clone()).expect("owner not merchant");
                 self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
@@ -1195,11 +1199,15 @@ impl NearP2P {
             let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order buy not found");
             if self.orders_buy[i].signer_id == env::signer_account_id().to_string() {
                 self.orders_buy[i].confirmation_signer_id = 1;
-                self.orders_buy[i].status = 2;
+                if self.orders_buy[i].status == 0 {
+                    self.orders_buy[i].status = 2;
+                }
                 env::log(b"Order buy Confirmation");
             } else if self.orders_buy[i].owner_id == env::signer_account_id().to_string() {
                 self.orders_buy[i].confirmation_owner_id = 1;
-                self.orders_buy[i].status = 2;
+                if self.orders_buy[i].status == 0 {
+                    self.orders_buy[i].status = 2;
+                }
 
                 let mut index = self.merchant.iter().position(|x| x.user_id == self.orders_buy[i].owner_id.clone()).expect("owner not merchant");
                 self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
