@@ -1429,10 +1429,9 @@ impl NearP2P {
 
     /// 
     /// Params: offer_type: 1 = sell, 2 = buy
-    #[payable]
+    /* #[payable]
     pub fn order_confirmation_dispute(&mut self, offer_type: i8, order_id: i128, confirmation: bool) -> String {
         assert_one_yocto();
-        let mut tranfer_valid = false;
         for i in 0..self.users.len() {    
             if self.users[i].user_id == env::signer_account_id().to_string() {
                 if self.users[i].admin == true || self.users[i].mediator == true {
@@ -1441,7 +1440,6 @@ impl NearP2P {
                             ////////////////////////////////////////////////////////////////////////////
                             /* Aqui va el codigo para transferir los near a la cuenta del "ownwe_id" */
                             ///////////////////////////////////////////////////////////////////////////
-                            // let mut tranfer_valid = false;
                             for i in 0..self.orders_sell.len() {
                                 if self.orders_sell.get(i).unwrap().order_id == order_id {
                                     Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(self.orders_sell[i].operation_amount * YOCTO_NEAR);
@@ -1585,7 +1583,7 @@ impl NearP2P {
             }
         }
         env::panic(b"the user does not have permission");
-    }
+    } */
 
 }
 
