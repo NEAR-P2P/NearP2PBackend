@@ -23,7 +23,7 @@ Develop by GlobalDv @2022
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use serde::Serialize;
 use serde::Deserialize;
-use near_sdk::collections::UnorderedMap;
+// use near_sdk::collections::UnorderedMap;
 use near_sdk::{env, near_bindgen, AccountId, Balance, Promise, assert_one_yocto}; // json_types::U128, 
 use std::collections::HashMap;
 // use near_sdk::json_types::ValidAccountId;
@@ -33,7 +33,7 @@ near_sdk::setup_alloc!();
 const YOCTO_NEAR: u128 = 1000000000000000000000000;
 const KEY_TOKEN: &str = "1";
 
-#[derive(Default, BorshDeserialize, BorshSerialize)]
+/*#[derive(Default, BorshDeserialize, BorshSerialize)]
 pub struct Account {
     /// Current unlocked balance.
     pub balance: Balance,
@@ -41,7 +41,7 @@ pub struct Account {
     pub allowances: HashMap<AccountId, Balance>,
     /// Allowed account to locked balance.
     pub locked_balances: HashMap<AccountId, Balance>,
-}
+}*/
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /// Objects Definition////////////////////////////////////////////////////////////////////////////
@@ -189,10 +189,9 @@ pub struct FiatMethodsObject {
 Near P2P Struct
 */
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize)]
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
 pub struct NearP2P {
-    /// AccountID -> Account details.
-    pub accounts: UnorderedMap<AccountId, Account>,
     // Users
     pub users: Vec<UserObject>,
     ///Offer object
@@ -211,12 +210,10 @@ pub struct NearP2P {
     pub orders_buy: Vec<OrderObject>,
     //Order object
     pub order_buy_id: i128,
-    //Order History
-    pub order_history: UnorderedMap<i8, OrderObject>,
     //Order History sell
-    pub order_history_sell: UnorderedMap<i128, OrderObject>,
+    pub order_history_sell: HashMap<i128, OrderObject>,
     //Order History buy
-    pub order_history_buy: UnorderedMap<i128, OrderObject>,
+    pub order_history_buy: HashMap<i128, OrderObject>,
     ///Merchant object
     pub merchant: Vec<MerchantObject>,
     ///Payment Method object
@@ -240,7 +237,6 @@ pub struct NearP2P {
 impl Default for NearP2P {
     fn default() -> Self {
         Self {
-            accounts: UnorderedMap::new(b"a"),
             users: vec![UserObject {
                 user_id: "p2p-testnet.testnet".to_string(),
                 name: "info".to_string(),
@@ -259,9 +255,8 @@ impl Default for NearP2P {
             order_sell_id: 0,
             orders_buy: Vec::new(),
             order_buy_id: 0,
-            order_history: UnorderedMap::new(b"s".to_vec()),
-            order_history_sell: UnorderedMap::new(b"0".to_vec()),
-            order_history_buy: UnorderedMap::new(b"0".to_vec()),
+            order_history_sell: HashMap::new(),
+            order_history_buy: HashMap::new(),
             merchant: vec![MerchantObject {
                 user_id: "info.testnet".to_string(),
                 total_orders: 0,
@@ -1188,7 +1183,7 @@ impl NearP2P {
                     status: 2,
                 };
                 
-                self.order_history_sell.insert(&self.orders_sell[i].order_id, &data);
+                self.order_history_sell.insert(self.orders_sell[i].order_id, data);
                 
                 self.orders_sell.remove(i);
                 
@@ -1238,7 +1233,7 @@ impl NearP2P {
                     status: 2,
                 };
 
-                self.order_history_buy.insert(&self.orders_buy[i].order_id.clone(), &data);
+                self.order_history_buy.insert(self.orders_buy[i].order_id.clone(), data);
                 self.orders_buy.remove(i);
                 
                 env::log(b"Order buy Completed");
@@ -1338,7 +1333,7 @@ impl NearP2P {
                 self.orders_sell[i].status = 4;
                 Promise::new(self.orders_sell[i].signer_id.to_string()).transfer(self.orders_sell[i].operation_amount * YOCTO_NEAR);
 
-                self.order_history_sell.insert(&self.orders_sell[i].order_id, &OrderObject {
+                let data = OrderObject {
                     offer_id:self.orders_sell[i].offer_id,
                     order_id: self.orders_sell[i].order_id,
                     owner_id: self.orders_sell[i].owner_id.to_string(),
@@ -1354,7 +1349,9 @@ impl NearP2P {
                     datetime: self.orders_sell[i].datetime.to_string(),
                     terms_conditions: self.orders_sell[i].terms_conditions.to_string(),
                     status: 4,
-                });
+                };
+
+                self.order_history_sell.insert(self.orders_sell[i].order_id, data);
     
                 self.offers_sell[j].remaining_amount = self.offers_sell[j].remaining_amount + self.orders_sell[i].operation_amount;
                 self.offers_sell[j].status = 1;
@@ -1380,7 +1377,7 @@ impl NearP2P {
 
                 Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(self.orders_sell[i].operation_amount * YOCTO_NEAR);
 
-                self.order_history_buy.insert(&self.orders_buy[i].order_id, &OrderObject {
+                let data = OrderObject {
                     offer_id:self.orders_sell[i].offer_id,
                     order_id: self.orders_sell[i].order_id,
                     owner_id: self.orders_sell[i].owner_id.to_string(),
@@ -1396,7 +1393,9 @@ impl NearP2P {
                     datetime: self.orders_sell[i].datetime.to_string(),
                     terms_conditions: self.orders_sell[i].terms_conditions.to_string(),
                     status: 4,
-                });
+                };
+
+                self.order_history_buy.insert(self.orders_buy[i].order_id, data);
                 
                 self.offers_buy[j].remaining_amount = self.offers_buy[j].remaining_amount + self.orders_buy[i].operation_amount;
                 self.offers_buy[j].status = 1;
@@ -1856,7 +1855,7 @@ fn search_order(data: Vec<OrderObject>,
     result
 }
 
-fn search_order_history(data: UnorderedMap<i128, OrderObject>, user_id: Option<AccountId>, order_id: Option<i128>, status: Option<i8>) -> Vec<OrderObject> {
+fn search_order_history(data: HashMap<i128, OrderObject>, user_id: Option<AccountId>, order_id: Option<i128>, status: Option<i8>) -> Vec<OrderObject> {
     let mut result = data.iter()
     .map(|(_k, s)| OrderObject {
         offer_id: s.offer_id,
@@ -1899,7 +1898,7 @@ fn search_order_history(data: UnorderedMap<i128, OrderObject>, user_id: Option<A
     }
 
     if order_id.is_some() {
-        result = data.iter().filter(|(k, _s)| *k == order_id.unwrap())
+        result = data.iter().filter(|(&k, _s)| k == order_id.unwrap())
                 .map(|(_k, s)| OrderObject {
                     offer_id: s.offer_id,
                     order_id: s.order_id,
