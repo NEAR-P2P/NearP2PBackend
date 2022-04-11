@@ -180,13 +180,6 @@ pub struct FiatMethodsObject {
     flagcdn: String,
 }
 
-#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize)]
-#[serde(crate = "near_sdk::serde")]
-pub struct RoyaltiesObject {
-    account_id: String,
-    percentage: u128,
-}
-
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /// Objects Definition////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -237,7 +230,7 @@ pub struct NearP2P {
     // Payment Method Id
     pub fiat_method_id: i128,
 
-    pub royalties: Vec<RoyaltiesObject>,
+    pub vault: AccountId,
 
     pub administrators: Vec<AccountId>,
 }
@@ -282,10 +275,7 @@ impl Default for NearP2P {
             payment_method_id: 0,
             fiat_method: Vec::new(),
             fiat_method_id: 0,
-            royalties: vec![
-                            {RoyaltiesObject { account_id: "hrpalencia.testnet".to_string(), percentage: 0}},
-                            {RoyaltiesObject { account_id: "info.testnet".to_string(), percentage: 0}},
-                        ],
+            vault: "vault.info.testnet".to_string(),
             administrators: vec![
                             "info.testnet".to_string(),
                         ],
@@ -310,6 +300,11 @@ impl NearP2P {
         self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
         let index = self.administrators.iter().position(|x| x == &user_id.to_string()).expect("the user is not in the list of administrators");
         self.administrators.remove(index);
+    }
+
+    pub fn update_vault(&mut self, account_id: AccountId) {      
+        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
+        self.vault = account_id;
     }
 
     /// Returns the users object loaded in contract
@@ -1178,11 +1173,8 @@ impl NearP2P {
                 
                 Promise::new(self.orders_sell[i].owner_id.to_string()).transfer((self.orders_sell[i].operation_amount * YOCTO_NEAR) - fee_deducted);
 
-                let percentage =  fee_deducted / self.royalties.len() as u128;
-
-                for i in 0..self.royalties.len() {
-                    Promise::new(self.royalties[i].account_id.to_string()).transfer(percentage);
-                }
+                Promise::new(self.vault).transfer(fee_deducted);
+                
 
                 let data = OrderObject {
                     offer_id:self.orders_sell[i].offer_id,
@@ -1230,12 +1222,10 @@ impl NearP2P {
                 let fee_deducted = (self.orders_buy[i].operation_amount * YOCTO_NEAR) * (0.003 as u128 / 10_000u128);
 
                 Promise::new(self.orders_buy[i].signer_id.to_string()).transfer((self.orders_buy[i].operation_amount * YOCTO_NEAR) - fee_deducted);
+                
+                Promise::new(self.vault).transfer(fee_deducted);
 
-                let percentage =  fee_deducted / self.royalties.len() as u128;
-
-                for i in 0..self.royalties.len() {
-                    Promise::new(self.royalties[i].account_id.to_string()).transfer(percentage);
-                }
+                
                 let data = OrderObject {
                     offer_id: self.orders_buy[i].offer_id,
                     order_id: self.orders_buy[i].order_id,
