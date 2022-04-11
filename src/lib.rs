@@ -1145,13 +1145,13 @@ impl NearP2P {
             let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
             if self.orders_sell[i].owner_id == env::signer_account_id().to_string() {
                 self.orders_sell[i].confirmation_owner_id = 1;
-                if self.orders_sell[i].status == 0 {
+                if self.orders_sell[i].status == 1 {
                     self.orders_sell[i].status = 2;
                 }
                 env::log(b"Order sell Confirmation");
             } else if self.orders_sell[i].signer_id == env::signer_account_id().to_string() {
                 self.orders_sell[i].confirmation_signer_id = 1;
-                if self.orders_sell[i].status == 0 {
+                if self.orders_sell[i].status == 1 {
                     self.orders_sell[i].status = 2;
                 }
 
@@ -1199,13 +1199,13 @@ impl NearP2P {
             let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order buy not found");
             if self.orders_buy[i].signer_id == env::signer_account_id().to_string() {
                 self.orders_buy[i].confirmation_signer_id = 1;
-                if self.orders_buy[i].status == 0 {
+                if self.orders_buy[i].status == 1 {
                     self.orders_buy[i].status = 2;
                 }
                 env::log(b"Order buy Confirmation");
             } else if self.orders_buy[i].owner_id == env::signer_account_id().to_string() {
                 self.orders_buy[i].confirmation_owner_id = 1;
-                if self.orders_buy[i].status == 0 {
+                if self.orders_buy[i].status == 1 {
                     self.orders_buy[i].status = 2;
                 }
 
@@ -1263,15 +1263,11 @@ impl NearP2P {
             let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
             if self.orders_sell[i].status == 2 || self.orders_sell[i].status == 1 {
                 if self.orders_sell[i].owner_id == env::signer_account_id().to_string() {
-                    if self.orders_sell[i].status == 0 || self.orders_sell[i].status == 2 {
-                        self.orders_sell[i].status = 3;
-                    }
+                    self.orders_sell[i].status = 3;
                     self.orders_sell[i].confirmation_owner_id = 2;
                     env::log(b"Order sell in dispute");
                 } else if self.orders_sell[i].signer_id == env::signer_account_id().to_string() {
-                    if self.orders_sell[i].status == 0 || self.orders_sell[i].status == 2 {
-                        self.orders_sell[i].status = 3;
-                    }
+                    self.orders_sell[i].status = 3;
                     self.orders_sell[i].confirmation_signer_id = 2;
                     env::log(b"Order sell in dispute");
                 } else {
@@ -1284,15 +1280,11 @@ impl NearP2P {
             let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order buy not found");
             if self.orders_buy[i].status == 2 || self.orders_buy[i].status == 1 {
                 if self.orders_buy[i].owner_id == env::signer_account_id().to_string() {
-                    if self.orders_buy[i].status == 0 || self.orders_buy[i].status == 2 {
-                        self.orders_buy[i].status = 3;
-                    }
+                    self.orders_buy[i].status = 3;
                     self.orders_buy[i].confirmation_owner_id = 2;
                     env::log(b"Order buy in dispute");
                 } else if self.orders_buy[i].signer_id == env::signer_account_id().to_string() {
-                    if self.orders_buy[i].status == 0 || self.orders_buy[i].status == 2 {
-                        self.orders_buy[i].status = 3;
-                    }
+                    self.orders_buy[i].status = 3;
                     self.orders_buy[i].confirmation_signer_id = 2;
                     env::log(b"Order buy in dispute");
                 } else {
@@ -1346,7 +1338,7 @@ impl NearP2P {
             if self.orders_sell[i].owner_id == env::signer_account_id().to_string() {
                 let j = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer Sell not found");
                 self.orders_sell[i].confirmation_owner_id = 3;
-                if self.orders_sell[i].status == 0 || self.orders_sell[i].status == 2 {
+                if self.orders_sell[i].status == 1 || self.orders_sell[i].status == 2 {
                     self.orders_sell[i].status = 4;
                 }
                 Promise::new(self.orders_sell[i].signer_id.to_string()).transfer(self.orders_sell[i].operation_amount * YOCTO_NEAR);
@@ -1377,7 +1369,7 @@ impl NearP2P {
                 env::log(b"Order sell canceled");
             } else if self.orders_sell[i].signer_id == env::signer_account_id().to_string() {
                 self.orders_sell[i].confirmation_signer_id = 3;
-                if self.orders_sell[i].status == 0 || self.orders_sell[i].status == 2 {
+                if self.orders_sell[i].status == 1 || self.orders_sell[i].status == 2 {
                     self.orders_sell[i].status = 4;
                 }
                 env::log(b"cancellation request sent");
@@ -1388,14 +1380,14 @@ impl NearP2P {
             let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order buy not found");
             if self.orders_buy[i].owner_id == env::signer_account_id().to_string() {
                 self.orders_buy[i].confirmation_owner_id = 3;
-                if self.orders_buy[i].status == 0 || self.orders_sell[i].status == 2 {
+                if self.orders_buy[i].status == 1 || self.orders_sell[i].status == 2 {
                     self.orders_buy[i].status = 4;
                 }
                 env::log(b"cancellation request sent");
             } else if self.orders_buy[i].signer_id == env::signer_account_id().to_string() {
                 let j = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer Sell not found");
                 self.orders_buy[i].confirmation_signer_id = 3;
-                if self.orders_buy[i].status == 0 || self.orders_buy[i].status == 2 {
+                if self.orders_buy[i].status == 1 || self.orders_buy[i].status == 2 {
                     self.orders_buy[i].status = 4;
                 }
 
