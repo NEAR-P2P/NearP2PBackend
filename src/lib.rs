@@ -20,7 +20,7 @@ Develop by GlobalDv @2022
 */
 
 
-use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+// use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use serde::Serialize;
 use serde::Deserialize;
 use near_sdk::collections::UnorderedMap;
@@ -297,7 +297,7 @@ impl Default for NearP2P {
 #[near_bindgen]
 impl NearP2P {
 
-    pub fn set_admin(&mut self, user_id: AccountId) {      
+    pub fn set_admin(&mut self, user_id: AccountId) {
         self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
         let valid = self.administrators.iter().find(|&x| x == &user_id);
         if valid.is_some() {
@@ -1184,8 +1184,7 @@ impl NearP2P {
                     Promise::new(self.royalties[i].account_id.to_string()).transfer(percentage);
                 }
 
-                
-                self.order_history_sell.insert(&self.orders_sell[i].order_id, &OrderObject {
+                let data = OrderObject {
                     offer_id:self.orders_sell[i].offer_id,
                     order_id: self.orders_sell[i].order_id,
                     owner_id: self.orders_sell[i].owner_id.to_string(),
@@ -1201,7 +1200,10 @@ impl NearP2P {
                     datetime: self.orders_sell[i].datetime.to_string(),
                     terms_conditions: self.orders_sell[i].terms_conditions.to_string(),
                     status: 2,
-                });
+                };
+                
+                self.order_history_sell.insert(&self.orders_sell[i].order_id, &data);
+                
                 self.orders_sell.remove(i);
                 
                 env::log(b"Order sell Completed");
@@ -1234,8 +1236,7 @@ impl NearP2P {
                 for i in 0..self.royalties.len() {
                     Promise::new(self.royalties[i].account_id.to_string()).transfer(percentage);
                 }
-            
-                self.order_history_buy.insert(&self.orders_buy[i].order_id, &OrderObject {
+                let data = OrderObject {
                     offer_id: self.orders_buy[i].offer_id,
                     order_id: self.orders_buy[i].order_id,
                     owner_id: self.orders_buy[i].owner_id.to_string(),
@@ -1251,7 +1252,9 @@ impl NearP2P {
                     datetime: self.orders_buy[i].datetime.to_string(),
                     terms_conditions: self.orders_buy[i].terms_conditions.to_string(),
                     status: 2,
-                });
+                };
+
+                self.order_history_buy.insert(&self.orders_buy[i].order_id.clone(), &data);
                 self.orders_buy.remove(i);
                 
                 env::log(b"Order buy Completed");
