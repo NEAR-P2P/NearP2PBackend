@@ -20,7 +20,7 @@ Develop by GlobalDv @2022
 */
 
 
-// use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use serde::Serialize;
 use serde::Deserialize;
 use near_sdk::collections::UnorderedMap;
@@ -445,11 +445,8 @@ impl NearP2P {
         , terms_conditions: String
     ) -> i128 {
         self.offer_sell_id += 1;
-        let mut merchant_valid: bool = false;
-        match self.merchant.iter().find(|x| x.is_merchant == true && x.user_id == owner_id.to_string()) {
-            Some(_) => merchant_valid = true,
-            None => merchant_valid = false,
-        }
+        let index = self.merchant.iter().position(|x| x.user_id == owner_id.to_string()).expect("the user is not in the list of users");
+        
         let data = OfferObject {
             offer_id: self.offer_sell_id,
             owner_id: String::from(owner_id),
@@ -461,7 +458,7 @@ impl NearP2P {
             max_limit: max_limit,
             payment_method: payment_method,
             fiat_method: fiat_method,
-            is_merchant: merchant_valid,
+            is_merchant: self.merchant[index].is_merchant,
             time: time,
             terms_conditions: terms_conditions,
             status: 1,
@@ -577,11 +574,8 @@ impl NearP2P {
             amount
         );
         self.offer_buy_id += 1;
-        let mut merchant_valid: bool = false;
-        match self.merchant.iter().find(|x| x.is_merchant == true && x.user_id == owner_id.to_string()) {
-            Some(_) => merchant_valid = true,
-            None => merchant_valid = false,
-        }
+        let index = self.merchant.iter().position(|x| x.user_id == owner_id.to_string()).expect("the user is not in the list of users");
+
         let data = OfferObject {
             offer_id: self.offer_buy_id,
             owner_id: String::from(owner_id),
@@ -593,7 +587,7 @@ impl NearP2P {
             max_limit: max_limit,
             payment_method: payment_method,
             fiat_method: fiat_method,
-            is_merchant: merchant_valid,
+            is_merchant: self.merchant[index].is_merchant,
             time: time,
             terms_conditions: terms_conditions,
             status: 1,
@@ -1173,7 +1167,7 @@ impl NearP2P {
                 
                 Promise::new(self.orders_sell[i].owner_id.to_string()).transfer((self.orders_sell[i].operation_amount * YOCTO_NEAR) - fee_deducted);
 
-                Promise::new(self.vault).transfer(fee_deducted);
+                Promise::new(self.vault.clone()).transfer(fee_deducted);
                 
 
                 let data = OrderObject {
@@ -1223,7 +1217,7 @@ impl NearP2P {
 
                 Promise::new(self.orders_buy[i].signer_id.to_string()).transfer((self.orders_buy[i].operation_amount * YOCTO_NEAR) - fee_deducted);
                 
-                Promise::new(self.vault).transfer(fee_deducted);
+                Promise::new(self.vault.clone()).transfer(fee_deducted);
 
                 
                 let data = OrderObject {
@@ -1417,8 +1411,8 @@ impl NearP2P {
     }
 
 
-    /// 
-    /// Params: offer_type: 1 = sell, 2 = buy
+    // 
+    // Params: offer_type: 1 = sell, 2 = buy
     /* #[payable]
     pub fn order_confirmation_dispute(&mut self, offer_type: i8, order_id: i128, confirmation: bool) -> String {
         assert_one_yocto();
