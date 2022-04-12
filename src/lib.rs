@@ -1015,7 +1015,8 @@ impl NearP2P {
                             self.offers_sell[i].min_limit = 1.0;
                         }
                         
-                        let fee_deducted = (attached_deposit as f64 / YOCTO_NEAR as f64) as f64 * FEE_TRANSACTION;
+                        let fee = (attached_deposit as f64 / YOCTO_NEAR as f64) as f64 * FEE_TRANSACTION;
+                        let fee_deducted = (attached_deposit as f64 / YOCTO_NEAR as f64) as f64 - fee;
 
                         self.offers_sell[i].remaining_amount = remaining;
                         self.order_sell_id += 1;
@@ -1078,7 +1079,8 @@ impl NearP2P {
                             self.offers_buy[i].min_limit = 1.0;
                         }
 
-                        let fee_deducted = amount * FEE_TRANSACTION;
+                        let fee = amount * FEE_TRANSACTION;
+                        let fee_deducted = amount - fee;
 
                         self.offers_buy[i].remaining_amount = remaining;
                         self.order_buy_id += 1;
