@@ -1164,11 +1164,11 @@ impl NearP2P {
                 self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
                 self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
 
-                let fee_deducted = (self.orders_sell[i].operation_amount * 0.004) as u128 * YOCTO_NEAR;
-                let operation_amount = self.orders_sell[i].operation_amount as u128 * YOCTO_NEAR;
+                let fee_deducted = (self.orders_buy[i].operation_amount * 0.004) * YOCTO_NEAR.into() as u128;
+                let operation_amount = self.orders_buy[i].operation_amount * YOCTO_NEAR.into() as u128 ; 
                 let fee_deducted_u128 = (self.orders_sell[i].operation_amount * 0.004) as u128;
                 let operation_amount_u128 = self.orders_sell[i].operation_amount as u128;
-                let fee_deducted_none = (self.orders_sell[i].operation_amount * 0.004);
+                let fee_deducted_none = (self.orders_sell[i].operation_amount * 0.004) * YOCTO_NEAR.into();
                 let operation_amount_none = self.orders_sell[i].operation_amount;
                 env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted, operation_amount).as_ref());
                 env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted_u128, operation_amount_u128).as_ref());
@@ -1225,11 +1225,11 @@ impl NearP2P {
                 self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
                 self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
                 
-                let fee_deducted = (self.orders_buy[i].operation_amount * 0.004) as u128 * YOCTO_NEAR;
-                let operation_amount = self.orders_buy[i].operation_amount as u128 * YOCTO_NEAR; 
+                let fee_deducted = (self.orders_buy[i].operation_amount * 0.004) * YOCTO_NEAR.into() as u128;
+                let operation_amount = self.orders_buy[i].operation_amount * YOCTO_NEAR.into() as u128 ; 
                 let fee_deducted_u128 = (self.orders_sell[i].operation_amount * 0.004) as u128;
                 let operation_amount_u128 = self.orders_sell[i].operation_amount as u128;
-                let fee_deducted_none = (self.orders_sell[i].operation_amount * 0.004);
+                let fee_deducted_none = (self.orders_sell[i].operation_amount * 0.004) * YOCTO_NEAR.into();
                 let operation_amount_none = self.orders_sell[i].operation_amount;
                 env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted, operation_amount).as_ref());
                 env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted_u128, operation_amount_u128).as_ref());
