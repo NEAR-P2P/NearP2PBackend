@@ -258,11 +258,11 @@ impl Default for NearP2P {
             order_history_sell: Vec::new(),
             order_history_buy: Vec::new(),
             merchant: vec![MerchantObject {
-                user_id: "info.testnet".to_string(),
-                total_orders: 0,
-                orders_completed: 0,
+                user_id: "p2p-testnet.testnet".to_string(),
+                total_orders: 1,
+                orders_completed: 1,
                 percentaje_completion: 0.0,
-                badge: "".to_string(),
+                badge: "check-circle".to_string(),
                 is_merchant: true,
             }],
             payment_method: Vec::new(),
@@ -270,9 +270,11 @@ impl Default for NearP2P {
             payment_method_id: 0,
             fiat_method: Vec::new(),
             fiat_method_id: 0,
-            vault: "vault.info.testnet".to_string(),
+            vault: "vault.p2p-testnet.testnet".to_string(),
             administrators: vec![
                             "info.testnet".to_string(),
+                            "p2p-testnet.testnet".to_string(),
+                            "gperez.testnet".to_string(),
                         ],
         }
     }
@@ -1240,7 +1242,7 @@ impl NearP2P {
                     terms_conditions: self.orders_buy[i].terms_conditions.to_string(),
                     status: 2,
                 };
-
+                 
                 self.order_history_buy.push(data);
                 self.orders_buy.remove(i);
                 
