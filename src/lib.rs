@@ -997,11 +997,11 @@ impl NearP2P {
         if offer_type == 1 {
             for i in 0..self.offers_sell.len() {
                 if self.offers_sell.get(i).unwrap().offer_id == offer_id {
-                    if (self.offers_sell[i].remaining_amount as u128 * YOCTO_NEAR) >= attached_deposit {
+                    if (self.offers_sell[i].remaining_amount * YOCTO_NEAR as f64) as u128 >= attached_deposit {
                         ////////////////////////////////////////////////////////////////////
                         /* colocar aqui el bloqueo de saldo del owner_id  cuando sea venta */
                         ////////////////////////////////////////////////////////////////////
-                        let remaining: f64 = self.offers_sell[i].remaining_amount  - (attached_deposit / YOCTO_NEAR) as f64;
+                        let remaining: f64 = self.offers_sell[i].remaining_amount  - (attached_deposit as f64 / YOCTO_NEAR as f64) as f64;
                         if remaining <= 0.0 {
                             self.offers_sell[i].status = 2;
                         }
@@ -1021,7 +1021,7 @@ impl NearP2P {
                             owner_id: self.offers_sell[i].owner_id.to_string(),
                             signer_id: env::signer_account_id(),
                             exchange_rate: self.offers_sell[i].exchange_rate.to_string(),
-                            operation_amount: (attached_deposit / YOCTO_NEAR) as f64,
+                            operation_amount: (attached_deposit as f64 / YOCTO_NEAR as f64) as f64,
                             payment_method: payment_method,
                             fiat_method: self.offers_sell[i].fiat_method,
                             confirmation_owner_id: 0,
