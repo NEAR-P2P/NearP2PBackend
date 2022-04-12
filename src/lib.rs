@@ -1166,7 +1166,7 @@ impl NearP2P {
 
                 let fee_deducted = (self.orders_sell[i].operation_amount * 0.004) as u128 * YOCTO_NEAR;
                 let operation_amount = self.orders_sell[i].operation_amount as u128 * YOCTO_NEAR;
-                
+                env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted, operation_amount).as_ref());
                 Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(operation_amount - fee_deducted);
 
                 Promise::new(self.vault.clone()).transfer(fee_deducted);
@@ -1221,7 +1221,7 @@ impl NearP2P {
                 
                 let fee_deducted = (self.orders_buy[i].operation_amount * 0.004) as u128 * YOCTO_NEAR;
                 let operation_amount = self.orders_buy[i].operation_amount as u128 * YOCTO_NEAR; 
-
+                env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted, operation_amount).as_ref());
                 Promise::new(self.orders_buy[i].signer_id.to_string()).transfer(operation_amount - fee_deducted);
                 
                 Promise::new(self.vault.clone()).transfer(fee_deducted);
