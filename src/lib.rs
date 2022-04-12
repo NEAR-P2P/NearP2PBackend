@@ -1168,7 +1168,7 @@ impl NearP2P {
                 let operation_amount = self.orders_sell[i].operation_amount as u128 * YOCTO_NEAR;
                 let fee_deducted_u128 = (self.orders_sell[i].operation_amount * 0.004) as u128;
                 let operation_amount_u128 = self.orders_sell[i].operation_amount as u128;
-                let fee_deducted_none = (self.orders_sell[i].operation_amount * 0.004)
+                let fee_deducted_none = (self.orders_sell[i].operation_amount * 0.004);
                 let operation_amount_none = self.orders_sell[i].operation_amount;
                 env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted, operation_amount).as_ref());
                 env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted_u128, operation_u128).as_ref());
@@ -1229,7 +1229,7 @@ impl NearP2P {
                 let operation_amount = self.orders_buy[i].operation_amount as u128 * YOCTO_NEAR; 
                 let fee_deducted_u128 = (self.orders_sell[i].operation_amount * 0.004) as u128;
                 let operation_amount_u128 = self.orders_sell[i].operation_amount as u128;
-                let fee_deducted_none = (self.orders_sell[i].operation_amount * 0.004)
+                let fee_deducted_none = (self.orders_sell[i].operation_amount * 0.004);
                 let operation_amount_none = self.orders_sell[i].operation_amount;
                 env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted, operation_amount).as_ref());
                 env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted_u128, operation_u128).as_ref());
