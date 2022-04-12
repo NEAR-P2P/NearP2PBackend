@@ -31,7 +31,7 @@ use near_sdk::{env, near_bindgen, AccountId, Promise, assert_one_yocto}; // json
 near_sdk::setup_alloc!();
 
 const YOCTO_NEAR: u128 = 1000000000000000000000000;
-const KEY_TOKEN: &str = "1";
+const KEY_TOKEN: &str = "qbogcyqiqO7Utwqm3VgKhxrmQIc0ROjj";
 
 /*#[derive(Default, BorshDeserialize, BorshSerialize)]
 pub struct Account {
