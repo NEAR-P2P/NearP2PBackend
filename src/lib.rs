@@ -1335,6 +1335,9 @@ impl NearP2P {
         assert_one_yocto();
         if offer_type == 1 {
             let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
+            
+            env::log(format!("indice {}", i).as_bytes());
+            env::log(format!("order_id {}", order_id).as_bytes());
             if self.orders_sell[i].owner_id == env::signer_account_id().to_string() {
                 let j = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer Sell not found");
                 self.orders_sell[i].confirmation_owner_id = 3;
@@ -1378,6 +1381,9 @@ impl NearP2P {
             }
         } else if offer_type == 2 {
             let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order buy not found");
+            env::log(format!("indice {}", i).as_bytes());
+            env::log(format!("order_id {}", order_id).as_bytes());
+            
             if self.orders_buy[i].owner_id == env::signer_account_id().to_string() {
                 self.orders_buy[i].confirmation_owner_id = 3;
                 if self.orders_buy[i].status == 1 || self.orders_sell[i].status == 2 {
