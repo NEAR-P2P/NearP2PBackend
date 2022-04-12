@@ -24,7 +24,7 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use serde::Serialize;
 use serde::Deserialize;
 // use near_sdk::collections::UnorderedMap;
-use near_sdk::{env, near_bindgen, AccountId, Balance, Promise, assert_one_yocto}; // json_types::U128, 
+use near_sdk::{env, near_bindgen, AccountId, Promise, assert_one_yocto}; // json_types::U128, 
 // use std::collections::HashMap;
 // use near_sdk::json_types::ValidAccountId;
 
@@ -84,8 +84,8 @@ pub struct OfferObject {
     owner_id: AccountId,
     asset: String, // NEAR, USD
     exchange_rate: String,
-    amount: Balance,
-    remaining_amount: Balance,
+    amount: f64,
+    remaining_amount: f64,
     min_limit: f64,
     max_limit: f64,
     payment_method: Vec<PaymentMethodsOfferObject>, // Info concerning to payment asociated to payment contract
@@ -105,7 +105,7 @@ pub struct OrderObject {
     owner_id: AccountId,
     signer_id: AccountId,
     exchange_rate: String,
-    operation_amount: Balance,
+    operation_amount: f64,
     payment_method: i128, // Info concerning to payment asociated to payment contract
     fiat_method: i128,
     confirmation_owner_id: i8,
@@ -413,7 +413,7 @@ impl NearP2P {
 
     /// Returns the order object loaded in contract
     /// Params: campo: String, valor: String
-    pub fn get_offers_sell(self, amount: Option<Balance>,
+    pub fn get_offers_sell(self, amount: Option<f64>,
         fiat_method: Option<i128>,
         payment_method: Option<i128>,
         is_merchant: Option<bool>,
@@ -433,7 +433,7 @@ impl NearP2P {
     pub fn set_offers_sell(&mut self, owner_id: AccountId
         , asset: String
         , exchange_rate: String
-        , amount: Balance
+        , amount: f64
         , min_limit: f64
         , max_limit: f64
         , payment_method: Vec<PaymentMethodsOfferObject>
@@ -470,7 +470,7 @@ impl NearP2P {
     pub fn put_offers_sell(&mut self, offer_id: i128
         , asset: Option<String>
         , exchange_rate: Option<String>
-        , remaining_amount: Option<Balance>
+        , remaining_amount: Option<f64>
         , min_limit: Option<f64>
         , max_limit: Option<f64>
         , payment_method: Option<Vec<PaymentMethodsOfferObject>>
@@ -536,7 +536,7 @@ impl NearP2P {
 
     /// Returns the order object loaded in contract
     /// Params: campo: String, valor: String
-    pub fn get_offers_buy(self, amount: Option<Balance>,
+    pub fn get_offers_buy(self, amount: Option<f64>,
         fiat_method: Option<i128>,
         payment_method: Option<i128>,
         is_merchant: Option<bool>,
@@ -556,7 +556,7 @@ impl NearP2P {
     pub fn set_offers_buy(&mut self, owner_id: AccountId
         , asset: String
         , exchange_rate: String
-        , amount: Balance
+        , amount: f64
         , min_limit: f64
         , max_limit: f64
         , payment_method: Vec<PaymentMethodsOfferObject>
@@ -566,7 +566,7 @@ impl NearP2P {
     ) -> i128{
         let attached_deposit = env::attached_deposit();
         assert!(
-            (attached_deposit / YOCTO_NEAR) >= amount,
+            (attached_deposit / YOCTO_NEAR) as f64 >= amount,
             "the deposit attached is less than the quantity supplied : {}",
             amount
         );
@@ -598,7 +598,7 @@ impl NearP2P {
     pub fn put_offers_buy(&mut self, offer_id: i128
         , asset: Option<String>
         , exchange_rate: Option<String>
-        , remaining_amount: Option<Balance>
+        , remaining_amount: Option<f64>
         , min_limit: Option<f64>
         , max_limit: Option<f64>
         , payment_method: Option<Vec<PaymentMethodsOfferObject>>
@@ -984,7 +984,7 @@ impl NearP2P {
     #[payable]
     pub fn accept_offer(&mut self, offer_type: i8
         , offer_id: i128
-        , amount: u128
+        , amount: f64
         , payment_method: i128
         , datetime: String
     ) -> String {
@@ -997,19 +997,19 @@ impl NearP2P {
         if offer_type == 1 {
             for i in 0..self.offers_sell.len() {
                 if self.offers_sell.get(i).unwrap().offer_id == offer_id {
-                    if (self.offers_sell[i].remaining_amount * YOCTO_NEAR) >= attached_deposit {
+                    if (self.offers_sell[i].remaining_amount as u128 * YOCTO_NEAR) >= attached_deposit {
                         ////////////////////////////////////////////////////////////////////
                         /* colocar aqui el bloqueo de saldo del owner_id  cuando sea venta */
                         ////////////////////////////////////////////////////////////////////
-                        let remaining: Balance = self.offers_sell[i].remaining_amount  - (attached_deposit / YOCTO_NEAR);
-                        if remaining == 0 {
+                        let remaining: f64 = self.offers_sell[i].remaining_amount  - (attached_deposit / YOCTO_NEAR) as f64;
+                        if remaining <= 0.0 {
                             self.offers_sell[i].status = 2;
                         }
                         
-                        if self.offers_sell[i].max_limit as u128 > remaining {
-                            self.offers_sell[i].max_limit = remaining as f64;
+                        if self.offers_sell[i].max_limit > remaining {
+                            self.offers_sell[i].max_limit = remaining;
                         }
-                        if self.offers_sell[i].min_limit as u128 > remaining {
+                        if self.offers_sell[i].min_limit > remaining {
                             self.offers_sell[i].min_limit = 1.0;
                         }
 
@@ -1021,7 +1021,7 @@ impl NearP2P {
                             owner_id: self.offers_sell[i].owner_id.to_string(),
                             signer_id: env::signer_account_id(),
                             exchange_rate: self.offers_sell[i].exchange_rate.to_string(),
-                            operation_amount: (attached_deposit / YOCTO_NEAR),
+                            operation_amount: (attached_deposit / YOCTO_NEAR) as f64,
                             payment_method: payment_method,
                             fiat_method: self.offers_sell[i].fiat_method,
                             confirmation_owner_id: 0,
@@ -1061,15 +1061,15 @@ impl NearP2P {
                         ////////////////////////////////////////////////////////////////////////
                         /* colocar aqui el bloqueo de saldo del owner_id  cuando sea compra */
                         ///////////////////////////////////////////////////////////////////////
-                        let remaining: Balance = self.offers_buy[i].remaining_amount - amount;
-                        if remaining == 0 {
+                        let remaining: f64 = self.offers_buy[i].remaining_amount - amount;
+                        if remaining <= 0.0 {
                             self.offers_buy[i].status = 2;
                         }
 
-                        if self.offers_buy[i].max_limit as u128 > remaining {
-                            self.offers_buy[i].max_limit = remaining as f64;
+                        if self.offers_buy[i].max_limit > remaining {
+                            self.offers_buy[i].max_limit = remaining;
                         }
-                        if self.offers_buy[i].min_limit as u128 > remaining {
+                        if self.offers_buy[i].min_limit > remaining {
                             self.offers_buy[i].min_limit = 1.0;
                         }
 
@@ -1346,7 +1346,7 @@ impl NearP2P {
                 if self.orders_sell[i].status == 1 || self.orders_sell[i].status == 2 {
                     self.orders_sell[i].status = 4;
                 }
-                Promise::new(self.orders_sell[i].signer_id.to_string()).transfer(self.orders_sell[i].operation_amount * YOCTO_NEAR);
+                Promise::new(self.orders_sell[i].signer_id.to_string()).transfer(self.orders_sell[i].operation_amount as u128 * YOCTO_NEAR);
 
                 let data = OrderObject {
                     offer_id:self.orders_sell[i].offer_id,
@@ -1397,7 +1397,7 @@ impl NearP2P {
                     self.orders_buy[i].status = 4;
                 }
 
-                Promise::new(self.orders_buy[i].owner_id.to_string()).transfer(self.orders_buy[i].operation_amount * YOCTO_NEAR);
+                Promise::new(self.orders_buy[i].owner_id.to_string()).transfer(self.orders_buy[i].operation_amount as u128 * YOCTO_NEAR);
 
                 let data = OrderObject {
                     offer_id:self.orders_buy[i].offer_id,
@@ -1594,7 +1594,7 @@ impl NearP2P {
 
 
 fn search_offer(data: Vec<OfferObject>,
-    amount: Option<Balance>,
+    amount: Option<f64>,
     fiat_method: Option<i128>,
     payment_method: Option<i128>,
     is_merchant: Option<bool>,
