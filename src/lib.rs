@@ -32,6 +32,7 @@ near_sdk::setup_alloc!();
 
 const YOCTO_NEAR: u128 = 1000000000000000000000000;
 const KEY_TOKEN: &str = "qbogcyqiqO7Utwqm3VgKhxrmQIc0ROjj";
+const FEE_TRANSACTION: f64 = 0.004;
 
 /*#[derive(Default, BorshDeserialize, BorshSerialize)]
 pub struct Account {
@@ -106,6 +107,7 @@ pub struct OrderObject {
     signer_id: AccountId,
     exchange_rate: String,
     operation_amount: f64,
+    fee_deducted: f64,
     payment_method: i128, // Info concerning to payment asociated to payment contract
     fiat_method: i128,
     confirmation_owner_id: i8,
@@ -1012,6 +1014,8 @@ impl NearP2P {
                         if self.offers_sell[i].min_limit > remaining {
                             self.offers_sell[i].min_limit = 1.0;
                         }
+                        
+                        let fee_deducted = (attached_deposit as f64 / YOCTO_NEAR as f64) as f64 * FEE_TRANSACTION;
 
                         self.offers_sell[i].remaining_amount = remaining;
                         self.order_sell_id += 1;
@@ -1022,6 +1026,7 @@ impl NearP2P {
                             signer_id: env::signer_account_id(),
                             exchange_rate: self.offers_sell[i].exchange_rate.to_string(),
                             operation_amount: (attached_deposit as f64 / YOCTO_NEAR as f64) as f64,
+                            fee_deducted: fee_deducted,
                             payment_method: payment_method,
                             fiat_method: self.offers_sell[i].fiat_method,
                             confirmation_owner_id: 0,
@@ -1073,6 +1078,8 @@ impl NearP2P {
                             self.offers_buy[i].min_limit = 1.0;
                         }
 
+                        let fee_deducted = amount * FEE_TRANSACTION;
+
                         self.offers_buy[i].remaining_amount = remaining;
                         self.order_buy_id += 1;
                         let data = OrderObject {
@@ -1082,6 +1089,7 @@ impl NearP2P {
                             signer_id: env::signer_account_id(),
                             exchange_rate: self.offers_buy[i].exchange_rate.to_string(),
                             operation_amount: amount,
+                            fee_deducted: fee_deducted,
                             payment_method: payment_method,
                             fiat_method: self.offers_buy[i].fiat_method,
                             confirmation_owner_id: 0,
@@ -1164,15 +1172,9 @@ impl NearP2P {
                 self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
                 self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
 
-                let fee_deducted = ((self.orders_sell[i].operation_amount * 0.004) * YOCTO_NEAR as f64) as u128;
+                let fee_deducted = ((self.orders_sell[i].operation_amount * FEE_TRANSACTION) * YOCTO_NEAR as f64) as u128;
                 let operation_amount = (self.orders_sell[i].operation_amount * YOCTO_NEAR as f64) as u128;
-                let fee_deducted_u128 = (self.orders_sell[i].operation_amount * 0.004) as u128;
-                let operation_amount_u128 = self.orders_sell[i].operation_amount as u128;
-                let fee_deducted_none = (self.orders_sell[i].operation_amount * 0.004) * YOCTO_NEAR as f64;
-                let operation_amount_none = self.orders_sell[i].operation_amount;
-                env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted, operation_amount).as_ref());
-                env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted_u128, operation_amount_u128).as_ref());
-                env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted_none, operation_amount_none).as_ref());
+                
                 Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(operation_amount - fee_deducted);
 
                 Promise::new(self.vault.clone()).transfer(fee_deducted);
@@ -1185,6 +1187,7 @@ impl NearP2P {
                     signer_id: self.orders_sell[i].signer_id.to_string(),
                     exchange_rate: self.orders_sell[i].exchange_rate.to_string(),
                     operation_amount: self.orders_sell[i].operation_amount,
+                    fee_deducted: self.orders_sell[i].fee_deducted,
                     payment_method: self.orders_sell[i].payment_method,
                     fiat_method: self.orders_sell[i].fiat_method,
                     confirmation_owner_id: self.orders_sell[i].confirmation_owner_id,
@@ -1225,15 +1228,9 @@ impl NearP2P {
                 self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
                 self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
                 
-                let fee_deducted = ((self.orders_buy[i].operation_amount * 0.004) * YOCTO_NEAR as f64) as u128;
+                let fee_deducted = ((self.orders_buy[i].operation_amount * FEE_TRANSACTION) * YOCTO_NEAR as f64) as u128;
                 let operation_amount = (self.orders_buy[i].operation_amount * YOCTO_NEAR as f64) as u128;
-                let fee_deducted_u128 = (self.orders_buy[i].operation_amount * 0.004) as u128;
-                let operation_amount_u128 = self.orders_buy[i].operation_amount as u128;
-                let fee_deducted_none = (self.orders_buy[i].operation_amount * 0.004) * YOCTO_NEAR as f64;
-                let operation_amount_none = self.orders_buy[i].operation_amount;
-                env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted, operation_amount).as_ref());
-                env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted_u128, operation_amount_u128).as_ref());
-                env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted_none, operation_amount_none).as_ref());
+
                 Promise::new(self.orders_buy[i].signer_id.to_string()).transfer(operation_amount - fee_deducted);
                 
                 Promise::new(self.vault.clone()).transfer(fee_deducted);
@@ -1246,6 +1243,7 @@ impl NearP2P {
                     signer_id: self.orders_buy[i].signer_id.to_string(),
                     exchange_rate: self.orders_buy[i].exchange_rate.to_string(),
                     operation_amount: self.orders_buy[i].operation_amount,
+                    fee_deducted: self.orders_buy[i].fee_deducted,
                     payment_method: self.orders_buy[i].payment_method,
                     fiat_method: self.orders_buy[i].fiat_method,
                     confirmation_owner_id: self.orders_buy[i].confirmation_owner_id,
@@ -1367,6 +1365,7 @@ impl NearP2P {
                     signer_id: self.orders_sell[i].signer_id.to_string(),
                     exchange_rate: self.orders_sell[i].exchange_rate.to_string(),
                     operation_amount: self.orders_sell[i].operation_amount,
+                    fee_deducted: self.orders_sell[i].fee_deducted,
                     payment_method: self.orders_sell[i].payment_method,
                     fiat_method: self.orders_sell[i].fiat_method,
                     confirmation_owner_id: self.orders_sell[i].confirmation_owner_id,
@@ -1418,6 +1417,7 @@ impl NearP2P {
                     signer_id: self.orders_buy[i].signer_id.to_string(),
                     exchange_rate: self.orders_buy[i].exchange_rate.to_string(),
                     operation_amount: self.orders_buy[i].operation_amount,
+                    fee_deducted: self.orders_buy[i].fee_deducted,
                     payment_method: self.orders_buy[i].payment_method,
                     fiat_method: self.orders_buy[i].fiat_method,
                     confirmation_owner_id: self.orders_buy[i].confirmation_owner_id,
@@ -1442,165 +1442,6 @@ impl NearP2P {
             env::panic(b"Invalid offer type");
         }
     }
-
-
-    // 
-    // Params: offer_type: 1 = sell, 2 = buy
-    /* #[payable]
-    pub fn order_confirmation_dispute(&mut self, offer_type: i8, order_id: i128, confirmation: bool) -> String {
-        assert_one_yocto();
-        for i in 0..self.users.len() {    
-            if self.users[i].user_id == env::signer_account_id().to_string() {
-                if self.users[i].admin == true || self.users[i].mediator == true {
-                    if confirmation == true {
-                        if offer_type == 1 {
-                            ////////////////////////////////////////////////////////////////////////////
-                            /* Aqui va el codigo para transferir los near a la cuenta del "ownwe_id" */
-                            ///////////////////////////////////////////////////////////////////////////
-                            for i in 0..self.orders_sell.len() {
-                                if self.orders_sell.get(i).unwrap().order_id == order_id {
-                                    Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(self.orders_sell[i].operation_amount * YOCTO_NEAR);
-                                    self.order_history.insert(&1, &OrderObject {
-                                        offer_id:self.orders_sell[i].offer_id,
-                                        order_id: self.orders_sell[i].order_id,
-                                        owner_id: self.orders_sell[i].owner_id.to_string(),
-                                        signer_id: self.orders_sell[i].signer_id.to_string(),
-                                        exchange_rate: self.orders_sell[i].exchange_rate.to_string(),
-                                        operation_amount: self.orders_sell[i].operation_amount,
-                                        payment_method: self.orders_sell[i].payment_method,
-                                        fiat_method: self.orders_sell[i].fiat_method,
-                                        confirmation_owner_id: self.orders_sell[i].confirmation_owner_id,
-                                        confirmation_signer_id: self.orders_sell[i].confirmation_signer_id,
-                                        confirmation_current: self.orders_sell[i].confirmation_current,
-                                        time: self.orders_sell[i].time,
-                                        datetime: self.orders_sell[i].datetime.to_string(),
-                                        terms_conditions: self.orders_sell[i].terms_conditions.to_string(),
-                                        status: 2,
-                                    });
-                                    self.orders_sell.remove(i);
-                                    tranfer_valid = true;
-                                    break;
-                                };
-                            };
-                            if tranfer_valid == false {
-                                env::panic(b"Order sell not found");
-                            };
-                            env::log(b"Order sell mediator Confirmation");
-                            return String::from("Order sell mediator Confirmation");
-                        } else if offer_type == 2 {
-                            /////////////////////////////////////////////////////////////////////////////
-                            /* Aqui va el codigo para transferir los near a la cuenta del "signer_id" */
-                            /////////////////////////////////////////////////////////////////////////////
-                            for i in 0..self.orders_buy.len() {
-                                if self.orders_buy.get(i).unwrap().order_id == order_id {
-                                    Promise::new(self.orders_buy[i].owner_id.to_string()).transfer(self.orders_buy[i].operation_amount * YOCTO_NEAR);
-                                    self.order_history.insert(&2, &OrderObject {
-                                        offer_id:self.orders_buy[i].offer_id,
-                                        order_id: self.orders_buy[i].order_id,
-                                        owner_id: self.orders_buy[i].owner_id.to_string(),
-                                        signer_id: self.orders_buy[i].signer_id.to_string(),
-                                        exchange_rate: self.orders_buy[i].exchange_rate.to_string(),
-                                        operation_amount: self.orders_buy[i].operation_amount,
-                                        payment_method: self.orders_buy[i].payment_method,
-                                        fiat_method: self.orders_buy[i].fiat_method,
-                                        confirmation_owner_id: self.orders_buy[i].confirmation_owner_id,
-                                        confirmation_signer_id: self.orders_buy[i].confirmation_signer_id,
-                                        confirmation_current: self.orders_buy[i].confirmation_current,
-                                        time: self.orders_buy[i].time,
-                                        datetime: self.orders_buy[i].datetime.to_string(),
-                                        terms_conditions: self.orders_buy[i].terms_conditions.to_string(),
-                                        status: 2,
-                                    });
-                                    self.orders_buy.remove(i);
-                                    tranfer_valid = true;
-                                    break;
-                                };
-                            };
-                            if tranfer_valid == false {
-                                env::panic(b"Order buy not found");
-                            };
-                            env::log(b"Order buy mediator Confirmation");
-                            return String::from("Order buy mediator Confirmation");
-                        } else {
-                            env::panic(b"Invalid offer type");
-                        }
-                    } else {
-                        if offer_type == 1 {
-                            /////////////////////////////////////////////////////////////////////////////
-                            /* Aqui va el codigo para transferir los near a la cuenta del "signer_id" */
-                            /////////////////////////////////////////////////////////////////////////////
-                            for i in 0..self.orders_sell.len() {
-                                if self.orders_sell.get(i).unwrap().order_id == order_id {
-                                    Promise::new(self.orders_sell[i].signer_id.to_string()).transfer(self.orders_sell[i].operation_amount * YOCTO_NEAR);
-                                    self.order_history.insert(&1, &OrderObject {
-                                        offer_id:self.orders_sell[i].offer_id,
-                                        order_id: self.orders_sell[i].order_id,
-                                        owner_id: self.orders_sell[i].owner_id.to_string(),
-                                        signer_id: self.orders_sell[i].signer_id.to_string(),
-                                        exchange_rate: self.orders_sell[i].exchange_rate.to_string(),
-                                        operation_amount: self.orders_sell[i].operation_amount,
-                                        payment_method: self.orders_sell[i].payment_method,
-                                        fiat_method: self.orders_sell[i].fiat_method,
-                                        confirmation_owner_id: self.orders_sell[i].confirmation_owner_id,
-                                        confirmation_signer_id: self.orders_sell[i].confirmation_signer_id,
-                                        confirmation_current: self.orders_sell[i].confirmation_current,
-                                        time: self.orders_sell[i].time,
-                                        datetime: self.orders_sell[i].datetime.to_string(),
-                                        terms_conditions: self.orders_sell[i].terms_conditions.to_string(),
-                                        status: 2,
-                                    });
-                                    self.orders_sell.remove(i);
-                                    tranfer_valid = true;
-                                    break;
-                                };
-                            };
-
-                            env::log(b"Order sell mediator Confirmation");
-                            return String::from("Order sell mediator Confirmation");
-                        } else if offer_type == 2 {
-                            ////////////////////////////////////////////////////////////////////////////
-                            /* Aqui va el codigo para transferir los near a la cuenta del "ownwe_id" */
-                            ////////////////////////////////////////////////////////////////////////////
-                            for i in 0..self.orders_buy.len() {
-                                if self.orders_buy.get(i).unwrap().order_id == order_id {
-                                    Promise::new(self.orders_buy[i].owner_id.to_string()).transfer(self.orders_buy[i].operation_amount * YOCTO_NEAR);
-                                    self.order_history.insert(&2, &OrderObject {
-                                        offer_id:self.orders_buy[i].offer_id,
-                                        order_id: self.orders_buy[i].order_id,
-                                        owner_id: self.orders_buy[i].owner_id.to_string(),
-                                        signer_id: self.orders_buy[i].signer_id.to_string(),
-                                        exchange_rate: self.orders_buy[i].exchange_rate.to_string(),
-                                        operation_amount: self.orders_buy[i].operation_amount,
-                                        payment_method: self.orders_buy[i].payment_method,
-                                        fiat_method: self.orders_buy[i].fiat_method,
-                                        confirmation_owner_id: self.orders_buy[i].confirmation_owner_id,
-                                        confirmation_signer_id: self.orders_buy[i].confirmation_signer_id,
-                                        confirmation_current: self.orders_buy[i].confirmation_current,
-                                        time: self.orders_buy[i].time,
-                                        datetime: self.orders_buy[i].datetime.to_string(),
-                                        terms_conditions: self.orders_buy[i].terms_conditions.to_string(),
-                                        status: 3,
-                                    });
-                                    self.orders_buy.remove(i);
-                                    tranfer_valid = true;
-                                    break;
-                                };
-                            };
-                            if tranfer_valid == false {
-                                env::panic(b"Order buy not found");
-                            };
-                            env::log(b"Order buy mediator Confirmation");
-                            return String::from("Order buy mediator Confirmation");
-                        } else {
-                            env::panic(b"Invalid offer type");
-                        }
-                    }
-                } 
-                break;
-            }
-        }
-        env::panic(b"the user does not have permission");
-    } */
 
 }
 
@@ -1788,6 +1629,7 @@ fn search_order(data: Vec<OrderObject>,
                         signer_id: r.signer_id.clone(),
                         exchange_rate: r.exchange_rate.clone(),
                         operation_amount: r.operation_amount,
+                        fee_deducted: r.fee_deducted,
                         payment_method: r.payment_method,
                         fiat_method: r.fiat_method,
                         confirmation_owner_id: r.confirmation_owner_id,
@@ -1809,6 +1651,7 @@ fn search_order(data: Vec<OrderObject>,
                         signer_id: r.signer_id.clone(),
                         exchange_rate: r.exchange_rate.clone(),
                         operation_amount: r.operation_amount,
+                        fee_deducted: r.fee_deducted,
                         payment_method: r.payment_method,
                         fiat_method: r.fiat_method,
                         confirmation_owner_id: r.confirmation_owner_id,
@@ -1831,6 +1674,7 @@ fn search_order(data: Vec<OrderObject>,
                         signer_id: r.signer_id.clone(),
                         exchange_rate: r.exchange_rate.clone(),
                         operation_amount: r.operation_amount,
+                        fee_deducted: r.fee_deducted,
                         payment_method: r.payment_method,
                         fiat_method: r.fiat_method,
                         confirmation_owner_id: r.confirmation_owner_id,
@@ -1853,6 +1697,7 @@ fn search_order(data: Vec<OrderObject>,
                         signer_id: r.signer_id.clone(),
                         exchange_rate: r.exchange_rate.clone(),
                         operation_amount: r.operation_amount,
+                        fee_deducted: r.fee_deducted,
                         payment_method: r.payment_method,
                         fiat_method: r.fiat_method,
                         confirmation_owner_id: r.confirmation_owner_id,
@@ -1874,6 +1719,7 @@ fn search_order(data: Vec<OrderObject>,
                         signer_id: r.signer_id.clone(),
                         exchange_rate: r.exchange_rate.clone(),
                         operation_amount: r.operation_amount,
+                        fee_deducted: r.fee_deducted,
                         payment_method: r.payment_method,
                         fiat_method: r.fiat_method,
                         confirmation_owner_id: r.confirmation_owner_id,
@@ -1898,6 +1744,7 @@ fn search_order_history(data: Vec<OrderObject>, user_id: Option<AccountId>, orde
         signer_id: s.signer_id.clone(),
         exchange_rate: s.exchange_rate.clone(),
         operation_amount: s.operation_amount,
+        fee_deducted: s.fee_deducted,
         payment_method: s.payment_method,
         fiat_method: s.fiat_method,
         confirmation_owner_id: s.confirmation_owner_id,
@@ -1919,6 +1766,7 @@ fn search_order_history(data: Vec<OrderObject>, user_id: Option<AccountId>, orde
                     signer_id: s.signer_id.clone(),
                     exchange_rate: s.exchange_rate.clone(),
                     operation_amount: s.operation_amount,
+                    fee_deducted: s.fee_deducted,
                     payment_method: s.payment_method,
                     fiat_method: s.fiat_method,
                     confirmation_owner_id: s.confirmation_owner_id,
@@ -1940,6 +1788,7 @@ fn search_order_history(data: Vec<OrderObject>, user_id: Option<AccountId>, orde
                     signer_id: s.signer_id.clone(),
                     exchange_rate: s.exchange_rate.clone(),
                     operation_amount: s.operation_amount,
+                    fee_deducted: s.fee_deducted,
                     payment_method: s.payment_method,
                     fiat_method: s.fiat_method,
                     confirmation_owner_id: s.confirmation_owner_id,
@@ -1961,6 +1810,7 @@ fn search_order_history(data: Vec<OrderObject>, user_id: Option<AccountId>, orde
                     signer_id: s.signer_id.clone(),
                     exchange_rate: s.exchange_rate.clone(),
                     operation_amount: s.operation_amount,
+                    fee_deducted: s.fee_deducted,
                     payment_method: s.payment_method,
                     fiat_method: s.fiat_method,
                     confirmation_owner_id: s.confirmation_owner_id,
