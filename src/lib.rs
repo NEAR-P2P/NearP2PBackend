@@ -1383,37 +1383,37 @@ impl NearP2P {
             let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order buy not found");
             env::log(format!("indice {}", i).as_bytes());
             env::log(format!("order_id {}", order_id).as_bytes());
-            
+
             if self.orders_buy[i].owner_id == env::signer_account_id().to_string() {
                 self.orders_buy[i].confirmation_owner_id = 3;
-                if self.orders_buy[i].status == 1 || self.orders_sell[i].status == 2 {
+                if self.orders_buy[i].status == 1 || self.orders_buy[i].status == 2 {
                     self.orders_buy[i].status = 4;
                 }
                 env::log(b"cancellation request sent");
             } else if self.orders_buy[i].signer_id == env::signer_account_id().to_string() {
-                let j = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer Sell not found");
+                let j = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer Sell not found");
                 self.orders_buy[i].confirmation_signer_id = 3;
                 if self.orders_buy[i].status == 1 || self.orders_buy[i].status == 2 {
                     self.orders_buy[i].status = 4;
                 }
 
-                Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(self.orders_sell[i].operation_amount * YOCTO_NEAR);
+                Promise::new(self.orders_buy[i].owner_id.to_string()).transfer(self.orders_buy[i].operation_amount * YOCTO_NEAR);
 
                 let data = OrderObject {
-                    offer_id:self.orders_sell[i].offer_id,
-                    order_id: self.orders_sell[i].order_id,
-                    owner_id: self.orders_sell[i].owner_id.to_string(),
-                    signer_id: self.orders_sell[i].signer_id.to_string(),
-                    exchange_rate: self.orders_sell[i].exchange_rate.to_string(),
-                    operation_amount: self.orders_sell[i].operation_amount,
-                    payment_method: self.orders_sell[i].payment_method,
-                    fiat_method: self.orders_sell[i].fiat_method,
-                    confirmation_owner_id: self.orders_sell[i].confirmation_owner_id,
-                    confirmation_signer_id: self.orders_sell[i].confirmation_signer_id,
-                    confirmation_current: self.orders_sell[i].confirmation_current,
-                    time: self.orders_sell[i].time,
-                    datetime: self.orders_sell[i].datetime.to_string(),
-                    terms_conditions: self.orders_sell[i].terms_conditions.to_string(),
+                    offer_id:self.orders_buy[i].offer_id,
+                    order_id: self.orders_buy[i].order_id,
+                    owner_id: self.orders_buy[i].owner_id.to_string(),
+                    signer_id: self.orders_buy[i].signer_id.to_string(),
+                    exchange_rate: self.orders_buy[i].exchange_rate.to_string(),
+                    operation_amount: self.orders_buy[i].operation_amount,
+                    payment_method: self.orders_buy[i].payment_method,
+                    fiat_method: self.orders_buy[i].fiat_method,
+                    confirmation_owner_id: self.orders_buy[i].confirmation_owner_id,
+                    confirmation_signer_id: self.orders_buy[i].confirmation_signer_id,
+                    confirmation_current: self.orders_buy[i].confirmation_current,
+                    time: self.orders_buy[i].time,
+                    datetime: self.orders_buy[i].datetime.to_string(),
+                    terms_conditions: self.orders_buy[i].terms_conditions.to_string(),
                     status: 4,
                 };
 
