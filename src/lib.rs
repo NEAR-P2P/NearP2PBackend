@@ -1164,7 +1164,7 @@ impl NearP2P {
                 self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
                 self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
 
-                let fee_deducted = (self.orders_buy[i].operation_amount * 0.06) * YOCTO_NEAR;
+                let fee_deducted = (self.orders_buy[i].operation_amount * 0.004) as u128 * YOCTO_NEAR;
                 let operation_amount = self.orders_buy[i].operation_amount as u128 * YOCTO_NEAR;
                 
                 Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(operation_amount - fee_deducted);
@@ -1219,7 +1219,7 @@ impl NearP2P {
                 self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
                 self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
                 
-                let fee_deducted = (self.orders_buy[i].operation_amount * 0.06) * YOCTO_NEAR;
+                let fee_deducted = (self.orders_buy[i].operation_amount * 0.004) as u128 * YOCTO_NEAR;
                 let operation_amount = self.orders_buy[i].operation_amount as u128 * YOCTO_NEAR; 
 
                 Promise::new(self.orders_buy[i].signer_id.to_string()).transfer(operation_amount - fee_deducted);
