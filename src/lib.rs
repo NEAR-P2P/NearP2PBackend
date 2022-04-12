@@ -1171,8 +1171,8 @@ impl NearP2P {
                 let fee_deducted_none = (self.orders_sell[i].operation_amount * 0.004);
                 let operation_amount_none = self.orders_sell[i].operation_amount;
                 env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted, operation_amount).as_ref());
-                env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted_u128, operation_u128).as_ref());
-                env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted_none, operation_none).as_ref());
+                env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted_u128, operation_amount_u128).as_ref());
+                env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted_none, operation_amount_none).as_ref());
                 Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(operation_amount - fee_deducted);
 
                 Promise::new(self.vault.clone()).transfer(fee_deducted);
@@ -1232,8 +1232,8 @@ impl NearP2P {
                 let fee_deducted_none = (self.orders_sell[i].operation_amount * 0.004);
                 let operation_amount_none = self.orders_sell[i].operation_amount;
                 env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted, operation_amount).as_ref());
-                env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted_u128, operation_u128).as_ref());
-                env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted_none, operation_none).as_ref());
+                env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted_u128, operation_amount_u128).as_ref());
+                env::log(format!("Fee deducted: {} - Operation amount: {}", fee_deducted_none, operation_amount_none).as_ref());
                 Promise::new(self.orders_buy[i].signer_id.to_string()).transfer(operation_amount - fee_deducted);
                 
                 Promise::new(self.vault.clone()).transfer(fee_deducted);
