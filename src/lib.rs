@@ -23,26 +23,14 @@ Develop by GlobalDv @2022
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use serde::Serialize;
 use serde::Deserialize;
-// use near_sdk::collections::UnorderedMap;
 use near_sdk::{env, near_bindgen, AccountId, Promise, assert_one_yocto}; // json_types::U128, 
-// use std::collections::HashMap;
-// use near_sdk::json_types::ValidAccountId;
+
 
 near_sdk::setup_alloc!();
 
 const YOCTO_NEAR: u128 = 1000000000000000000000000;
 const KEY_TOKEN: &str = "qbogcyqiqO7Utwqm3VgKhxrmQIc0ROjj";
 const FEE_TRANSACTION: f64 = 0.004;
-
-/*#[derive(Default, BorshDeserialize, BorshSerialize)]
-pub struct Account {
-    /// Current unlocked balance.
-    pub balance: Balance,
-    /// Allowed account to the allowance amount.
-    pub allowances: HashMap<AccountId, Balance>,
-    /// Allowed account to locked balance.
-    pub locked_balances: HashMap<AccountId, Balance>,
-}*/
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /// Objects Definition////////////////////////////////////////////////////////////////////////////
@@ -568,7 +556,7 @@ impl NearP2P {
     ) -> i128{
         let attached_deposit = env::attached_deposit();
         assert!(
-            (attached_deposit / YOCTO_NEAR) as f64 >= amount,
+            (attached_deposit as f64 / YOCTO_NEAR as f64) as f64 >= amount,
             "the deposit attached is less than the quantity supplied : {}",
             amount
         );
@@ -616,6 +604,18 @@ impl NearP2P {
             self.offers_buy[offer].exchange_rate = exchange_rate.unwrap();
         }
         if remaining_amount.is_some() {
+            if remaining_amount.unwrap() < self.offers_buy[offer].remaining_amount {
+                let diff_return = self.offers_buy[offer].remaining_amount - remaining_amount.unwrap();
+                Promise::new(self.offers_buy[offer].owner_id.clone()).transfer((diff_return * YOCTO_NEAR as f64) as u128);
+            } else if remaining_amount.unwrap() > self.offers_buy[offer].remaining_amount {
+                let diff_pay = self.offers_buy[offer].remaining_amount - remaining_amount.unwrap();
+                let attached_deposit = env::attached_deposit();
+                assert!(
+                    (attached_deposit as f64 / YOCTO_NEAR as f64) as f64 >= diff_pay,
+                    "the deposit attached is less than the remaining supplied : {}",
+                    diff_pay
+                );        
+            }
             self.offers_buy[offer].remaining_amount = remaining_amount.unwrap();
         }
         if min_limit.is_some() {
@@ -659,6 +659,7 @@ impl NearP2P {
 
     pub fn delete_offers_buy(&mut self, offer_id: i128) {
         let offer = self.offers_buy.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id().to_string()).expect("Offer not found");
+        Promise::new(self.offers_buy[offer].owner_id.clone()).transfer((self.offers_buy[offer].remaining_amount * YOCTO_NEAR as f64) as u128);
         self.offers_buy.remove(offer);
         env::log(b"Offer Buy Delete");
     }
