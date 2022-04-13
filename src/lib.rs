@@ -614,7 +614,7 @@ impl NearP2P {
                 Promise::new(self.offers_buy[offer].owner_id.clone()).transfer((diff_return * YOCTO_NEAR as f64) as u128);
             } else if remaining_amount.unwrap() > self.offers_buy[offer].remaining_amount {
                 assert!(
-                    remaining_amount.unwrap() > self.offers_buy[offer].amount,
+                    remaining_amount.unwrap() <= self.offers_buy[offer].amount,
                     "the remaining amount is greater than the original amount of the offer, original amount {}, remaining amount {}.",
                     self.offers_buy[offer].amount, remaining_amount.unwrap()
                 );
