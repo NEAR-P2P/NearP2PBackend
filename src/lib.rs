@@ -596,6 +596,11 @@ impl NearP2P {
         , time: Option<i64>
         , terms_conditions: Option<String>
     ) -> OfferObject {
+        let attached_deposit = env::attached_deposit();
+        assert!(
+            attached_deposit >= 1,
+            "you have to deposit a minimum of one yoctoNear"
+        );
         let offer = self.offers_buy.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id().to_string()).expect("Offer not found");
         if asset.is_some() {
             self.offers_buy[offer].asset = asset.unwrap();
@@ -608,13 +613,17 @@ impl NearP2P {
                 let diff_return = self.offers_buy[offer].remaining_amount - remaining_amount.unwrap();
                 Promise::new(self.offers_buy[offer].owner_id.clone()).transfer((diff_return * YOCTO_NEAR as f64) as u128);
             } else if remaining_amount.unwrap() > self.offers_buy[offer].remaining_amount {
+                assert!(
+                    remaining_amount.unwrap() > self.offers_buy[offer].amount,
+                    "the remaining amount is greater than the original amount of the offer, original amount {}, remaining amount {}.",
+                    self.offers_buy[offer].amount, remaining_amount.unwrap()
+                );
                 let diff_pay = self.offers_buy[offer].remaining_amount - remaining_amount.unwrap();
-                let attached_deposit = env::attached_deposit();
                 assert!(
                     (attached_deposit as f64 / YOCTO_NEAR as f64) as f64 >= diff_pay,
                     "the deposit attached is less than the remaining supplied : {}",
                     diff_pay
-                );        
+                );  
             }
             self.offers_buy[offer].remaining_amount = remaining_amount.unwrap();
         }
