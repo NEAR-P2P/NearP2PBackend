@@ -29,7 +29,7 @@ use near_sdk::{env, near_bindgen, AccountId, Promise, assert_one_yocto}; // json
 near_sdk::setup_alloc!();
 
 const YOCTO_NEAR: u128 = 1000000000000000000000000;
-const KEY_TOKEN: &str = "OzhQbGSPa63uohj6VTXBV5KbUm2x0Q3i";
+const KEY_TOKEN: &str = "qbogcyqiqO7Utwqm3VgKhxrmQIc0ROjj";
 const FEE_TRANSACTION: f64 = 0.003;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
