@@ -30,7 +30,7 @@ near_sdk::setup_alloc!();
 
 const YOCTO_NEAR: u128 = 1000000000000000000000000;
 const KEY_TOKEN: &str = "qbogcyqiqO7Utwqm3VgKhxrmQIc0ROjj";
-const FEE_TRANSACTION: f64 = 0.004;
+const FEE_TRANSACTION: f64 = 0.003;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /// Objects Definition////////////////////////////////////////////////////////////////////////////
@@ -228,9 +228,9 @@ impl Default for NearP2P {
     fn default() -> Self {
         Self {
             users: vec![UserObject {
-                user_id: "p2p-testnet.testnet".to_string(),
-                name: "info".to_string(),
-                last_name: "info".to_string(),
+                user_id: "info.testnet".to_string(),
+                name: "Andrés".to_string(),
+                last_name: "Dominguez".to_string(),
                 phone: "0413-4158733".to_string(),
                 email: "adominguez@dvconsultores.com".to_string(),
                 country: "Venezuela".to_string(),
@@ -248,7 +248,7 @@ impl Default for NearP2P {
             order_history_sell: Vec::new(),
             order_history_buy: Vec::new(),
             merchant: vec![MerchantObject {
-                user_id: "p2p-testnet.testnet".to_string(),
+                user_id: "info.testnet".to_string(),
                 total_orders: 1,
                 orders_completed: 1,
                 percentaje_completion: 0.0,
@@ -260,11 +260,10 @@ impl Default for NearP2P {
             payment_method_id: 0,
             fiat_method: Vec::new(),
             fiat_method_id: 0,
-            vault: "vault.p2p-testnet.testnet".to_string(),
+            vault: "near-p2p-smart-contract.sputnikv2.testnet".to_string(),
             administrators: vec![
-                            "info.testnet".to_string(),
-                            "p2p-testnet.testnet".to_string(),
-                            "gperez.testnet".to_string(),
+                        "info.testnet".to_string(),
+                        "gperez.testnet".to_string(),
                         ],
         }
     }
