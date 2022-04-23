@@ -1005,13 +1005,14 @@ impl NearP2P {
             attached_deposit >= 1,
             "you have to deposit a minimum of one yoctoNear"
         );
-        
+
+
         if offer_type == 1 {
             for i in 0..self.offers_sell.len() {
                 if self.offers_sell.get(i).unwrap().offer_id == offer_id {
                     env::log(format!("remainig amount en float: {} - remainig amount en yocto: {} - atached deposit: {}", self.offers_sell[i].remaining_amount ,
-                    (self.offers_sell[i].remaining_amount * YOCTO_NEAR as f64), attached_deposit).as_bytes());
-                    if (self.offers_sell[i].remaining_amount * YOCTO_NEAR as f64) as u128 >= attached_deposit {
+                    (self.offers_sell[i].remaining_amount * YOCTO_NEAR as f64) as u128, attached_deposit).as_bytes());
+                    if (self.offers_sell[i].remaining_amount * YOCTO_NEAR as f64) as f64 >= attached_deposit as f64 {
                         ////////////////////////////////////////////////////////////////////
                         /* colocar aqui el bloqueo de saldo del owner_id  cuando sea venta */
                         ////////////////////////////////////////////////////////////////////
