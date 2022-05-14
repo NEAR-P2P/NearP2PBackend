@@ -362,13 +362,11 @@ impl NearP2P {
     /// Set the users object into the contract
     /// Params: user_id: String, name: String
     /// name: String, last_name: String, phone: String, email: String, country: String
-    #[payable]
     pub fn put_user(&mut self, name: String
         , last_name: String
         , phone: String
         , email: String
         , country: String) {
-        assert_one_yocto();
         for i in 0..self.users.len() {
             if self.users[i].user_id == env::signer_account_id() {
                 self.users[i].name = name.to_string();
@@ -918,14 +916,12 @@ impl NearP2P {
     }
     
     //Set the Payment Method User object into the contract
-    #[payable]
     pub fn set_payment_method_user(&mut self, payment_method_id: i128
         , input1: String
         , input2: String
         , input3: String
         , input4: String
         , input5: String) -> String {
-        assert_one_yocto();
         for i in 0..self.payment_method_user.len() {
             if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id().to_string() {
                 env::panic(b"Repeated payment methods are not allowed");
@@ -957,14 +953,12 @@ impl NearP2P {
     }
 
     /// put the Payment Method object into the contract
-    #[payable]
     pub fn put_payment_method_user(&mut self, payment_method_id: i128
         , input1: String
         , input2: String
         , input3: String
         , input4: String
         , input5: String) {
-        assert_one_yocto();
         for i in 0..self.payment_method_user.len() {
             if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id().to_string() {
                 self.payment_method_user[i].input1 = input1.to_string();
@@ -979,9 +973,7 @@ impl NearP2P {
     }
 
     /// delete the Payment Method user object into the contract
-    #[payable]
     pub fn delete_payment_method_user(&mut self, payment_method_id: i128) {
-        assert_one_yocto();
         for i in 0..self.payment_method_user.len() {
             if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id().to_string() {
                 self.payment_method_user.remove(i);
