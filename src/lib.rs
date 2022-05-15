@@ -322,14 +322,12 @@ impl NearP2P {
     /// Set the users object into the contract
     /// Params: user_id: String, name: String
     /// last_name: String, phone: String, email: String, country: String
-    #[payable]
     pub fn set_user(&mut self,
         name: String,
         last_name: String,
         phone: String,
         email: String,
         country: String) -> String {
-        assert_one_yocto();
         let user = self.users.iter().find(|x| x.user_id == env::signer_account_id());
         if user.is_some() {
             env::panic(b"profile already exists");
