@@ -1279,7 +1279,7 @@ impl NearP2P {
         assert_one_yocto();
         if offer_type == 1 {
             let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
-            if self.orders_sell[i].status == 2 || self.orders_sell[i].status == 1 {
+            if self.orders_sell[i].status != 3 {
                 if self.orders_sell[i].owner_id == env::signer_account_id().to_string() {
                     self.orders_sell[i].status = 3;
                     self.orders_sell[i].confirmation_owner_id = 2;
@@ -1296,7 +1296,7 @@ impl NearP2P {
             }
         } else if offer_type == 2 {
             let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order buy not found");
-            if self.orders_buy[i].status == 2 || self.orders_buy[i].status == 1 {
+            if self.orders_buy[i].status != 3 {
                 if self.orders_buy[i].owner_id == env::signer_account_id().to_string() {
                     self.orders_buy[i].status = 3;
                     self.orders_buy[i].confirmation_owner_id = 2;
@@ -1321,7 +1321,7 @@ impl NearP2P {
         if KEY_TOKEN == token {
             if offer_type == 1 {
                 let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
-                if self.orders_sell[i].status == 2 || self.orders_sell[i].status == 1 {
+                if self.orders_sell[i].status != 3 {
                     self.orders_sell[i].status = 3;
                     self.orders_sell[i].confirmation_owner_id = 2;
                     self.orders_sell[i].confirmation_signer_id = 2;
@@ -1331,7 +1331,7 @@ impl NearP2P {
                 }
             } else if offer_type == 2 {
                 let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order buy not found");
-                if self.orders_buy[i].status == 2 || self.orders_buy[i].status == 1 {
+                if self.orders_buy[i].status != 3 {
                     self.orders_buy[i].status = 3;
                     self.orders_buy[i].confirmation_owner_id = 2;
                     self.orders_buy[i].confirmation_signer_id = 2;
