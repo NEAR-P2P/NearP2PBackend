@@ -228,7 +228,7 @@ impl Default for NearP2P {
     fn default() -> Self {
         Self {
             users: vec![UserObject {
-                user_id: "info.testnet".to_string(),
+                user_id: "andresdom.near".to_string(),
                 name: "Andrés".to_string(),
                 last_name: "Dominguez".to_string(),
                 phone: "0413-4158733".to_string(),
@@ -248,7 +248,7 @@ impl Default for NearP2P {
             order_history_sell: Vec::new(),
             order_history_buy: Vec::new(),
             merchant: vec![MerchantObject {
-                user_id: "info.testnet".to_string(),
+                user_id: "andresdom.near".to_string(),
                 total_orders: 1,
                 orders_completed: 1,
                 percentaje_completion: 0.0,
@@ -260,10 +260,15 @@ impl Default for NearP2P {
             payment_method_id: 0,
             fiat_method: Vec::new(),
             fiat_method_id: 0,
-            vault: "near-p2p-smart-contract.sputnikv2.testnet".to_string(),
+            vault: "vault.nearp2pdex.near".to_string(),
             administrators: vec![
-                        "info.testnet".to_string(),
-                        "gperez.testnet".to_string(),
+                        "andresdom.near".to_string(),
+                        "maruja.near".to_string(),
+                        "gperez83.near".to_string(),
+                        "leyner.near".to_string(),
+                        "hrpalencia.near".to_string(),
+                        "fritzwagner.near".to_string(),
+                        "gastonwagner.near".to_string(),
                         ],
         }
     }
@@ -317,14 +322,12 @@ impl NearP2P {
     /// Set the users object into the contract
     /// Params: user_id: String, name: String
     /// last_name: String, phone: String, email: String, country: String
-    #[payable]
     pub fn set_user(&mut self,
         name: String,
         last_name: String,
         phone: String,
         email: String,
         country: String) -> String {
-        assert_one_yocto();
         let user = self.users.iter().find(|x| x.user_id == env::signer_account_id());
         if user.is_some() {
             env::panic(b"profile already exists");
@@ -990,6 +993,7 @@ impl NearP2P {
         , amount: f64
         , payment_method: i128
         , datetime: String
+        , rate: f64
     ) -> String {
         let attached_deposit = env::attached_deposit();
         assert!(
@@ -1019,7 +1023,6 @@ impl NearP2P {
                         
                         let fee = (attached_deposit as f64 / YOCTO_NEAR as f64) as f64 * FEE_TRANSACTION;
                         let fee_deducted = (attached_deposit as f64 / YOCTO_NEAR as f64) as f64 - fee;
-
                         self.offers_sell[i].remaining_amount = remaining;
                         self.order_sell_id += 1;
                         let data = OrderObject {
@@ -1027,7 +1030,7 @@ impl NearP2P {
                             order_id: self.order_sell_id,
                             owner_id: self.offers_sell[i].owner_id.to_string(),
                             signer_id: env::signer_account_id(),
-                            exchange_rate: self.offers_sell[i].exchange_rate.to_string(),
+                            exchange_rate: rate.to_string(), // self.offers_sell[i].exchange_rate.to_string(),
                             operation_amount: (attached_deposit as f64 / YOCTO_NEAR as f64) as f64,
                             fee_deducted: fee_deducted,
                             payment_method: payment_method,
@@ -1091,7 +1094,7 @@ impl NearP2P {
                             order_id: self.order_buy_id,
                             owner_id: self.offers_buy[i].owner_id.to_string(),
                             signer_id: env::signer_account_id(),
-                            exchange_rate: self.offers_buy[i].exchange_rate.to_string(),
+                            exchange_rate: rate.to_string(), //self.offers_buy[i].exchange_rate.to_string(),
                             operation_amount: amount,
                             fee_deducted: fee_deducted,
                             payment_method: payment_method,
