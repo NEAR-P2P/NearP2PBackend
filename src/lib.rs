@@ -409,9 +409,10 @@ impl NearP2P {
         is_merchant: Option<bool>,
         owner_id: Option<AccountId>,
         status: Option<i8>,
-        offer_id: Option<i128>
+        offer_id: Option<i128>,
+        signer_id: AccountId
     ) -> Vec<OfferObject> {
-        search_offer(self.offers_sell, amount, fiat_method, payment_method, is_merchant, owner_id, status, offer_id)
+        search_offer(self.offers_sell, amount, fiat_method, payment_method, is_merchant, owner_id, status, offer_id, signer_id)
     }
 
 
@@ -532,9 +533,10 @@ impl NearP2P {
         is_merchant: Option<bool>,
         owner_id: Option<AccountId>,
         status: Option<i8>,
-        offer_id: Option<i128>
+        offer_id: Option<i128>,
+        signer_id: AccountId
     ) -> Vec<OfferObject> {
-        search_offer(self.offers_buy, amount, fiat_method, payment_method, is_merchant, owner_id, status, offer_id)
+        search_offer(self.offers_buy, amount, fiat_method, payment_method, is_merchant, owner_id, status, offer_id, signer_id)
     }
 
 
@@ -1460,9 +1462,26 @@ fn search_offer(data: Vec<OfferObject>,
     is_merchant: Option<bool>,
     owner_id: Option<AccountId>,
     status: Option<i8>,
-    offer_id: Option<i128>
+    offer_id: Option<i128>,
+    signer_id: AccountId
 ) -> Vec<OfferObject> {
-    let mut result: Vec<OfferObject> = data ;
+    let mut result: Vec<OfferObject> = data.iter().filter(|x| x.owner_id != signer_id)
+                                            .map(|r| OfferObject { 
+                                                offer_id: r.offer_id,
+                                                owner_id: r.owner_id.clone(),
+                                                asset: r.asset.clone(), // NEAR, USD
+                                                exchange_rate: r.exchange_rate.clone(),
+                                                amount: r.amount,
+                                                remaining_amount: r.remaining_amount,
+                                                min_limit: r.min_limit,
+                                                max_limit: r.max_limit,
+                                                payment_method: r.payment_method.iter().map(|r| PaymentMethodsOfferObject {id: r.id, payment_method: r.payment_method.clone()}).collect(), // Info concerning to payment asociated to payment contract
+                                                fiat_method: r.fiat_method,
+                                                is_merchant: r.is_merchant,
+                                                time: r.time,
+                                                terms_conditions: r.terms_conditions.clone(),
+                                                status: r.status, // 1: active, 2: closed).collect()
+                                            }).collect();
 
     if amount.is_some() {
         result = result.iter().filter(|x| x.amount >= amount.unwrap())
