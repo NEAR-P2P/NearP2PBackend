@@ -24,7 +24,7 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use serde::Serialize;
 use serde::Deserialize;
 use near_sdk::{env, near_bindgen, AccountId, Promise, assert_one_yocto}; // json_types::U128, 
-
+use near_sdk::json_types::U128;
 
 near_sdk::setup_alloc!();
 
@@ -54,7 +54,7 @@ pub struct UserObject {
 }
 
 
-#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize)]
+#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct PaymentMethodsOfferObject {
     id: i128,
@@ -66,7 +66,7 @@ pub struct PaymentMethodsOfferObject {
 User OfferObject: Struct for offer that will be listed.
 This object contains, order_id, owner_id, asset, exchange_rate, email, country
 */
-#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize)]
+#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct OfferObject {
     offer_id: i128,
@@ -86,7 +86,7 @@ pub struct OfferObject {
 }
 
 
-#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize)]
+#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct OrderObject {
     offer_id: i128,
@@ -111,7 +111,7 @@ pub struct OrderObject {
 User MerchantObject: Struct for Merchants.
 This object contains, user_id, total_orders, orders_completed, percentaje_completion, badge
 */
-#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize)]
+#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct MerchantObject {
     user_id: AccountId,
@@ -127,7 +127,7 @@ pub struct MerchantObject {
 User PaymentMethodsObject: Struct for Payments.
 This object contains, id, payment_method, input1, input2, input3, input4, input5
 */
-#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize)]
+#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct PaymentMethodsObject {
     id: i128,
@@ -162,7 +162,7 @@ pub struct PaymentMethodUserObject {
 User FiatMethodsObject: Struct for Fiat list.
 This object contains, id, fiat_method, flagcdn
 */
-#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize)]
+#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct FiatMethodsObject {
     id: i128,
@@ -300,10 +300,24 @@ impl NearP2P {
 
     /// Returns the users object loaded in contract
     /// Params: user_id: AccountId
-    pub fn get_user(self, user_id: Option<AccountId>) -> Vec<UserObject> {
+    pub fn get_user(self, 
+        user_id: Option<AccountId>,
+        from_index: Option<U128>,
+        limit: Option<u64>,
+    ) -> Vec<UserObject> {
+        let start_index: u128 = from_index.map(From::from).unwrap_or_default();
+        assert!(
+            (self.users.len() as u128) > start_index,
+            "Out of bounds, please use a smaller from_index."
+        );
+        let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
+        assert_ne!(limit, 0, "Cannot provide limit of 0.");
+
         if user_id.is_some() {
             let user = user_id.unwrap().clone();
             self.users.iter().filter(|x| x.user_id == user.to_string())
+            .skip(start_index as usize)
+            .take(limit)
             .map(|x| UserObject {
                 user_id: x.user_id.to_string(),
                 name: x.name.to_string(),
@@ -315,7 +329,19 @@ impl NearP2P {
                 is_active: x.is_active,
             }).collect()
         } else {
-            self.users
+            self.users.iter()
+            .skip(start_index as usize)
+            .take(limit)
+            .map(|x| UserObject {
+                user_id: x.user_id.to_string(),
+                name: x.name.to_string(),
+                last_name: x.last_name.to_string(),
+                phone: x.phone.to_string(),
+                email: x.email.to_string(),
+                country: x.country.to_string(),
+                mediator: x.mediator,
+                is_active: x.is_active,
+            }).collect()
         }
     }
 
@@ -410,9 +436,11 @@ impl NearP2P {
         owner_id: Option<AccountId>,
         status: Option<i8>,
         offer_id: Option<i128>,
-        signer_id: Option<AccountId>
+        signer_id: Option<AccountId>,
+        from_index: Option<U128>,
+        limit: Option<u64>,
     ) -> Vec<OfferObject> {
-        search_offer(self.offers_sell, amount, fiat_method, payment_method, is_merchant, owner_id, status, offer_id, signer_id)
+        search_offer(self.offers_sell, amount, fiat_method, payment_method, is_merchant, owner_id, status, offer_id, signer_id, from_index, limit)
     }
 
 
@@ -534,9 +562,11 @@ impl NearP2P {
         owner_id: Option<AccountId>,
         status: Option<i8>,
         offer_id: Option<i128>,
-        signer_id: Option<AccountId>
+        signer_id: Option<AccountId>,
+        from_index: Option<U128>,
+        limit: Option<u64>,
     ) -> Vec<OfferObject> {
-        search_offer(self.offers_buy, amount, fiat_method, payment_method, is_merchant, owner_id, status, offer_id, signer_id)
+        search_offer(self.offers_buy, amount, fiat_method, payment_method, is_merchant, owner_id, status, offer_id, signer_id, from_index, limit)
     }
 
 
@@ -677,25 +707,29 @@ impl NearP2P {
 
 
     /// Returns the merchant object loaded in contract
-    pub fn get_merchant(self, user_id: AccountId) -> Vec<MerchantObject> {
+    pub fn get_merchant(self,
+        user_id: AccountId,
+        from_index: Option<U128>,
+        limit: Option<u64>,
+    ) -> Vec<MerchantObject> {
+        let start_index: u128 = from_index.map(From::from).unwrap_or_default();
+        assert!(
+            (self.merchant.len() as u128) > start_index,
+            "Out of bounds, please use a smaller from_index."
+        );
+        let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
+        assert_ne!(limit, 0, "Cannot provide limit of 0.");
+
         if user_id == "%" {
-            self.merchant  // Return all merchants   
+            self.merchant.iter()  // Return all merchants
+            .skip(start_index as usize)
+            .take(limit) 
+            .map(|x| x.clone()).collect()
         } else {
-            let mut result: Vec<MerchantObject> = Vec::new();
-            // for i in 0..self.merchant.len() {
-            for i in (0..self.merchant.len()).filter(|&x| self.merchant[x].user_id == user_id.to_string()) {
-                //if self.merchant[i].user_id == user_id.to_string() {
-                result.push(MerchantObject {
-                    user_id: self.merchant[i].user_id.to_string(),
-                    total_orders: self.merchant[i].total_orders,
-                    orders_completed: self.merchant[i].orders_completed,
-                    percentaje_completion: self.merchant[i].percentaje_completion,
-                    badge: self.merchant[i].badge.to_string(),
-                    is_merchant: self.merchant[i].is_merchant,
-                });
-                //}
-            }
-            result
+            self.merchant.iter().filter(|x| x.user_id == user_id.to_string())
+            .skip(start_index as usize)
+            .take(limit)
+            .map(|x| x.clone()).collect()                
         }
     }
 
@@ -723,8 +757,22 @@ impl NearP2P {
 
 
     /// Returns the Payment Method object loaded in contract
-    pub fn get_payment_method(self) -> Vec<PaymentMethodsObject> {
-        self.payment_method
+    pub fn get_payment_method(&self,
+        from_index: Option<U128>,
+        limit: Option<u64>
+    ) -> Vec<PaymentMethodsObject> {
+        let start_index: u128 = from_index.map(From::from).unwrap_or_default();
+        assert!(
+            (self.payment_method.len() as u128) > start_index,
+            "Out of bounds, please use a smaller from_index."
+        );
+        let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
+        assert_ne!(limit, 0, "Cannot provide limit of 0.");
+
+        self.payment_method.iter()
+        .skip(start_index as usize)
+        .take(limit)
+        .map(|x| x.clone()).collect()
     }
 
 
@@ -817,8 +865,22 @@ impl NearP2P {
     }
     
     /// Returns the Fiat Method object loaded in contract
-    pub fn get_fiat_method(self) -> Vec<FiatMethodsObject> {
-        self.fiat_method
+    pub fn get_fiat_method(&self,
+        from_index: Option<U128>,
+        limit: Option<u64>
+    ) -> Vec<FiatMethodsObject> {
+        let start_index: u128 = from_index.map(From::from).unwrap_or_default();
+        assert!(
+            (self.fiat_method.len() as u128) > start_index,
+            "Out of bounds, please use a smaller from_index."
+        );
+        let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
+        assert_ne!(limit, 0, "Cannot provide limit of 0.");
+
+        self.fiat_method.iter()
+        .skip(start_index as usize)
+        .take(limit)
+        .map(|x| x.clone()).collect()
     }
 
     /// Set the Fiat Method object into the contract
@@ -1142,21 +1204,49 @@ impl NearP2P {
     }
 
 
-    pub fn get_order_sell(self, order_id: Option<i128>, offer_id: Option<i128>, owner_id: Option<AccountId>, signer_id: Option<AccountId>, status: Option<i8>) -> Vec<OrderObject> {
-        search_order(self.orders_sell, order_id, offer_id, owner_id, signer_id, status)
+    pub fn get_order_sell(self,
+        order_id: Option<i128>,
+        offer_id: Option<i128>,
+        owner_id: Option<AccountId>,
+        signer_id: Option<AccountId>,
+        status: Option<i8>,
+        from_index: Option<U128>,
+        limit: Option<u64>,
+    ) -> Vec<OrderObject> {
+        search_order(self.orders_sell, order_id, offer_id, owner_id, signer_id, status, from_index, limit)
     }
 
 
-    pub fn get_order_buy(self, order_id: Option<i128>, offer_id: Option<i128>, owner_id: Option<AccountId>, signer_id: Option<AccountId>, status: Option<i8>) -> Vec<OrderObject> {
-        search_order(self.orders_buy, order_id, offer_id, owner_id, signer_id, status)
+    pub fn get_order_buy(self,
+        order_id: Option<i128>,
+        offer_id: Option<i128>,
+        owner_id: Option<AccountId>,
+        signer_id: Option<AccountId>,
+        status: Option<i8>,
+        from_index: Option<U128>,
+        limit: Option<u64>,
+    ) -> Vec<OrderObject> {
+        search_order(self.orders_buy, order_id, offer_id, owner_id, signer_id, status, from_index, limit)
     }
     
-    pub fn get_order_history_sell(self, user_id: Option<AccountId>, order_id: Option<i128>, status: Option<i8>) -> Vec<OrderObject> {
-        search_order_history(self.order_history_sell, user_id, order_id, status)
+    pub fn get_order_history_sell(self,
+        user_id: Option<AccountId>,
+        order_id: Option<i128>,
+        status: Option<i8>,
+        from_index: Option<U128>,
+        limit: Option<u64>,
+    ) -> Vec<OrderObject> {
+        search_order_history(self.order_history_sell, user_id, order_id, status, from_index, limit)
     }
 
-    pub fn get_order_history_buy(self, user_id: Option<AccountId>, order_id: Option<i128>, status: Option<i8>) -> Vec<OrderObject> {
-        search_order_history(self.order_history_buy, user_id, order_id, status)
+    pub fn get_order_history_buy(self,
+        user_id: Option<AccountId>,
+        order_id: Option<i128>,
+        status: Option<i8>,
+        from_index: Option<U128>,
+        limit: Option<u64>,
+    ) -> Vec<OrderObject> {
+        search_order_history(self.order_history_buy, user_id, order_id, status, from_index, limit)
     }
     
     
@@ -1469,179 +1559,57 @@ fn search_offer(data: Vec<OfferObject>,
     owner_id: Option<AccountId>,
     status: Option<i8>,
     offer_id: Option<i128>,
-    signer_id: Option<AccountId>
+    signer_id: Option<AccountId>,
+    from_index: Option<U128>,
+    limit: Option<u64>,
 ) -> Vec<OfferObject> {
     let mut result: Vec<OfferObject> = data;
 
+    let start_index: u128 = from_index.map(From::from).unwrap_or_default();
+    assert!(
+        (result.len() as u128) > start_index,
+        "Out of bounds, please use a smaller from_index."
+    );
+    let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
+    assert_ne!(limit, 0, "Cannot provide limit of 0.");
+
     if signer_id.is_some() {
         result = result.iter().filter(|x| x.owner_id != signer_id.as_ref().unwrap().to_string())
-                    .map(|r| OfferObject { 
-                        offer_id: r.offer_id,
-                        owner_id: r.owner_id.clone(),
-                        asset: r.asset.clone(), // NEAR, USD
-                        exchange_rate: r.exchange_rate.clone(),
-                        amount: r.amount,
-                        remaining_amount: r.remaining_amount,
-                        min_limit: r.min_limit,
-                        max_limit: r.max_limit,
-                        payment_method: r.payment_method.iter().map(|r| PaymentMethodsOfferObject {id: r.id, payment_method: r.payment_method.clone()}).collect(), // Info concerning to payment asociated to payment contract
-                        fiat_method: r.fiat_method,
-                        is_merchant: r.is_merchant,
-                        time: r.time,
-                        terms_conditions: r.terms_conditions.clone(),
-                        status: r.status, // 1: active, 2: closed).collect()
-                    }).collect();
+                    .map(|r| r.clone()).collect();
     }
     if amount.is_some() {
         result = result.iter().filter(|x| x.amount >= amount.unwrap())
-                    .map(|r| OfferObject { 
-                        offer_id: r.offer_id,
-                        owner_id: r.owner_id.clone(),
-                        asset: r.asset.clone(), // NEAR, USD
-                        exchange_rate: r.exchange_rate.clone(),
-                        amount: r.amount,
-                        remaining_amount: r.remaining_amount,
-                        min_limit: r.min_limit,
-                        max_limit: r.max_limit,
-                        payment_method: r.payment_method.iter().map(|r| PaymentMethodsOfferObject {id: r.id, payment_method: r.payment_method.clone()}).collect(), // Info concerning to payment asociated to payment contract
-                        fiat_method: r.fiat_method,
-                        is_merchant: r.is_merchant,
-                        time: r.time,
-                        terms_conditions: r.terms_conditions.clone(),
-                        status: r.status, // 1: active, 2: closed).collect()
-                    }).collect();
+                    .map(|r| r.clone()).collect();
     }
     if fiat_method.is_some() {
         result = result.iter().filter(|x| x.fiat_method == fiat_method.unwrap())
-                    .map(|r| OfferObject { 
-                        offer_id: r.offer_id,
-                        owner_id: r.owner_id.clone(),
-                        asset: r.asset.clone(), // NEAR, USD
-                        exchange_rate: r.exchange_rate.clone(),
-                        amount: r.amount,
-                        remaining_amount: r.remaining_amount,
-                        min_limit: r.min_limit,
-                        max_limit: r.max_limit,
-                        payment_method: r.payment_method.iter().map(|r| PaymentMethodsOfferObject {id: r.id, payment_method: r.payment_method.clone()}).collect(), // Info concerning to payment asociated to payment contract
-                        fiat_method: r.fiat_method,
-                        is_merchant: r.is_merchant,
-                        time: r.time,
-                        terms_conditions: r.terms_conditions.clone(),
-                        status: r.status, // 1: active, 2: closed).collect()
-                    }).collect();
+                    .map(|r| r.clone()).collect();
     }
     if payment_method.is_some() {
         result = result.iter().filter(|x| x.payment_method.iter().filter(|z| z.id == payment_method.unwrap()).count() > 0 )
-                    .map(|r| OfferObject { 
-                        offer_id: r.offer_id,
-                        owner_id: r.owner_id.clone(),
-                        asset: r.asset.clone(), // NEAR, USD
-                        exchange_rate: r.exchange_rate.clone(),
-                        amount: r.amount,
-                        remaining_amount: r.remaining_amount,
-                        min_limit: r.min_limit,
-                        max_limit: r.max_limit,
-                        payment_method: r.payment_method.iter().map(|r| PaymentMethodsOfferObject {id: r.id, payment_method: r.payment_method.clone()}).collect(), // Info concerning to payment asociated to payment contract
-                        fiat_method: r.fiat_method,
-                        is_merchant: r.is_merchant,
-                        time: r.time,
-                        terms_conditions: r.terms_conditions.clone(),
-                        status: r.status, // 1: active, 2: closed).collect()
-                    }).collect();
+                    .map(|r| r.clone()).collect();
     }
     if is_merchant.is_some() {
         result = result.iter().filter(|x| x.is_merchant == is_merchant.unwrap())
-                    .map(|r| OfferObject { 
-                        offer_id: r.offer_id,
-                        owner_id: r.owner_id.clone(),
-                        asset: r.asset.clone(), // NEAR, USD
-                        exchange_rate: r.exchange_rate.clone(),
-                        amount: r.amount,
-                        remaining_amount: r.remaining_amount,
-                        min_limit: r.min_limit,
-                        max_limit: r.max_limit,
-                        payment_method: r.payment_method.iter().map(|r| PaymentMethodsOfferObject {id: r.id, payment_method: r.payment_method.clone()}).collect(), // Info concerning to payment asociated to payment contract
-                        fiat_method: r.fiat_method,
-                        is_merchant: r.is_merchant,
-                        time: r.time,
-                        terms_conditions: r.terms_conditions.clone(),
-                        status: r.status, // 1: active, 2: closed).collect()
-                    }).collect();
+                    .map(|r| r.clone()).collect();
     }
     if owner_id.is_some() {
         result = result.iter().filter(|x| x.owner_id == owner_id.as_ref().unwrap().to_string())
-                    .map(|r| OfferObject { 
-                        offer_id: r.offer_id,
-                        owner_id: r.owner_id.clone(),
-                        asset: r.asset.clone(), // NEAR, USD
-                        exchange_rate: r.exchange_rate.clone(),
-                        amount: r.amount,
-                        remaining_amount: r.remaining_amount,
-                        min_limit: r.min_limit,
-                        max_limit: r.max_limit,
-                        payment_method: r.payment_method.iter().map(|r| PaymentMethodsOfferObject {id: r.id, payment_method: r.payment_method.clone()}).collect(), // Info concerning to payment asociated to payment contract
-                        fiat_method: r.fiat_method,
-                        is_merchant: r.is_merchant,
-                        time: r.time,
-                        terms_conditions: r.terms_conditions.clone(),
-                        status: r.status, // 1: active, 2: closed).collect()
-                    }).collect();
+                    .map(|r| r.clone()).collect();
     }
     if status.is_some() {
         result = result.iter().filter(|x| x.status == status.unwrap())
-                    .map(|r| OfferObject { 
-                        offer_id: r.offer_id,
-                        owner_id: r.owner_id.clone(),
-                        asset: r.asset.clone(), // NEAR, USD
-                        exchange_rate: r.exchange_rate.clone(),
-                        amount: r.amount,
-                        remaining_amount: r.remaining_amount,
-                        min_limit: r.min_limit,
-                        max_limit: r.max_limit,
-                        payment_method: r.payment_method.iter().map(|r| PaymentMethodsOfferObject {id: r.id, payment_method: r.payment_method.clone()}).collect(), // Info concerning to payment asociated to payment contract
-                        fiat_method: r.fiat_method,
-                        is_merchant: r.is_merchant,
-                        time: r.time,
-                        terms_conditions: r.terms_conditions.clone(),
-                        status: r.status, // 1: active, 2: closed).collect()
-                    }).collect();
+                    .map(|r| r.clone()).collect();
     }
     if offer_id.is_some() {
         result = result.iter().filter(|x| x.offer_id == offer_id.unwrap())
-                    .map(|r| OfferObject { 
-                        offer_id: r.offer_id,
-                        owner_id: r.owner_id.clone(),
-                        asset: r.asset.clone(), // NEAR, USD
-                        exchange_rate: r.exchange_rate.clone(),
-                        amount: r.amount,
-                        remaining_amount: r.remaining_amount,
-                        min_limit: r.min_limit,
-                        max_limit: r.max_limit,
-                        payment_method: r.payment_method.iter().map(|r| PaymentMethodsOfferObject {id: r.id, payment_method: r.payment_method.clone()}).collect(), // Info concerning to payment asociated to payment contract
-                        fiat_method: r.fiat_method,
-                        is_merchant: r.is_merchant,
-                        time: r.time,
-                        terms_conditions: r.terms_conditions.clone(),
-                        status: r.status, // 1: active, 2: closed).collect()
-                    }).collect();
+                    .map(|r| r.clone()).collect();
     }
 
-    result.iter().map(|r| OfferObject { 
-        offer_id: r.offer_id,
-        owner_id: r.owner_id.clone(),
-        asset: r.asset.clone(), // NEAR, USD
-        exchange_rate: r.exchange_rate.clone(),
-        amount: r.amount,
-        remaining_amount: r.remaining_amount,
-        min_limit: r.min_limit,
-        max_limit: r.max_limit,
-        payment_method: r.payment_method.iter().map(|r| PaymentMethodsOfferObject {id: r.id, payment_method: r.payment_method.clone()}).collect(), // Info concerning to payment asociated to payment contract
-        fiat_method: r.fiat_method,
-        is_merchant: r.is_merchant,
-        time: r.time,
-        terms_conditions: r.terms_conditions.clone(),
-        status: r.status, // 1: active, 2: closed).collect()
-    }).collect()
+    result.iter()
+    .skip(start_index as usize)
+    .take(limit)
+    .map(|r| r.clone()).collect()
     
 }
 
@@ -1652,213 +1620,90 @@ fn search_order(data: Vec<OrderObject>,
     owner_id: Option<AccountId>,
     signer_id: Option<AccountId>,
     status: Option<i8>,
+    from_index: Option<U128>,
+    limit: Option<u64>,
 ) -> Vec<OrderObject> {
     let mut result: Vec<OrderObject> = data;
+
+    let start_index: u128 = from_index.map(From::from).unwrap_or_default();
+    assert!(
+        (result.len() as u128) > start_index,
+        "Out of bounds, please use a smaller from_index."
+    );
+    let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
+    assert_ne!(limit, 0, "Cannot provide limit of 0.");
     
     if order_id.is_some() {
         result = result.iter().filter(|x| x.order_id == order_id.unwrap())
-                    .map(|r| OrderObject {
-                        offer_id: r.offer_id,
-                        order_id: r.order_id,
-                        owner_id: r.owner_id.clone(),
-                        signer_id: r.signer_id.clone(),
-                        exchange_rate: r.exchange_rate.clone(),
-                        operation_amount: r.operation_amount,
-                        fee_deducted: r.fee_deducted,
-                        payment_method: r.payment_method,
-                        fiat_method: r.fiat_method,
-                        confirmation_owner_id: r.confirmation_owner_id,
-                        confirmation_signer_id: r.confirmation_signer_id,
-                        confirmation_current: r.confirmation_current,
-                        time: r.time,
-                        datetime: r.datetime.clone(),
-                        terms_conditions: r.terms_conditions.clone(),
-                        status: r.status,
-                    }).collect();
+                    .map(|r| r.clone()).collect();
     }
     
     if offer_id.is_some() {
         result = result.iter().filter(|x| x.offer_id == offer_id.unwrap())
-                    .map(|r| OrderObject {
-                        offer_id: r.offer_id,
-                        order_id: r.order_id,
-                        owner_id: r.owner_id.clone(),
-                        signer_id: r.signer_id.clone(),
-                        exchange_rate: r.exchange_rate.clone(),
-                        operation_amount: r.operation_amount,
-                        fee_deducted: r.fee_deducted,
-                        payment_method: r.payment_method,
-                        fiat_method: r.fiat_method,
-                        confirmation_owner_id: r.confirmation_owner_id,
-                        confirmation_signer_id: r.confirmation_signer_id,
-                        confirmation_current: r.confirmation_current,
-                        time: r.time,
-                        datetime: r.datetime.clone(),
-                        terms_conditions: r.terms_conditions.clone(),
-                        status: r.status,
-                    }).collect();
+                    .map(|r| r.clone()).collect();
     }
 
     if owner_id.is_some() {
         let user = owner_id.unwrap().clone();
         result = result.iter().filter(|x| x.owner_id == user.to_string())
-                    .map(|r| OrderObject {
-                        offer_id: r.offer_id,
-                        order_id: r.order_id,
-                        owner_id: r.owner_id.clone(),
-                        signer_id: r.signer_id.clone(),
-                        exchange_rate: r.exchange_rate.clone(),
-                        operation_amount: r.operation_amount,
-                        fee_deducted: r.fee_deducted,
-                        payment_method: r.payment_method,
-                        fiat_method: r.fiat_method,
-                        confirmation_owner_id: r.confirmation_owner_id,
-                        confirmation_signer_id: r.confirmation_signer_id,
-                        confirmation_current: r.confirmation_current,
-                        time: r.time,
-                        datetime: r.datetime.clone(),
-                        terms_conditions: r.terms_conditions.clone(),
-                        status: r.status,
-                    }).collect();
+                    .map(|r| r.clone()).collect();
     }
     
     if signer_id.is_some() {
         let user = signer_id.unwrap().clone();
         result = result.iter().filter(|x| x.signer_id == user.to_string())
-                    .map(|r| OrderObject {
-                        offer_id: r.offer_id,
-                        order_id: r.order_id,
-                        owner_id: r.owner_id.clone(),
-                        signer_id: r.signer_id.clone(),
-                        exchange_rate: r.exchange_rate.clone(),
-                        operation_amount: r.operation_amount,
-                        fee_deducted: r.fee_deducted,
-                        payment_method: r.payment_method,
-                        fiat_method: r.fiat_method,
-                        confirmation_owner_id: r.confirmation_owner_id,
-                        confirmation_signer_id: r.confirmation_signer_id,
-                        confirmation_current: r.confirmation_current,
-                        time: r.time,
-                        datetime: r.datetime.clone(),
-                        terms_conditions: r.terms_conditions.clone(),
-                        status: r.status,
-                    }).collect();
+                    .map(|r| r.clone()).collect();
     }
     
     if status.is_some() {
         result = result.iter().filter(|x| x.status == status.unwrap())
-                    .map(|r| OrderObject {
-                        offer_id: r.offer_id,
-                        order_id: r.order_id,
-                        owner_id: r.owner_id.clone(),
-                        signer_id: r.signer_id.clone(),
-                        exchange_rate: r.exchange_rate.clone(),
-                        operation_amount: r.operation_amount,
-                        fee_deducted: r.fee_deducted,
-                        payment_method: r.payment_method,
-                        fiat_method: r.fiat_method,
-                        confirmation_owner_id: r.confirmation_owner_id,
-                        confirmation_signer_id: r.confirmation_signer_id,
-                        confirmation_current: r.confirmation_current,
-                        time: r.time,
-                        datetime: r.datetime.clone(),
-                        terms_conditions: r.terms_conditions.clone(),
-                        status: r.status,
-                    }).collect();
+                    .map(|r| r.clone()).collect();
     }
 
-    result
+    result.iter()
+    .skip(start_index as usize)
+    .take(limit)
+    .map(|r| r.clone()).collect()
 }
 
-fn search_order_history(data: Vec<OrderObject>, user_id: Option<AccountId>, order_id: Option<i128>, status: Option<i8>) -> Vec<OrderObject> {
-    let mut result = data.iter()
-    .map(|s| OrderObject {
-        offer_id: s.offer_id,
-        order_id: s.order_id,
-        owner_id: s.owner_id.clone(),
-        signer_id: s.signer_id.clone(),
-        exchange_rate: s.exchange_rate.clone(),
-        operation_amount: s.operation_amount,
-        fee_deducted: s.fee_deducted,
-        payment_method: s.payment_method,
-        fiat_method: s.fiat_method,
-        confirmation_owner_id: s.confirmation_owner_id,
-        confirmation_signer_id: s.confirmation_signer_id,
-        confirmation_current: s.confirmation_current,
-        time: s.time,
-        datetime: s.datetime.clone(),
-        terms_conditions: s.terms_conditions.clone(),
-        status: s.status,
-    }).collect();
+fn search_order_history(data: Vec<OrderObject>,
+    user_id: Option<AccountId>,
+    order_id: Option<i128>,
+    status: Option<i8>,
+    from_index: Option<U128>,
+    limit: Option<u64>,
+) -> Vec<OrderObject> {
+    let mut result: Vec<OrderObject> = data.iter()
+    .map(|s| s.clone()).collect();
+
+    let start_index: u128 = from_index.map(From::from).unwrap_or_default();
+    assert!(
+        (result.len() as u128) > start_index,
+        "Out of bounds, please use a smaller from_index."
+    );
+    let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
+    assert_ne!(limit, 0, "Cannot provide limit of 0.");
 
     if user_id.is_some() {
         let user = user_id.unwrap().clone();
         result = data.iter().filter(|s| s.owner_id == user.to_string() || s.signer_id == user.to_string())
-                .map(|s| OrderObject {
-                    offer_id: s.offer_id,
-                    order_id: s.order_id,
-                    owner_id: s.owner_id.clone(),
-                    signer_id: s.signer_id.clone(),
-                    exchange_rate: s.exchange_rate.clone(),
-                    operation_amount: s.operation_amount,
-                    fee_deducted: s.fee_deducted,
-                    payment_method: s.payment_method,
-                    fiat_method: s.fiat_method,
-                    confirmation_owner_id: s.confirmation_owner_id,
-                    confirmation_signer_id: s.confirmation_signer_id,
-                    confirmation_current: s.confirmation_current,
-                    time: s.time,
-                    datetime: s.datetime.clone(),
-                    terms_conditions: s.terms_conditions.clone(),
-                    status: s.status,
-                }).collect();
+                .map(|s| s.clone()).collect();
     }
 
     if order_id.is_some() {
         result = data.iter().filter(|s| s.order_id == order_id.unwrap())
-                .map(|s| OrderObject {
-                    offer_id: s.offer_id,
-                    order_id: s.order_id,
-                    owner_id: s.owner_id.clone(),
-                    signer_id: s.signer_id.clone(),
-                    exchange_rate: s.exchange_rate.clone(),
-                    operation_amount: s.operation_amount,
-                    fee_deducted: s.fee_deducted,
-                    payment_method: s.payment_method,
-                    fiat_method: s.fiat_method,
-                    confirmation_owner_id: s.confirmation_owner_id,
-                    confirmation_signer_id: s.confirmation_signer_id,
-                    confirmation_current: s.confirmation_current,
-                    time: s.time,
-                    datetime: s.datetime.clone(),
-                    terms_conditions: s.terms_conditions.clone(),
-                    status: s.status,
-                }).collect();
+                .map(|s| s.clone()).collect();
     }
 
     if status.is_some() {
         result = data.iter().filter(|s| s.status == status.unwrap())
-                .map(|s| OrderObject {
-                    offer_id: s.offer_id,
-                    order_id: s.order_id,
-                    owner_id: s.owner_id.clone(),
-                    signer_id: s.signer_id.clone(),
-                    exchange_rate: s.exchange_rate.clone(),
-                    operation_amount: s.operation_amount,
-                    fee_deducted: s.fee_deducted,
-                    payment_method: s.payment_method,
-                    fiat_method: s.fiat_method,
-                    confirmation_owner_id: s.confirmation_owner_id,
-                    confirmation_signer_id: s.confirmation_signer_id,
-                    confirmation_current: s.confirmation_current,
-                    time: s.time,
-                    datetime: s.datetime.clone(),
-                    terms_conditions: s.terms_conditions.clone(),
-                    status: s.status,
-                }).collect();
+                .map(|s| s.clone()).collect();
     }
 
-    result
+    result.iter()
+    .skip(start_index as usize)
+    .take(limit)
+    .map(|s| s.clone()).collect()
 }
 
 // use the attribute below for unit tests
