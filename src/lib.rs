@@ -431,11 +431,12 @@ impl NearP2P {
         owner_id: Option<AccountId>,
         status: Option<i8>,
         offer_id: Option<i128>,
+        asset: Option<String>,
         signer_id: Option<AccountId>,
         from_index: Option<U128>,
         limit: Option<u64>,
     ) -> Vec<OfferObject> {
-        search_offer(self.offers_sell, amount, fiat_method, payment_method, is_merchant, owner_id, status, offer_id, signer_id, from_index, limit)
+        search_offer(self.offers_sell, amount, fiat_method, payment_method, is_merchant, owner_id, status, offer_id, asset, signer_id, from_index, limit)
     }
 
 
@@ -557,11 +558,12 @@ impl NearP2P {
         owner_id: Option<AccountId>,
         status: Option<i8>,
         offer_id: Option<i128>,
+        asset: Option<String>,
         signer_id: Option<AccountId>,
         from_index: Option<U128>,
         limit: Option<u64>,
     ) -> Vec<OfferObject> {
-        search_offer(self.offers_buy, amount, fiat_method, payment_method, is_merchant, owner_id, status, offer_id, signer_id, from_index, limit)
+        search_offer(self.offers_buy, amount, fiat_method, payment_method, is_merchant, owner_id, status, offer_id, asset, signer_id, from_index, limit)
     }
 
 
@@ -1554,6 +1556,7 @@ fn search_offer(data: Vec<OfferObject>,
     owner_id: Option<AccountId>,
     status: Option<i8>,
     offer_id: Option<i128>,
+    asset: Option<String>,
     signer_id: Option<AccountId>,
     from_index: Option<U128>,
     limit: Option<u64>,
@@ -1598,6 +1601,10 @@ fn search_offer(data: Vec<OfferObject>,
     }
     if offer_id.is_some() {
         result = result.iter().filter(|x| x.offer_id == offer_id.unwrap())
+                    .map(|r| r.clone()).collect();
+    }
+    if asset.is_some() {
+        result = result.iter().filter(|x| x.asset == asset.as_ref().unwrap().to_string())
                     .map(|r| r.clone()).collect();
     }
 
