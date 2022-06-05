@@ -34,6 +34,7 @@ const FEE_TRANSACTION: f64 = 0.003;
 
 const GAS_FOR_RESOLVE_TRANSFER: Gas = 10_000_000_000_000;
 const GAS_FOR_TRANSFER: Gas = 30_000_000_000_000 + GAS_FOR_RESOLVE_TRANSFER;
+const contract_name: AccountId = "usdc.fakes.testnet".to_string();
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /// Objects Definition////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -182,6 +183,22 @@ pub struct FiatMethodsObject {
     fiat_method: String,
     flagcdn: String,
 }
+
+
+#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub struct SearchOfferObject {
+    total_index: i128,
+    data: Vec<OfferObject>,
+}
+
+#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub struct SearchOrderObject {
+    total_index: i128,
+    data: Vec<OrderObject>,
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /// Objects Definition////////////////////////////////////////////////////////////////////////////
@@ -1293,18 +1310,18 @@ impl NearP2P {
                 
                 let index_offer = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer sell not found");
 
-                if self.offers_sell[index_offer].asset == "usdc" {
-                    let contract_name: AccountId = "usdc.fakes.testnet".to_string();
+                if self.offers_sell[index_offer].asset == "USDC".to_string() {
+                    // let contract_name: AccountId = "usdc.fakes.testnet".to_string();
                     // transfer usdc to owner
                     ext_tranfer_usdc::ft_transfer(
                         self.orders_sell[i].owner_id.to_string(),
-                        U128(operation_amount),
+                        U128(self.orders_sell[i].operation_amount as u128),
                         None,
                         &contract_name,
                         1,
                         GAS_FOR_TRANSFER,
                     );
-                    // tranfer usdc fee al vault
+                    /*// tranfer usdc fee al vault
                     ext_tranfer_usdc::ft_transfer(
                         self.vault.clone(),
                         U128(fee_deducted),
@@ -1312,7 +1329,7 @@ impl NearP2P {
                         &contract_name,
                         1,
                         GAS_FOR_TRANSFER,
-                    );
+                    );*/
 
                 } else {
                     Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(operation_amount - fee_deducted);
@@ -1373,18 +1390,18 @@ impl NearP2P {
 
                 let index_offer = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer buy not found");
 
-                if self.offers_buy[index_offer].asset == "usdc" {
-                    let contract_name: AccountId = "usdc.fakes.testnet".to_string();
+                if self.offers_buy[index_offer].asset == "USDC".to_string() {
+                    
                     // transfer usdc to owner
                     ext_tranfer_usdc::ft_transfer(
                         self.orders_buy[i].owner_id.to_string(),
-                        U128(operation_amount),
+                        U128(self.orders_buy[i].operation_amount as u128),
                         None,
                         &contract_name,
                         1,
                         GAS_FOR_TRANSFER,
                     );
-                    // tranfer usdc fee al vault
+                    /*// tranfer usdc fee al vault
                     ext_tranfer_usdc::ft_transfer(
                         self.vault.clone(),
                         U128(fee_deducted),
@@ -1392,7 +1409,7 @@ impl NearP2P {
                         &contract_name,
                         1,
                         GAS_FOR_TRANSFER,
-                    );
+                    );*/
 
                 } else {
                     Promise::new(self.orders_buy[i].signer_id.to_string()).transfer(operation_amount - fee_deducted);
@@ -1525,12 +1542,12 @@ impl NearP2P {
 
                 let index_offer = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer sell not found");
 
-                if self.offers_sell[index_offer].asset == "usdc" {
-                    let contract_name: AccountId = "usdc.fakes.testnet".to_string();
+                if self.offers_sell[index_offer].asset == "USDC".to_string() {
+                    //let contract_name: AccountId = "usdc.fakes.testnet".to_string();
                     // transfer usdc to owner
                     ext_tranfer_usdc::ft_transfer(
                         self.orders_sell[i].owner_id.to_string(),
-                        U128(self.orders_sell[i].operation_amount as u128 * YOCTO_NEAR),
+                        U128(self.orders_sell[i].operation_amount as u128),
                         None,
                         &contract_name,
                         1,
@@ -1592,12 +1609,12 @@ impl NearP2P {
 
                 let index_offer = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer buy not found");
 
-                if self.offers_buy[index_offer].asset == "usdc" {
+                if self.offers_buy[index_offer].asset == "USDC".to_string() {
                     let contract_name: AccountId = "usdc.fakes.testnet".to_string();
                     // transfer usdc to owner
                     ext_tranfer_usdc::ft_transfer(
                         self.orders_sell[i].owner_id.to_string(),
-                        U128(self.orders_buy[i].operation_amount as u128 * YOCTO_NEAR),
+                        U128(self.orders_buy[i].operation_amount as u128),
                         None,
                         &contract_name,
                         1,
@@ -1656,7 +1673,9 @@ fn search_offer(data: Vec<OfferObject>,
     signer_id: Option<AccountId>,
     from_index: Option<U128>,
     limit: Option<u64>,
-) -> Vec<OfferObject> {
+) -> SearchOfferObject {
+
+    
     let mut result: Vec<OfferObject> = data;
 
     let start_index: u128 = from_index.map(From::from).unwrap_or_default();
@@ -1704,11 +1723,13 @@ fn search_offer(data: Vec<OfferObject>,
                     .map(|r| r.clone()).collect();
     }
 
-    result.iter()
-    .skip(start_index as usize)
-    .take(limit)
-    .map(|r| r.clone()).collect()
-    
+    SearchOfferObject {
+        total_index: result.len(),
+        data: result.iter()
+        .skip(start_index as usize)
+        .take(limit)
+        .map(|r| r.clone()).collect(),
+    }
 }
 
 
@@ -1720,7 +1741,7 @@ fn search_order(data: Vec<OrderObject>,
     status: Option<i8>,
     from_index: Option<U128>,
     limit: Option<u64>,
-) -> Vec<OrderObject> {
+) -> SearchOrderObject {
     let mut result: Vec<OrderObject> = data;
 
     let start_index: u128 = from_index.map(From::from).unwrap_or_default();
@@ -1758,10 +1779,13 @@ fn search_order(data: Vec<OrderObject>,
                     .map(|r| r.clone()).collect();
     }
 
-    result.iter()
-    .skip(start_index as usize)
-    .take(limit)
-    .map(|r| r.clone()).collect()
+    SearchOrderObject {
+        total_index: result.len(),
+        data: result.iter()
+        .skip(start_index as usize)
+        .take(limit)
+        .map(|r| r.clone()).collect(),
+    }
 }
 
 fn search_order_history(data: Vec<OrderObject>,
@@ -1770,7 +1794,7 @@ fn search_order_history(data: Vec<OrderObject>,
     status: Option<i8>,
     from_index: Option<U128>,
     limit: Option<u64>,
-) -> Vec<OrderObject> {
+) -> SearchOrderObject {
     let mut result: Vec<OrderObject> = data.iter()
     .map(|s| s.clone()).collect();
 
@@ -1798,10 +1822,13 @@ fn search_order_history(data: Vec<OrderObject>,
                 .map(|s| s.clone()).collect();
     }
 
-    result.iter().rev()
-    .skip(start_index as usize)
-    .take(limit)
-    .map(|s| s.clone()).collect()
+    SearchOrderObject {
+        total_index: result.len(),
+        data: result.iter().rev()
+        .skip(start_index as usize)
+        .take(limit)
+        .map(|s| s.clone()).collect(),
+    }
 }
 
 // use the attribute below for unit tests
