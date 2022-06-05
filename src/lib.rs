@@ -23,7 +23,7 @@ Develop by GlobalDv @2022
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use serde::Serialize;
 use serde::Deserialize;
-use near_sdk::{env, near_bindgen, AccountId, Promise, assert_one_yocto}; // json_types::U128, 
+use near_sdk::{env, near_bindgen, AccountId, Promise, assert_one_yocto, ext_contract, Gas}; // json_types::U128, 
 use near_sdk::json_types::U128;
 
 near_sdk::setup_alloc!();
@@ -32,9 +32,22 @@ const YOCTO_NEAR: u128 = 1000000000000000000000000;
 const KEY_TOKEN: &str = "qbogcyqiqO7Utwqm3VgKhxrmQIc0ROjj";
 const FEE_TRANSACTION: f64 = 0.003;
 
+const GAS_FOR_RESOLVE_TRANSFER: Gas = 10_000_000_000_000;
+const GAS_FOR_TRANSFER: Gas = 30_000_000_000_000 + GAS_FOR_RESOLVE_TRANSFER;
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /// Objects Definition////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+#[ext_contract(ext_tranfer_usdc)]
+trait ExtTranferUsdc {
+    fn ft_transfer(&mut self,
+        receiver_id: AccountId,
+        amount: U128,
+        memo: Option<String>
+    );
+}
+
 
 /*
 User UserObject: Struct for the user that contains info about the logged user.
@@ -339,6 +352,7 @@ impl NearP2P {
             }).collect()
         }
     }
+
 
     /// Set the users object into the contract
     /// Params: user_id: String, name: String
@@ -1277,10 +1291,34 @@ impl NearP2P {
                 let fee_deducted = ((self.orders_sell[i].operation_amount * FEE_TRANSACTION) * YOCTO_NEAR as f64) as u128;
                 let operation_amount = (self.orders_sell[i].operation_amount * YOCTO_NEAR as f64) as u128;
                 
-                Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(operation_amount - fee_deducted);
+                let index_offer = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer sell not found");
 
-                Promise::new(self.vault.clone()).transfer(fee_deducted);
-                
+                if self.offers_sell[index_offer].asset == "usdc" {
+                    let contract_name: AccountId = "usdc.fakes.testnet".to_string();
+                    // transfer usdc to owner
+                    ext_tranfer_usdc::ft_transfer(
+                        self.orders_sell[i].owner_id.to_string(),
+                        U128(operation_amount),
+                        None,
+                        &contract_name,
+                        1,
+                        GAS_FOR_TRANSFER,
+                    );
+                    // tranfer usdc fee al vault
+                    ext_tranfer_usdc::ft_transfer(
+                        self.vault.clone(),
+                        U128(fee_deducted),
+                        None,
+                        &contract_name,
+                        1,
+                        GAS_FOR_TRANSFER,
+                    );
+
+                } else {
+                    Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(operation_amount - fee_deducted);
+
+                    Promise::new(self.vault.clone()).transfer(fee_deducted);
+                }    
 
                 let data = OrderObject {
                     offer_id:self.orders_sell[i].offer_id,
@@ -1333,9 +1371,35 @@ impl NearP2P {
                 let fee_deducted = ((self.orders_buy[i].operation_amount * FEE_TRANSACTION) * YOCTO_NEAR as f64) as u128;
                 let operation_amount = (self.orders_buy[i].operation_amount * YOCTO_NEAR as f64) as u128;
 
-                Promise::new(self.orders_buy[i].signer_id.to_string()).transfer(operation_amount - fee_deducted);
+                let index_offer = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer buy not found");
+
+                if self.offers_buy[index_offer].asset == "usdc" {
+                    let contract_name: AccountId = "usdc.fakes.testnet".to_string();
+                    // transfer usdc to owner
+                    ext_tranfer_usdc::ft_transfer(
+                        self.orders_buy[i].owner_id.to_string(),
+                        U128(operation_amount),
+                        None,
+                        &contract_name,
+                        1,
+                        GAS_FOR_TRANSFER,
+                    );
+                    // tranfer usdc fee al vault
+                    ext_tranfer_usdc::ft_transfer(
+                        self.vault.clone(),
+                        U128(fee_deducted),
+                        None,
+                        &contract_name,
+                        1,
+                        GAS_FOR_TRANSFER,
+                    );
+
+                } else {
+                    Promise::new(self.orders_buy[i].signer_id.to_string()).transfer(operation_amount - fee_deducted);
                 
-                Promise::new(self.vault.clone()).transfer(fee_deducted);
+                    Promise::new(self.vault.clone()).transfer(fee_deducted);
+                }
+                
 
                 
                 let data = OrderObject {
@@ -1458,8 +1522,24 @@ impl NearP2P {
                 if self.orders_sell[i].status == 1 || self.orders_sell[i].status == 2 {
                     self.orders_sell[i].status = 4;
                 }
-                Promise::new(self.orders_sell[i].signer_id.to_string()).transfer(self.orders_sell[i].operation_amount as u128 * YOCTO_NEAR);
 
+                let index_offer = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer sell not found");
+
+                if self.offers_sell[index_offer].asset == "usdc" {
+                    let contract_name: AccountId = "usdc.fakes.testnet".to_string();
+                    // transfer usdc to owner
+                    ext_tranfer_usdc::ft_transfer(
+                        self.orders_sell[i].owner_id.to_string(),
+                        U128(self.orders_sell[i].operation_amount as u128 * YOCTO_NEAR),
+                        None,
+                        &contract_name,
+                        1,
+                        GAS_FOR_TRANSFER,
+                    );
+                } else {
+                    Promise::new(self.orders_sell[i].signer_id.to_string()).transfer(self.orders_sell[i].operation_amount as u128 * YOCTO_NEAR);
+                }
+                
                 let data = OrderObject {
                     offer_id:self.orders_sell[i].offer_id,
                     order_id: self.orders_sell[i].order_id,
@@ -1504,13 +1584,29 @@ impl NearP2P {
                 }
                 env::log(b"cancellation request sent");
             } else if self.orders_buy[i].signer_id == env::signer_account_id().to_string() {
-                let j = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer Sell not found");
+                let j = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer buy not found");
                 self.orders_buy[i].confirmation_signer_id = 3;
                 if self.orders_buy[i].status == 1 || self.orders_buy[i].status == 2 {
                     self.orders_buy[i].status = 4;
                 }
 
-                Promise::new(self.orders_buy[i].owner_id.to_string()).transfer(self.orders_buy[i].operation_amount as u128 * YOCTO_NEAR);
+                let index_offer = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer buy not found");
+
+                if self.offers_buy[index_offer].asset == "usdc" {
+                    let contract_name: AccountId = "usdc.fakes.testnet".to_string();
+                    // transfer usdc to owner
+                    ext_tranfer_usdc::ft_transfer(
+                        self.orders_sell[i].owner_id.to_string(),
+                        U128(self.orders_buy[i].operation_amount as u128 * YOCTO_NEAR),
+                        None,
+                        &contract_name,
+                        1,
+                        GAS_FOR_TRANSFER,
+                    );
+                } else {
+                    Promise::new(self.orders_buy[i].owner_id.to_string()).transfer(self.orders_buy[i].operation_amount as u128 * YOCTO_NEAR);
+                }
+                
 
                 let data = OrderObject {
                     offer_id:self.orders_buy[i].offer_id,
