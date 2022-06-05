@@ -1798,7 +1798,7 @@ fn search_order_history(data: Vec<OrderObject>,
                 .map(|s| s.clone()).collect();
     }
 
-    result.iter()
+    result.iter().rev()
     .skip(start_index as usize)
     .take(limit)
     .map(|s| s.clone()).collect()
