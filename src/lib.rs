@@ -34,9 +34,9 @@ const FEE_TRANSACTION: f64 = 0.003;
 
 const GAS_FOR_RESOLVE_TRANSFER: Gas = 10_000_000_000_000;
 const GAS_FOR_TRANSFER: Gas = 30_000_000_000_000 + GAS_FOR_RESOLVE_TRANSFER;
-const contract_name: AccountId = "usdc.fakes.testnet".to_string();
-//////////////////////////////////////////////////////////////////////////////////////////////////
-/// Objects Definition////////////////////////////////////////////////////////////////////////////
+const CONTRACT_TRANSFER: &str = "usdc.fakes.testnet";
+/////////////////////////////////////////////////////////////////////////////////////////////////
+/// Objects Definition///////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -466,7 +466,7 @@ impl NearP2P {
         signer_id: Option<AccountId>,
         from_index: Option<U128>,
         limit: Option<u64>,
-    ) -> Vec<OfferObject> {
+    ) -> SearchOfferObject {
         search_offer(self.offers_sell, amount, fiat_method, payment_method, is_merchant, owner_id, status, offer_id, asset, signer_id, from_index, limit)
     }
 
@@ -593,7 +593,7 @@ impl NearP2P {
         signer_id: Option<AccountId>,
         from_index: Option<U128>,
         limit: Option<u64>,
-    ) -> Vec<OfferObject> {
+    ) -> SearchOfferObject {
         search_offer(self.offers_buy, amount, fiat_method, payment_method, is_merchant, owner_id, status, offer_id, asset, signer_id, from_index, limit)
     }
 
@@ -1240,7 +1240,7 @@ impl NearP2P {
         status: Option<i8>,
         from_index: Option<U128>,
         limit: Option<u64>,
-    ) -> Vec<OrderObject> {
+    ) -> SearchOrderObject {
         search_order(self.orders_sell, order_id, offer_id, owner_id, signer_id, status, from_index, limit)
     }
 
@@ -1253,7 +1253,7 @@ impl NearP2P {
         status: Option<i8>,
         from_index: Option<U128>,
         limit: Option<u64>,
-    ) -> Vec<OrderObject> {
+    ) -> SearchOrderObject {
         search_order(self.orders_buy, order_id, offer_id, owner_id, signer_id, status, from_index, limit)
     }
     
@@ -1263,7 +1263,7 @@ impl NearP2P {
         status: Option<i8>,
         from_index: Option<U128>,
         limit: Option<u64>,
-    ) -> Vec<OrderObject> {
+    ) -> SearchOrderObject {
         search_order_history(self.order_history_sell, user_id, order_id, status, from_index, limit)
     }
 
@@ -1273,7 +1273,7 @@ impl NearP2P {
         status: Option<i8>,
         from_index: Option<U128>,
         limit: Option<u64>,
-    ) -> Vec<OrderObject> {
+    ) -> SearchOrderObject {
         search_order_history(self.order_history_buy, user_id, order_id, status, from_index, limit)
     }
     
@@ -1311,7 +1311,7 @@ impl NearP2P {
                 let index_offer = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer sell not found");
 
                 if self.offers_sell[index_offer].asset == "USDC".to_string() {
-                    // let contract_name: AccountId = "usdc.fakes.testnet".to_string();
+                    let contract_name: AccountId = CONTRACT_TRANSFER.to_string();
                     // transfer usdc to owner
                     ext_tranfer_usdc::ft_transfer(
                         self.orders_sell[i].owner_id.to_string(),
@@ -1391,7 +1391,7 @@ impl NearP2P {
                 let index_offer = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer buy not found");
 
                 if self.offers_buy[index_offer].asset == "USDC".to_string() {
-                    
+                    let contract_name: AccountId = CONTRACT_TRANSFER.to_string();
                     // transfer usdc to owner
                     ext_tranfer_usdc::ft_transfer(
                         self.orders_buy[i].owner_id.to_string(),
@@ -1543,7 +1543,7 @@ impl NearP2P {
                 let index_offer = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer sell not found");
 
                 if self.offers_sell[index_offer].asset == "USDC".to_string() {
-                    //let contract_name: AccountId = "usdc.fakes.testnet".to_string();
+                    let contract_name: AccountId = CONTRACT_TRANSFER.to_string();
                     // transfer usdc to owner
                     ext_tranfer_usdc::ft_transfer(
                         self.orders_sell[i].owner_id.to_string(),
@@ -1610,7 +1610,7 @@ impl NearP2P {
                 let index_offer = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer buy not found");
 
                 if self.offers_buy[index_offer].asset == "USDC".to_string() {
-                    let contract_name: AccountId = "usdc.fakes.testnet".to_string();
+                    let contract_name: AccountId = CONTRACT_TRANSFER.to_string();
                     // transfer usdc to owner
                     ext_tranfer_usdc::ft_transfer(
                         self.orders_sell[i].owner_id.to_string(),
@@ -1724,7 +1724,7 @@ fn search_offer(data: Vec<OfferObject>,
     }
 
     SearchOfferObject {
-        total_index: result.len(),
+        total_index: result.len() as i128,
         data: result.iter()
         .skip(start_index as usize)
         .take(limit)
@@ -1780,7 +1780,7 @@ fn search_order(data: Vec<OrderObject>,
     }
 
     SearchOrderObject {
-        total_index: result.len(),
+        total_index: result.len() as i128,
         data: result.iter()
         .skip(start_index as usize)
         .take(limit)
@@ -1823,7 +1823,7 @@ fn search_order_history(data: Vec<OrderObject>,
     }
 
     SearchOrderObject {
-        total_index: result.len(),
+        total_index: result.len() as i128,
         data: result.iter().rev()
         .skip(start_index as usize)
         .take(limit)
