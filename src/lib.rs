@@ -655,6 +655,7 @@ impl NearP2P {
         , fiat_method: Option<i128>
         , time: Option<i64>
         , terms_conditions: Option<String>
+        , token: String
     ) -> OfferObject {
         let attached_deposit = env::attached_deposit();
         assert!(
@@ -671,7 +672,24 @@ impl NearP2P {
         if remaining_amount.is_some() {
             if remaining_amount.unwrap() < self.offers_buy[offer].remaining_amount {
                 let diff_return = self.offers_buy[offer].remaining_amount - remaining_amount.unwrap();
-                Promise::new(self.offers_buy[offer].owner_id.clone()).transfer((diff_return * YOCTO_NEAR as f64) as u128);
+                if self.offers_buy[offer].asset == "USDC".to_string() {
+                    if KEY_TOKEN == token {
+                        let contract_name: AccountId = CONTRACT_TRANSFER.to_string();
+                        // transfer usdc to owner
+                        ext_tranfer_usdc::ft_transfer(
+                            self.offers_buy[offer].owner_id.clone(),
+                            U128((diff_return as f64) as u128),
+                            None,
+                            &contract_name,
+                            1,
+                            GAS_FOR_TRANSFER,
+                        );
+                    } else {
+                        env::panic(b"Invalid Key_token");
+                    }
+                } else {
+                    Promise::new(self.offers_buy[offer].owner_id.clone()).transfer((diff_return * YOCTO_NEAR as f64) as u128);
+                }
             } else if remaining_amount.unwrap() > self.offers_buy[offer].remaining_amount {
                 assert!(
                     remaining_amount.unwrap() <= self.offers_buy[offer].amount,
@@ -726,9 +744,26 @@ impl NearP2P {
     }
     
 
-    pub fn delete_offers_buy(&mut self, offer_id: i128) {
+    pub fn delete_offers_buy(&mut self, offer_id: i128, token: String) {
         let offer = self.offers_buy.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id().to_string()).expect("Offer not found");
-        Promise::new(self.offers_buy[offer].owner_id.clone()).transfer((self.offers_buy[offer].remaining_amount * YOCTO_NEAR as f64) as u128);
+        if self.offers_buy[offer].asset == "USDC".to_string() {
+            if KEY_TOKEN == token {
+                let contract_name: AccountId = CONTRACT_TRANSFER.to_string();
+                // transfer usdc to owner
+                ext_tranfer_usdc::ft_transfer(
+                    self.offers_buy[offer].owner_id.clone(),
+                    U128((self.offers_buy[offer].remaining_amount as f64) as u128),
+                    None,
+                    &contract_name,
+                    1,
+                    GAS_FOR_TRANSFER,
+                );
+            } else {
+                env::panic(b"Invalid Key_token");
+            }
+        } else {
+            Promise::new(self.offers_buy[offer].owner_id.clone()).transfer((self.offers_buy[offer].remaining_amount * YOCTO_NEAR as f64) as u128);
+        }
         self.offers_buy.remove(offer);
         env::log(b"Offer Buy Delete");
     }
