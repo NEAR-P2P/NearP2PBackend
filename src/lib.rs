@@ -27,13 +27,13 @@ use near_sdk::{env, near_bindgen, AccountId, Promise, assert_one_yocto, ext_cont
 use near_sdk::json_types::U128;
 
 
-near_sdk::setup_alloc!();
+//near_sdk::setup_alloc!();
 
 const YOCTO_NEAR: u128 = 1000000000000000000000000;
 const KEY_TOKEN: &str = "qbogcyqiqO7Utwqm3VgKhxrmQIc0ROjj";
 const FEE_TRANSACTION: f64 = 0.003;
 
-const GAS_FOR_RESOLVE_TRANSFER: Gas = Gas(10_000_000_000_000);
+//const GAS_FOR_RESOLVE_TRANSFER: Gas = Gas(10_000_000_000_000);
 const GAS_FOR_TRANSFER: Gas = Gas(40_000_000_000_000);
 const BASE_GAS_TOKEN: Gas = Gas(3_000_000_000_000);
 const CONTRACT_USDC: &str = "usdc.fakes.testnet";
@@ -329,7 +329,7 @@ impl NearP2P {
     pub fn on_ft_balance_of(&mut self) -> String {
         let result = promise_result_as_success();
         if result.is_none() {
-            env::panic(b"balance is None".as_ref());
+            env::panic_str("balance is None".as_ref());
         }
         let ret = near_sdk::serde_json::from_slice::<String>(&result.unwrap()).expect("balance is None");
         return ret;
@@ -340,7 +340,7 @@ impl NearP2P {
         self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
         let valid = self.administrators.iter().find(|&x| x == &user_id);
         if valid.is_some() {
-            env::panic(b"the user is already in the list of administrators");
+            env::panic_str("the user is already in the list of administrators");
         }
         self.administrators.push(user_id);
     }
@@ -415,7 +415,7 @@ impl NearP2P {
         country: String) -> String {
         let user = self.users.iter().find(|x| x.user_id == env::signer_account_id().to_string());
         if user.is_some() {
-            env::panic(b"profile already exists");
+            env::panic_str("profile already exists");
         }
         let data = UserObject {
             user_id: env::signer_account_id().to_string(),
@@ -438,7 +438,7 @@ impl NearP2P {
         };
         self.merchant.push(data2);
        // set_merchant(user_id: user_id.to_string(), total_orders: 0, orders_completed: 0 , badge: "".to_string());
-        env::log(b"User Created");
+        env::log_str("User Created");
         env::signer_account_id().to_string().to_string()
     }
     
@@ -461,7 +461,7 @@ impl NearP2P {
                 self.users[i].is_active = self.users[i].is_active;
             }
         }
-        env::log(b"User Updated");
+        env::log_str("User Updated");
     }
 
     pub fn put_users(&mut self, user_id: AccountId
@@ -483,7 +483,7 @@ impl NearP2P {
         self.users[i].mediator = mediator;
         self.users[i].is_active = is_active;
                             
-        env::log(b"User Updated");
+        env::log_str("User Updated");
     }
 
     /// Returns the order object loaded in contract
@@ -540,7 +540,7 @@ impl NearP2P {
             status: 1,
         };
         self.offers_sell.push(data);
-        env::log(b"Offer Created");
+        env::log_str("Offer Created");
         self.offer_sell_id
     }
 
@@ -586,7 +586,7 @@ impl NearP2P {
             self.offers_sell[offer].terms_conditions = terms_conditions.unwrap();
         }
         
-        env::log(b"Offer updated");
+        env::log_str("Offer updated");
         OfferObject {
             offer_id: offer_id,
             owner_id: self.offers_sell[offer].owner_id.clone(),
@@ -609,7 +609,7 @@ impl NearP2P {
     pub fn delete_offers_sell(&mut self, offer_id: i128) {
         let offer = self.offers_sell.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id()).expect("Offer not found");
         self.offers_sell.remove(offer);
-        env::log(b"Offer Buy Delete");
+        env::log_str("Offer Buy Delete");
     }
 
 
@@ -673,7 +673,7 @@ impl NearP2P {
             status: 1,
         };
         self.offers_buy.push(data);
-        env::log(b"Offer Created");
+        env::log_str("Offer Created");
         self.offer_buy_id
     }
 
@@ -718,7 +718,7 @@ impl NearP2P {
                             GAS_FOR_TRANSFER,
                         );
                     } else {
-                        env::panic(b"Invalid Key_token");
+                        env::panic_str("Invalid Key_token");
                     }
                 } else {
                     Promise::new(self.offers_buy[offer].owner_id.clone()).transfer((diff_return * YOCTO_NEAR as f64) as u128);
@@ -757,7 +757,7 @@ impl NearP2P {
             self.offers_buy[offer].terms_conditions = terms_conditions.unwrap();
         }
         
-        env::log(b"Offer updated");
+        env::log_str("Offer updated");
         OfferObject {
             offer_id: offer_id,
             owner_id: self.offers_buy[offer].owner_id.clone(),
@@ -792,13 +792,13 @@ impl NearP2P {
                     GAS_FOR_TRANSFER,
                 );
             } else {
-                env::panic(b"Invalid Key_token");
+                env::panic_str("Invalid Key_token");
             }
         } else {
             Promise::new(self.offers_buy[offer].owner_id.clone()).transfer((self.offers_buy[offer].remaining_amount * YOCTO_NEAR as f64) as u128);
         }
         self.offers_buy.remove(offer);
-        env::log(b"Offer Buy Delete");
+        env::log_str("Offer Buy Delete");
     }
 
 
@@ -848,7 +848,7 @@ impl NearP2P {
         self.merchant[i].badge = badge.to_string();
         self.merchant[i].is_merchant = is_merchant;
 
-        env::log(b"Merchant Updated");
+        env::log_str("Merchant Updated");
     }
 
 
@@ -896,7 +896,7 @@ impl NearP2P {
             input5: input5,
         };
         self.payment_method.push(data);
-        env::log(b"Payment Method Created");
+        env::log_str("Payment Method Created");
         self.payment_method_id
     }
 
@@ -934,7 +934,7 @@ impl NearP2P {
                 self.payment_method_user[i].desc5 = input5.to_string();
             }
         }
-        env::log(b"Payment Method Update");
+        env::log_str("Payment Method Update");
         //self.merchant.get(0).unwrap().user_id.clone()
         //self.payment_method
     }
@@ -955,7 +955,7 @@ impl NearP2P {
                 break;
             }
         }
-        env::log(b"Payment Method Delete");
+        env::log_str("Payment Method Delete");
         //self.merchant.get(0).unwrap().user_id.clone()
         //self.payment_method
     }
@@ -991,7 +991,7 @@ impl NearP2P {
             flagcdn: flagcdn,
         };
         self.fiat_method.push(data);
-        env::log(b"Fiat Method Created");
+        env::log_str("Fiat Method Created");
         self.fiat_method_id
     }
 
@@ -1007,7 +1007,7 @@ impl NearP2P {
                 self.fiat_method[i].flagcdn = flagcdn.to_string();
             }
         }
-        env::log(b"Fiat Method Update");
+        env::log_str("Fiat Method Update");
     }
 
     /// Delete the Fiat Method object into the contract
@@ -1020,7 +1020,7 @@ impl NearP2P {
                 break;
             }
         }
-        env::log(b"Fiat Method Delete");
+        env::log_str("Fiat Method Delete");
     }
 
 
@@ -1082,7 +1082,7 @@ impl NearP2P {
         , input5: String) -> String {
         for i in 0..self.payment_method_user.len() {
             if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id() {
-                env::panic(b"Repeated payment methods are not allowed");
+                env::panic_str("Repeated payment methods are not allowed");
             }
         }
         for i in 0..self.payment_method.len() {
@@ -1103,11 +1103,11 @@ impl NearP2P {
                     input5: input5,
                 };
                 self.payment_method_user.push(data);
-                env::log(b"Payment Method User Created");
+                env::log_str("Payment Method User Created");
                 return "".to_string();
             }
         }
-        env::panic(b"the payment method provided does not exist");
+        env::panic_str("the payment method provided does not exist");
     }
 
     /// put the Payment Method object into the contract
@@ -1127,7 +1127,7 @@ impl NearP2P {
                 break;
             }
         }
-        env::log(b"Payment Method User Update");
+        env::log_str("Payment Method User Update");
     }
 
     /// delete the Payment Method user object into the contract
@@ -1138,7 +1138,7 @@ impl NearP2P {
                 break;
             }
         }
-        env::log(b"Payment Method User Delete");
+        env::log_str("Payment Method User Delete");
     }
 
 
@@ -1166,7 +1166,7 @@ impl NearP2P {
             for i in 0..self.offers_sell.len() {
                 if self.offers_sell.get(i).unwrap().offer_id == offer_id {
                     if self.offers_sell[i].owner_id == env::signer_account_id() {
-                        env::panic(b"you can not accept your own offer");
+                        env::panic_str("you can not accept your own offer");
                     }
                     if (self.offers_sell[i].remaining_amount * YOCTO_NEAR as f64) as f64 >= attached_deposit as f64 {
                         ////////////////////////////////////////////////////////////////////
@@ -1216,14 +1216,14 @@ impl NearP2P {
                         self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
                          
                             
-                        env::log(b"Offer sell accepted");
+                        env::log_str("Offer sell accepted");
                         // let msg: String = format!("Offer sell accepted - remaining: {} - Attached: {} - Amount: {}", self.offers_buy[i].remaining_amount, attached_deposit, amount.0);
                         let msg: String = "Offer sell accepted".to_string();
                         return String::from(msg);
                     } else {
                         // let error: String = format!("the quantity is greater than the offer sell amount - Remaining: {} - Attached: {}", self.offers_buy[i].remaining_amount, attached_deposit);
                         // nv::panic(error.as_ref());
-                        env::panic(b"the quantity is greater than the offer sell amount");
+                        env::panic_str("the quantity is greater than the offer sell amount");
                     }
                 }
             }
@@ -1232,7 +1232,7 @@ impl NearP2P {
             for i in 0..self.offers_buy.len() {
                 if self.offers_buy.get(i).unwrap().offer_id == offer_id {
                     if self.offers_buy[i].owner_id == env::signer_account_id() {
-                        env::panic(b"you can not accept your own offer");
+                        env::panic_str("you can not accept your own offer");
                     }
                     if self.offers_buy[i].remaining_amount >= amount  {
                         ////////////////////////////////////////////////////////////////////////
@@ -1282,20 +1282,20 @@ impl NearP2P {
                         self.merchant[index].total_orders = self.merchant[index].total_orders + 1;
                         self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
 
-                        env::log(b"Offer buy accepted");
+                        env::log_str("Offer buy accepted");
                         // let msg: String = format!("Offer buy accepted - remaining: {} - Amount: {} - Amount: ", self.offers_buy[i].remaining_amount, amount.0);
                         let msg: String = "Offer buy accepted".to_string();
                         return String::from(msg);
                     } else {
                         // let error: String = format!("the quantity is greater than the offer buy amount - Remaining: {} - Amount: {}", self.offers_buy[i].remaining_amount, amount.0);
-                        // env::panic(error.as_ref());
-                        env::panic(b"the quantity is greater than the offer buy amount");
+                        // env::panic_str(error.as_ref());
+                        env::panic_str("the quantity is greater than the offer buy amount");
                     }
                 }
             }
-            env::panic(b"Offer buy not found");
+            env::panic_str("Offer buy not found");
         }   else {
-            env::panic(b"Invalid offer type");
+            env::panic_str("Invalid offer type");
         }
     }
 
@@ -1359,7 +1359,7 @@ impl NearP2P {
                 if self.orders_sell[i].status == 1 {
                     self.orders_sell[i].status = 2;
                 }
-                env::log(b"Order sell Confirmation");
+                env::log_str("Order sell Confirmation");
             } else if self.orders_sell[i].signer_id == env::signer_account_id() {
                 self.orders_sell[i].confirmation_signer_id = 1;
                 if self.orders_sell[i].status == 1 {
@@ -1400,7 +1400,7 @@ impl NearP2P {
                             GAS_FOR_TRANSFER,
                         );*/
                     } else {
-                        env::panic(b"Invalid Key_token");
+                        env::panic_str("Invalid Key_token");
                     }
                 } else {
                     Promise::new(self.orders_sell[i].owner_id.clone()).transfer(operation_amount - fee_deducted);
@@ -1431,9 +1431,9 @@ impl NearP2P {
                 
                 self.orders_sell.remove(i);
                 
-                env::log(b"Order sell Completed");
+                env::log_str("Order sell Completed");
             } else {
-                env::panic(b"Server internar error, signer not found");
+                env::panic_str("Server internar error, signer not found");
             }
         } else if offer_type == 2 {
             let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order buy not found");
@@ -1442,7 +1442,7 @@ impl NearP2P {
                 if self.orders_buy[i].status == 1 {
                     self.orders_buy[i].status = 2;
                 }
-                env::log(b"Order buy Confirmation");
+                env::log_str("Order buy Confirmation");
             } else if self.orders_buy[i].owner_id == env::signer_account_id() {
                 self.orders_buy[i].confirmation_owner_id = 1;
                 if self.orders_buy[i].status == 1 {
@@ -1483,7 +1483,7 @@ impl NearP2P {
                             GAS_FOR_TRANSFER,
                         );*/
                     } else {
-                        env::panic(b"Invalid Key_token");
+                        env::panic_str("Invalid Key_token");
                     }
                 } else {
                     Promise::new(self.orders_buy[i].signer_id.clone()).transfer(operation_amount - fee_deducted);
@@ -1515,12 +1515,12 @@ impl NearP2P {
                 self.order_history_buy.push(data);
                 self.orders_buy.remove(i);
                 
-                env::log(b"Order buy Completed");
+                env::log_str("Order buy Completed");
             } else {
-                env::panic(b"Server internar error, signer not found");
+                env::panic_str("Server internar error, signer not found");
             }
         }  else {
-            env::panic(b"Invalid offer type");
+            env::panic_str("Invalid offer type");
         }
     }
 
@@ -1536,16 +1536,16 @@ impl NearP2P {
                 if self.orders_sell[i].owner_id == env::signer_account_id() {
                     self.orders_sell[i].status = 3;
                     self.orders_sell[i].confirmation_owner_id = 2;
-                    env::log(b"Order sell in dispute");
+                    env::log_str("Order sell in dispute");
                 } else if self.orders_sell[i].signer_id == env::signer_account_id() {
                     self.orders_sell[i].status = 3;
                     self.orders_sell[i].confirmation_signer_id = 2;
-                    env::log(b"Order sell in dispute");
+                    env::log_str("Order sell in dispute");
                 } else {
-                    env::panic(b"Server internar error, signer not found");  
+                    env::panic_str("Server internar error, signer not found");  
                 }
             } else {
-                env::panic(b"The sales order is already in dispute");
+                env::panic_str("The sales order is already in dispute");
             }
         } else if offer_type == 2 {
             let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order buy not found");
@@ -1553,19 +1553,19 @@ impl NearP2P {
                 if self.orders_buy[i].owner_id == env::signer_account_id() {
                     self.orders_buy[i].status = 3;
                     self.orders_buy[i].confirmation_owner_id = 2;
-                    env::log(b"Order buy in dispute");
+                    env::log_str("Order buy in dispute");
                 } else if self.orders_buy[i].signer_id == env::signer_account_id() {
                     self.orders_buy[i].status = 3;
                     self.orders_buy[i].confirmation_signer_id = 2;
-                    env::log(b"Order buy in dispute");
+                    env::log_str("Order buy in dispute");
                 } else {
-                    env::panic(b"Server internar error, signer not found");  
+                    env::panic_str("Server internar error, signer not found");  
                 }
             } else {
-                env::panic(b"The sales order is already in dispute");
+                env::panic_str("The sales order is already in dispute");
             }
         }  else {
-            env::panic(b"Invalid offer type");
+            env::panic_str("Invalid offer type");
         }
     }
 
@@ -1578,9 +1578,9 @@ impl NearP2P {
                     self.orders_sell[i].status = 3;
                     self.orders_sell[i].confirmation_owner_id = 2;
                     self.orders_sell[i].confirmation_signer_id = 2;
-                    env::log(b"Order sell in dispute");
+                    env::log_str("Order sell in dispute");
                 } else {
-                    env::panic(b"The sales order is already in dispute");
+                    env::panic_str("The sales order is already in dispute");
                 }
             } else if offer_type == 2 {
                 let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order buy not found");
@@ -1588,15 +1588,15 @@ impl NearP2P {
                     self.orders_buy[i].status = 3;
                     self.orders_buy[i].confirmation_owner_id = 2;
                     self.orders_buy[i].confirmation_signer_id = 2;
-                    env::log(b"Order buy in dispute");
+                    env::log_str("Order buy in dispute");
                 } else {
-                    env::panic(b"The sales order is already in dispute");
+                    env::panic_str("The sales order is already in dispute");
                 }
             }  else {
-                env::panic(b"Invalid offer type");
+                env::panic_str("Invalid offer type");
             }
         } else {
-            env::panic(b"Invalid Key_token");
+            env::panic_str("Invalid Key_token");
         }
     }
 
@@ -1629,7 +1629,7 @@ impl NearP2P {
                             GAS_FOR_TRANSFER,
                         );   
                     } else {
-                        env::panic(b"Invalid Key_token");
+                        env::panic_str("Invalid Key_token");
                     }
                 } else {
                     Promise::new(self.orders_sell[i].signer_id.clone()).transfer(self.orders_sell[i].operation_amount as u128 * YOCTO_NEAR);
@@ -1659,15 +1659,15 @@ impl NearP2P {
                 self.offers_sell[j].remaining_amount = self.offers_sell[j].remaining_amount + self.orders_sell[i].operation_amount;
                 self.offers_sell[j].status = 1;
                 self.orders_sell.remove(i);
-                env::log(b"Order sell canceled");
+                env::log_str("Order sell canceled");
             } else if self.orders_sell[i].signer_id == env::signer_account_id() {
                 self.orders_sell[i].confirmation_signer_id = 3;
                 if self.orders_sell[i].status == 1 || self.orders_sell[i].status == 2 {
                     self.orders_sell[i].status = 4;
                 }
-                env::log(b"cancellation request sent");
+                env::log_str("cancellation request sent");
             } else {
-                env::panic(b"Server internar error, signer not found");  
+                env::panic_str("Server internar error, signer not found");  
             }
         } else if offer_type == 2 {
             let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order buy not found");
@@ -1677,7 +1677,7 @@ impl NearP2P {
                 if self.orders_buy[i].status == 1 || self.orders_buy[i].status == 2 {
                     self.orders_buy[i].status = 4;
                 }
-                env::log(b"cancellation request sent");
+                env::log_str("cancellation request sent");
             } else if self.orders_buy[i].signer_id == env::signer_account_id() {
                 let j = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer buy not found");
                 self.orders_buy[i].confirmation_signer_id = 3;
@@ -1700,7 +1700,7 @@ impl NearP2P {
                             GAS_FOR_TRANSFER,
                         );
                     } else {
-                        env::panic(b"Invalid Key_token");
+                        env::panic_str("Invalid Key_token");
                     }
                 } else {
                     Promise::new(self.orders_buy[i].owner_id.clone()).transfer(self.orders_buy[i].operation_amount as u128 * YOCTO_NEAR);
@@ -1731,12 +1731,12 @@ impl NearP2P {
                 self.offers_buy[j].remaining_amount = self.offers_buy[j].remaining_amount + self.orders_buy[i].operation_amount;
                 self.offers_buy[j].status = 1;
                 self.orders_buy.remove(i);
-                env::log(b"Order sell canceled");
+                env::log_str("Order sell canceled");
             } else {
-                env::panic(b"Server internar error, signer not found");  
+                env::panic_str("Server internar error, signer not found");  
             }
         }  else {
-            env::panic(b"Invalid offer type");
+            env::panic_str("Invalid offer type");
         }
     }
 
