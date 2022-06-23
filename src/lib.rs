@@ -23,7 +23,7 @@ Develop by GlobalDv @2022
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use serde::Serialize;
 use serde::Deserialize;
-use near_sdk::{env, near_bindgen, AccountId, Promise, assert_one_yocto, ext_contract, Gas}; // json_types::U128, 
+use near_sdk::{env, near_bindgen, AccountId, Promise, assert_one_yocto, ext_contract, Gas, promise_result_as_success}; // json_types::U128, 
 use near_sdk::json_types::U128;
 
 
@@ -33,23 +33,30 @@ const YOCTO_NEAR: u128 = 1000000000000000000000000;
 const KEY_TOKEN: &str = "qbogcyqiqO7Utwqm3VgKhxrmQIc0ROjj";
 const FEE_TRANSACTION: f64 = 0.003;
 
-const GAS_FOR_RESOLVE_TRANSFER: Gas = 10_000_000_000_000;
-const GAS_FOR_TRANSFER: Gas = 30_000_000_000_000 + GAS_FOR_RESOLVE_TRANSFER;
-const CONTRACT_TRANSFER: &str = "usdc.fakes.testnet";
+const GAS_FOR_RESOLVE_TRANSFER: Gas = Gas(10_000_000_000_000);
+const GAS_FOR_TRANSFER: Gas = Gas(40_000_000_000_000);
+const BASE_GAS_TOKEN: Gas = Gas(3_000_000_000_000);
+const CONTRACT_USDC: &str = "usdc.fakes.testnet";
 /////////////////////////////////////////////////////////////////////////////////////////////////
 /// Objects Definition///////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-#[ext_contract(ext_tranfer_usdc)]
+#[ext_contract(ext_usdc)]
 trait ExtTranferUsdc {
     fn ft_transfer(&mut self,
         receiver_id: AccountId,
         amount: U128,
         memo: Option<String>
     );
+
+    fn ft_balance_of(self, account_id: String);
 }
 
+#[ext_contract(ext_internal)]
+trait ExtNftDos {
+    fn on_ft_balance_of(&mut self);
+}
 
 /*
 User UserObject: Struct for the user that contains info about the logged user.
@@ -278,7 +285,7 @@ impl Default for NearP2P {
             order_history_sell: Vec::new(),
             order_history_buy: Vec::new(),
             merchant: vec![MerchantObject {
-                user_id: "info.testnet".to_string(),
+                user_id: AccountId::new_unchecked("info.testnet".to_string()),
                 total_orders: 1,
                 orders_completed: 1,
                 percentaje_completion: 0.0,
@@ -290,10 +297,10 @@ impl Default for NearP2P {
             payment_method_id: 0,
             fiat_method: Vec::new(),
             fiat_method_id: 0,
-            vault: "vault.p2p-testnet.testnet".to_string(),
+            vault: AccountId::new_unchecked("vault.p2p-testnet.testnet".to_string()),
             administrators: vec![
-                        "info.testnet".to_string(),
-                        "gperez.testnet".to_string(),
+                AccountId::new_unchecked("info.testnet".to_string()),
+                AccountId::new_unchecked("gperez.testnet".to_string()),
                         ],
         }
     }
@@ -302,6 +309,32 @@ impl Default for NearP2P {
 /// Implementing Struct
 #[near_bindgen]
 impl NearP2P {
+    pub fn prueba_balance(&mut self, account_id: String) -> Promise {
+        let nft_contract: AccountId = CONTRACT_USDC.parse().unwrap();
+        let gas_internal: Gas = Gas(1_000_000_000_000);
+        ext_usdc::ft_balance_of(
+            account_id,
+            nft_contract,
+            0,
+            BASE_GAS_TOKEN,
+        )
+        .then(ext_internal::on_ft_balance_of(
+            env::current_account_id(),
+            0,
+            gas_internal,
+        ))
+    }
+
+    #[private]
+    pub fn on_ft_balance_of(&mut self) -> String {
+        let result = promise_result_as_success();
+        if result.is_none() {
+            env::panic(b"balance is None".as_ref());
+        }
+        let ret = near_sdk::serde_json::from_slice::<String>(&result.unwrap()).expect("balance is None");
+        return ret;
+    }
+
    
     pub fn set_admin(&mut self, user_id: AccountId) {
         self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
@@ -314,7 +347,7 @@ impl NearP2P {
 
     pub fn delete_admin(&mut self, user_id: AccountId) {      
         self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
-        let index = self.administrators.iter().position(|x| x == &user_id.to_string()).expect("the user is not in the list of administrators");
+        let index = self.administrators.iter().position(|x| x == &AccountId::new_unchecked(user_id.to_string())).expect("the user is not in the list of administrators");
         self.administrators.remove(index);
     }
 
@@ -380,7 +413,7 @@ impl NearP2P {
         phone: String,
         email: String,
         country: String) -> String {
-        let user = self.users.iter().find(|x| x.user_id == env::signer_account_id());
+        let user = self.users.iter().find(|x| x.user_id == env::signer_account_id().to_string());
         if user.is_some() {
             env::panic(b"profile already exists");
         }
@@ -396,7 +429,7 @@ impl NearP2P {
         };
         self.users.push(data);
         let data2 = MerchantObject {
-            user_id: env::signer_account_id().to_string(),
+            user_id: env::signer_account_id(),
             total_orders: 0,
             orders_completed: 0,
             percentaje_completion: 0.0,
@@ -418,7 +451,7 @@ impl NearP2P {
         , email: String
         , country: String) {
         for i in 0..self.users.len() {
-            if self.users[i].user_id == env::signer_account_id() {
+            if self.users[i].user_id == env::signer_account_id().to_string() {
                 self.users[i].name = name.to_string();
                 self.users[i].last_name = last_name.to_string();
                 self.users[i].phone = phone.to_string();
@@ -488,11 +521,11 @@ impl NearP2P {
         , terms_conditions: String
     ) -> i128 {
         self.offer_sell_id += 1;
-        let index = self.merchant.iter().position(|x| x.user_id == owner_id.to_string()).expect("the user is not in the list of users");
+        let index = self.merchant.iter().position(|x| x.user_id == owner_id).expect("the user is not in the list of users");
         
         let data = OfferObject {
             offer_id: self.offer_sell_id,
-            owner_id: String::from(owner_id),
+            owner_id: owner_id,
             asset: String::from(asset),
             exchange_rate: String::from(exchange_rate),
             amount: amount,
@@ -524,7 +557,7 @@ impl NearP2P {
         , time: Option<i64>
         , terms_conditions: Option<String>
     ) -> OfferObject {
-        let offer = self.offers_sell.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id().to_string()).expect("Offer not found");
+        let offer = self.offers_sell.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id()).expect("Offer not found");
         if asset.is_some() {
             self.offers_sell[offer].asset = asset.unwrap();
         }
@@ -556,7 +589,7 @@ impl NearP2P {
         env::log(b"Offer updated");
         OfferObject {
             offer_id: offer_id,
-            owner_id: String::from(self.offers_sell[offer].owner_id.clone()),
+            owner_id: self.offers_sell[offer].owner_id.clone(),
             asset: String::from(self.offers_sell[offer].asset.clone()),
             exchange_rate: String::from(self.offers_sell[offer].exchange_rate.clone()),
             amount: self.offers_sell[offer].amount,
@@ -574,7 +607,7 @@ impl NearP2P {
 
 
     pub fn delete_offers_sell(&mut self, offer_id: i128) {
-        let offer = self.offers_sell.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id().to_string()).expect("Offer not found");
+        let offer = self.offers_sell.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id()).expect("Offer not found");
         self.offers_sell.remove(offer);
         env::log(b"Offer Buy Delete");
     }
@@ -621,11 +654,11 @@ impl NearP2P {
             amount
         );
         self.offer_buy_id += 1;
-        let index = self.merchant.iter().position(|x| x.user_id == owner_id.to_string()).expect("the user is not in the list of users");
+        let index = self.merchant.iter().position(|x| x.user_id == owner_id).expect("the user is not in the list of users");
 
         let data = OfferObject {
             offer_id: self.offer_buy_id,
-            owner_id: String::from(owner_id),
+            owner_id: owner_id,
             asset: String::from(asset),
             exchange_rate: String::from(exchange_rate),
             amount: amount,
@@ -662,7 +695,7 @@ impl NearP2P {
             attached_deposit >= 1,
             "you have to deposit a minimum of one yoctoNear"
         );
-        let offer = self.offers_buy.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id().to_string()).expect("Offer not found");
+        let offer = self.offers_buy.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id()).expect("Offer not found");
         if asset.is_some() {
             self.offers_buy[offer].asset = asset.unwrap();
         }
@@ -674,13 +707,13 @@ impl NearP2P {
                 let diff_return = self.offers_buy[offer].remaining_amount - remaining_amount.unwrap();
                 if self.offers_buy[offer].asset == "USDC".to_string() {
                     if KEY_TOKEN == token {
-                        let contract_name: AccountId = CONTRACT_TRANSFER.to_string();
+                        let contract_name: AccountId = AccountId::new_unchecked(CONTRACT_USDC.to_string());
                         // transfer usdc to owner
-                        ext_tranfer_usdc::ft_transfer(
+                        ext_usdc::ft_transfer(
                             self.offers_buy[offer].owner_id.clone(),
                             U128((diff_return as f64) as u128),
                             None,
-                            &contract_name,
+                            contract_name,
                             1,
                             GAS_FOR_TRANSFER,
                         );
@@ -727,7 +760,7 @@ impl NearP2P {
         env::log(b"Offer updated");
         OfferObject {
             offer_id: offer_id,
-            owner_id: String::from(self.offers_buy[offer].owner_id.clone()),
+            owner_id: self.offers_buy[offer].owner_id.clone(),
             asset: String::from(self.offers_buy[offer].asset.clone()),
             exchange_rate: String::from(self.offers_buy[offer].exchange_rate.clone()),
             amount: self.offers_buy[offer].amount,
@@ -745,16 +778,16 @@ impl NearP2P {
     
 
     pub fn delete_offers_buy(&mut self, offer_id: i128, token: String) {
-        let offer = self.offers_buy.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id().to_string()).expect("Offer not found");
+        let offer = self.offers_buy.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id()).expect("Offer not found");
         if self.offers_buy[offer].asset == "USDC".to_string() {
             if KEY_TOKEN == token {
-                let contract_name: AccountId = CONTRACT_TRANSFER.to_string();
+                let contract_name: AccountId = AccountId::new_unchecked(CONTRACT_USDC.to_string());
                 // transfer usdc to owner
-                ext_tranfer_usdc::ft_transfer(
+                ext_usdc::ft_transfer(
                     self.offers_buy[offer].owner_id.clone(),
                     U128((self.offers_buy[offer].remaining_amount as f64) as u128),
                     None,
-                    &contract_name,
+                    contract_name,
                     1,
                     GAS_FOR_TRANSFER,
                 );
@@ -783,13 +816,13 @@ impl NearP2P {
         let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
         assert_ne!(limit, 0, "Cannot provide limit of 0.");
 
-        if user_id == "%" {
+        if user_id.to_string() == "%".to_string() {
             self.merchant.iter()  // Return all merchants
             .skip(start_index as usize)
             .take(limit) 
             .map(|x| x.clone()).collect()
         } else {
-            self.merchant.iter().filter(|x| x.user_id == user_id.to_string())
+            self.merchant.iter().filter(|x| x.user_id == user_id)
             .skip(start_index as usize)
             .take(limit)
             .map(|x| x.clone()).collect()                
@@ -808,7 +841,7 @@ impl NearP2P {
     ) {
         self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
             
-        let i = self.merchant.iter().position(|x| x.user_id == user_id.to_string()).expect("Merchant not found");
+        let i = self.merchant.iter().position(|x| x.user_id == user_id).expect("Merchant not found");
         self.merchant[i].total_orders = total_orders;
         self.merchant[i].orders_completed = orders_completed;
         self.merchant[i].percentaje_completion = (orders_completed as f64 / total_orders as f64) * 100.0;
@@ -997,9 +1030,9 @@ impl NearP2P {
         if self.payment_method_user.len() > 0 {
             for i in 0..self.payment_method_user.len() {
                 if method_id.is_some() {
-                    if self.payment_method_user.get(i).unwrap().payment_method_id == method_id.unwrap() && self.payment_method_user.get(i).unwrap().user_id == user_id.to_string() {
+                    if self.payment_method_user.get(i).unwrap().payment_method_id == method_id.unwrap() && self.payment_method_user.get(i).unwrap().user_id == user_id {
                         result.push(PaymentMethodUserObject {
-                            user_id: self.payment_method_user[i].user_id.to_string(),
+                            user_id: self.payment_method_user[i].user_id.clone(),
                             payment_method_id: self.payment_method_user[i].payment_method_id,
                             payment_method: self.payment_method_user[i].payment_method.to_string(),
                             desc1: self.payment_method_user[i].desc1.to_string(),
@@ -1015,9 +1048,9 @@ impl NearP2P {
                         });
                     }
                 } else {
-                    if self.payment_method_user.get(i).unwrap().user_id == user_id.to_string() {
+                    if self.payment_method_user.get(i).unwrap().user_id == user_id {
                         result.push(PaymentMethodUserObject {
-                            user_id: self.payment_method_user[i].user_id.to_string(),
+                            user_id: self.payment_method_user[i].user_id.clone(),
                             payment_method_id: self.payment_method_user[i].payment_method_id,
                             payment_method: self.payment_method_user[i].payment_method.to_string(),
                             desc1: self.payment_method_user[i].desc1.to_string(),
@@ -1048,14 +1081,14 @@ impl NearP2P {
         , input4: String
         , input5: String) -> String {
         for i in 0..self.payment_method_user.len() {
-            if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id().to_string() {
+            if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id() {
                 env::panic(b"Repeated payment methods are not allowed");
             }
         }
         for i in 0..self.payment_method.len() {
             if self.payment_method[i].id == payment_method_id {
                 let data = PaymentMethodUserObject {
-                    user_id: env::signer_account_id().to_string(),
+                    user_id: env::signer_account_id(),
                     payment_method_id: payment_method_id,
                     payment_method: self.payment_method[i].payment_method.to_string(),
                     desc1: self.payment_method[i].input1.to_string(),
@@ -1085,7 +1118,7 @@ impl NearP2P {
         , input4: String
         , input5: String) {
         for i in 0..self.payment_method_user.len() {
-            if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id().to_string() {
+            if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id() {
                 self.payment_method_user[i].input1 = input1.to_string();
                 self.payment_method_user[i].input2 = input2.to_string();
                 self.payment_method_user[i].input3 = input3.to_string();
@@ -1100,7 +1133,7 @@ impl NearP2P {
     /// delete the Payment Method user object into the contract
     pub fn delete_payment_method_user(&mut self, payment_method_id: i128) {
         for i in 0..self.payment_method_user.len() {
-            if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id().to_string() {
+            if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id() {
                 self.payment_method_user.remove(i);
                 break;
             }
@@ -1132,7 +1165,7 @@ impl NearP2P {
         if offer_type == 1 {
             for i in 0..self.offers_sell.len() {
                 if self.offers_sell.get(i).unwrap().offer_id == offer_id {
-                    if self.offers_sell[i].owner_id == env::signer_account_id().to_string() {
+                    if self.offers_sell[i].owner_id == env::signer_account_id() {
                         env::panic(b"you can not accept your own offer");
                     }
                     if (self.offers_sell[i].remaining_amount * YOCTO_NEAR as f64) as f64 >= attached_deposit as f64 {
@@ -1158,7 +1191,7 @@ impl NearP2P {
                         let data = OrderObject {
                             offer_id: offer_id,
                             order_id: self.order_sell_id,
-                            owner_id: self.offers_sell[i].owner_id.to_string(),
+                            owner_id: self.offers_sell[i].owner_id.clone(),
                             signer_id: env::signer_account_id(),
                             exchange_rate: rate.to_string(), // self.offers_sell[i].exchange_rate.to_string(),
                             operation_amount: (attached_deposit as f64 / YOCTO_NEAR as f64) as f64,
@@ -1198,7 +1231,7 @@ impl NearP2P {
         } else if offer_type == 2 {
             for i in 0..self.offers_buy.len() {
                 if self.offers_buy.get(i).unwrap().offer_id == offer_id {
-                    if self.offers_buy[i].owner_id == env::signer_account_id().to_string() {
+                    if self.offers_buy[i].owner_id == env::signer_account_id() {
                         env::panic(b"you can not accept your own offer");
                     }
                     if self.offers_buy[i].remaining_amount >= amount  {
@@ -1225,7 +1258,7 @@ impl NearP2P {
                         let data = OrderObject {
                             offer_id: offer_id,
                             order_id: self.order_buy_id,
-                            owner_id: self.offers_buy[i].owner_id.to_string(),
+                            owner_id: self.offers_buy[i].owner_id.clone(),
                             signer_id: env::signer_account_id(),
                             exchange_rate: rate.to_string(), //self.offers_buy[i].exchange_rate.to_string(),
                             operation_amount: amount,
@@ -1321,13 +1354,13 @@ impl NearP2P {
         assert_one_yocto();
         if offer_type == 1 {
             let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
-            if self.orders_sell[i].owner_id == env::signer_account_id().to_string() {
+            if self.orders_sell[i].owner_id == env::signer_account_id() {
                 self.orders_sell[i].confirmation_owner_id = 1;
                 if self.orders_sell[i].status == 1 {
                     self.orders_sell[i].status = 2;
                 }
                 env::log(b"Order sell Confirmation");
-            } else if self.orders_sell[i].signer_id == env::signer_account_id().to_string() {
+            } else if self.orders_sell[i].signer_id == env::signer_account_id() {
                 self.orders_sell[i].confirmation_signer_id = 1;
                 if self.orders_sell[i].status == 1 {
                     self.orders_sell[i].status = 2;
@@ -1347,18 +1380,18 @@ impl NearP2P {
 
                 if self.offers_sell[index_offer].asset == "USDC".to_string() {
                     if KEY_TOKEN == token {
-                        let contract_name: AccountId = CONTRACT_TRANSFER.to_string();
+                        let contract_name: AccountId = AccountId::new_unchecked(CONTRACT_USDC.to_string());
                         // transfer usdc to owner
-                        ext_tranfer_usdc::ft_transfer(
-                            self.orders_sell[i].owner_id.to_string(),
+                        ext_usdc::ft_transfer(
+                            self.orders_sell[i].owner_id.clone(),
                             U128(self.orders_sell[i].operation_amount as u128),
                             None,
-                            &contract_name,
+                            contract_name,
                             1,
                             GAS_FOR_TRANSFER,
                         );
                         /*// tranfer usdc fee al vault
-                        ext_tranfer_usdc::ft_transfer(
+                        ext_usdc::ft_transfer(
                             self.vault.clone(),
                             U128(fee_deducted),
                             None,
@@ -1370,7 +1403,7 @@ impl NearP2P {
                         env::panic(b"Invalid Key_token");
                     }
                 } else {
-                    Promise::new(self.orders_sell[i].owner_id.to_string()).transfer(operation_amount - fee_deducted);
+                    Promise::new(self.orders_sell[i].owner_id.clone()).transfer(operation_amount - fee_deducted);
 
                     Promise::new(self.vault.clone()).transfer(fee_deducted);
                 }    
@@ -1378,8 +1411,8 @@ impl NearP2P {
                 let data = OrderObject {
                     offer_id:self.orders_sell[i].offer_id,
                     order_id: self.orders_sell[i].order_id,
-                    owner_id: self.orders_sell[i].owner_id.to_string(),
-                    signer_id: self.orders_sell[i].signer_id.to_string(),
+                    owner_id: self.orders_sell[i].owner_id.clone(),
+                    signer_id: self.orders_sell[i].signer_id.clone(),
                     exchange_rate: self.orders_sell[i].exchange_rate.to_string(),
                     operation_amount: self.orders_sell[i].operation_amount,
                     fee_deducted: self.orders_sell[i].fee_deducted,
@@ -1404,13 +1437,13 @@ impl NearP2P {
             }
         } else if offer_type == 2 {
             let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order buy not found");
-            if self.orders_buy[i].signer_id == env::signer_account_id().to_string() {
+            if self.orders_buy[i].signer_id == env::signer_account_id() {
                 self.orders_buy[i].confirmation_signer_id = 1;
                 if self.orders_buy[i].status == 1 {
                     self.orders_buy[i].status = 2;
                 }
                 env::log(b"Order buy Confirmation");
-            } else if self.orders_buy[i].owner_id == env::signer_account_id().to_string() {
+            } else if self.orders_buy[i].owner_id == env::signer_account_id() {
                 self.orders_buy[i].confirmation_owner_id = 1;
                 if self.orders_buy[i].status == 1 {
                     self.orders_buy[i].status = 2;
@@ -1430,18 +1463,18 @@ impl NearP2P {
 
                 if self.offers_buy[index_offer].asset == "USDC".to_string() {
                     if KEY_TOKEN == token {
-                        let contract_name: AccountId = CONTRACT_TRANSFER.to_string();
+                        let contract_name: AccountId = AccountId::new_unchecked(CONTRACT_USDC.to_string());
                         // transfer usdc to owner
-                        ext_tranfer_usdc::ft_transfer(
-                            self.orders_buy[i].owner_id.to_string(),
+                        ext_usdc::ft_transfer(
+                            self.orders_buy[i].owner_id.clone(),
                             U128(self.orders_buy[i].operation_amount as u128),
                             None,
-                            &contract_name,
+                            contract_name,
                             1,
                             GAS_FOR_TRANSFER,
                         );
                         /*// tranfer usdc fee al vault
-                        ext_tranfer_usdc::ft_transfer(
+                        ext_usdc::ft_transfer(
                             self.vault.clone(),
                             U128(fee_deducted),
                             None,
@@ -1453,7 +1486,7 @@ impl NearP2P {
                         env::panic(b"Invalid Key_token");
                     }
                 } else {
-                    Promise::new(self.orders_buy[i].signer_id.to_string()).transfer(operation_amount - fee_deducted);
+                    Promise::new(self.orders_buy[i].signer_id.clone()).transfer(operation_amount - fee_deducted);
                 
                     Promise::new(self.vault.clone()).transfer(fee_deducted);
                 }
@@ -1463,8 +1496,8 @@ impl NearP2P {
                 let data = OrderObject {
                     offer_id: self.orders_buy[i].offer_id,
                     order_id: self.orders_buy[i].order_id,
-                    owner_id: self.orders_buy[i].owner_id.to_string(),
-                    signer_id: self.orders_buy[i].signer_id.to_string(),
+                    owner_id: self.orders_buy[i].owner_id.clone(),
+                    signer_id: self.orders_buy[i].signer_id.clone(),
                     exchange_rate: self.orders_buy[i].exchange_rate.to_string(),
                     operation_amount: self.orders_buy[i].operation_amount,
                     fee_deducted: self.orders_buy[i].fee_deducted,
@@ -1500,11 +1533,11 @@ impl NearP2P {
         if offer_type == 1 {
             let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
             if self.orders_sell[i].status != 3 {
-                if self.orders_sell[i].owner_id == env::signer_account_id().to_string() {
+                if self.orders_sell[i].owner_id == env::signer_account_id() {
                     self.orders_sell[i].status = 3;
                     self.orders_sell[i].confirmation_owner_id = 2;
                     env::log(b"Order sell in dispute");
-                } else if self.orders_sell[i].signer_id == env::signer_account_id().to_string() {
+                } else if self.orders_sell[i].signer_id == env::signer_account_id() {
                     self.orders_sell[i].status = 3;
                     self.orders_sell[i].confirmation_signer_id = 2;
                     env::log(b"Order sell in dispute");
@@ -1517,11 +1550,11 @@ impl NearP2P {
         } else if offer_type == 2 {
             let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order buy not found");
             if self.orders_buy[i].status != 3 {
-                if self.orders_buy[i].owner_id == env::signer_account_id().to_string() {
+                if self.orders_buy[i].owner_id == env::signer_account_id() {
                     self.orders_buy[i].status = 3;
                     self.orders_buy[i].confirmation_owner_id = 2;
                     env::log(b"Order buy in dispute");
-                } else if self.orders_buy[i].signer_id == env::signer_account_id().to_string() {
+                } else if self.orders_buy[i].signer_id == env::signer_account_id() {
                     self.orders_buy[i].status = 3;
                     self.orders_buy[i].confirmation_signer_id = 2;
                     env::log(b"Order buy in dispute");
@@ -1574,7 +1607,7 @@ impl NearP2P {
         if offer_type == 1 {
             let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
             
-            if self.orders_sell[i].owner_id == env::signer_account_id().to_string() {
+            if self.orders_sell[i].owner_id == env::signer_account_id() {
                 let j = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer Sell not found");
                 self.orders_sell[i].confirmation_owner_id = 3;
                 if self.orders_sell[i].status == 1 || self.orders_sell[i].status == 2 {
@@ -1585,13 +1618,13 @@ impl NearP2P {
 
                 if self.offers_sell[index_offer].asset == "USDC".to_string() {
                     if KEY_TOKEN == token {
-                        let contract_name: AccountId = CONTRACT_TRANSFER.to_string();
+                        let contract_name: AccountId = AccountId::new_unchecked(CONTRACT_USDC.to_string());
                         // transfer usdc to owner
-                        ext_tranfer_usdc::ft_transfer(
-                            self.orders_sell[i].owner_id.to_string(),
+                        ext_usdc::ft_transfer(
+                            self.orders_sell[i].owner_id.clone(),
                             U128(self.orders_sell[i].operation_amount as u128),
                             None,
-                            &contract_name,
+                            contract_name,
                             1,
                             GAS_FOR_TRANSFER,
                         );   
@@ -1599,14 +1632,14 @@ impl NearP2P {
                         env::panic(b"Invalid Key_token");
                     }
                 } else {
-                    Promise::new(self.orders_sell[i].signer_id.to_string()).transfer(self.orders_sell[i].operation_amount as u128 * YOCTO_NEAR);
+                    Promise::new(self.orders_sell[i].signer_id.clone()).transfer(self.orders_sell[i].operation_amount as u128 * YOCTO_NEAR);
                 }
                 
                 let data = OrderObject {
                     offer_id:self.orders_sell[i].offer_id,
                     order_id: self.orders_sell[i].order_id,
-                    owner_id: self.orders_sell[i].owner_id.to_string(),
-                    signer_id: self.orders_sell[i].signer_id.to_string(),
+                    owner_id: self.orders_sell[i].owner_id.clone(),
+                    signer_id: self.orders_sell[i].signer_id.clone(),
                     exchange_rate: self.orders_sell[i].exchange_rate.to_string(),
                     operation_amount: self.orders_sell[i].operation_amount,
                     fee_deducted: self.orders_sell[i].fee_deducted,
@@ -1627,7 +1660,7 @@ impl NearP2P {
                 self.offers_sell[j].status = 1;
                 self.orders_sell.remove(i);
                 env::log(b"Order sell canceled");
-            } else if self.orders_sell[i].signer_id == env::signer_account_id().to_string() {
+            } else if self.orders_sell[i].signer_id == env::signer_account_id() {
                 self.orders_sell[i].confirmation_signer_id = 3;
                 if self.orders_sell[i].status == 1 || self.orders_sell[i].status == 2 {
                     self.orders_sell[i].status = 4;
@@ -1639,13 +1672,13 @@ impl NearP2P {
         } else if offer_type == 2 {
             let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order buy not found");
 
-            if self.orders_buy[i].owner_id == env::signer_account_id().to_string() {
+            if self.orders_buy[i].owner_id == env::signer_account_id() {
                 self.orders_buy[i].confirmation_owner_id = 3;
                 if self.orders_buy[i].status == 1 || self.orders_buy[i].status == 2 {
                     self.orders_buy[i].status = 4;
                 }
                 env::log(b"cancellation request sent");
-            } else if self.orders_buy[i].signer_id == env::signer_account_id().to_string() {
+            } else if self.orders_buy[i].signer_id == env::signer_account_id() {
                 let j = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer buy not found");
                 self.orders_buy[i].confirmation_signer_id = 3;
                 if self.orders_buy[i].status == 1 || self.orders_buy[i].status == 2 {
@@ -1656,13 +1689,13 @@ impl NearP2P {
 
                 if self.offers_buy[index_offer].asset == "USDC".to_string() {
                     if KEY_TOKEN == token {
-                        let contract_name: AccountId = CONTRACT_TRANSFER.to_string();
+                        let contract_name: AccountId = AccountId::new_unchecked(CONTRACT_USDC.to_string());
                         // transfer usdc to owner
-                        ext_tranfer_usdc::ft_transfer(
-                            self.orders_sell[i].owner_id.to_string(),
+                        ext_usdc::ft_transfer(
+                            self.orders_sell[i].owner_id.clone(),
                             U128(self.orders_buy[i].operation_amount as u128),
                             None,
-                            &contract_name,
+                            contract_name,
                             1,
                             GAS_FOR_TRANSFER,
                         );
@@ -1670,15 +1703,15 @@ impl NearP2P {
                         env::panic(b"Invalid Key_token");
                     }
                 } else {
-                    Promise::new(self.orders_buy[i].owner_id.to_string()).transfer(self.orders_buy[i].operation_amount as u128 * YOCTO_NEAR);
+                    Promise::new(self.orders_buy[i].owner_id.clone()).transfer(self.orders_buy[i].operation_amount as u128 * YOCTO_NEAR);
                 }
                 
 
                 let data = OrderObject {
                     offer_id:self.orders_buy[i].offer_id,
                     order_id: self.orders_buy[i].order_id,
-                    owner_id: self.orders_buy[i].owner_id.to_string(),
-                    signer_id: self.orders_buy[i].signer_id.to_string(),
+                    owner_id: self.orders_buy[i].owner_id.clone(),
+                    signer_id: self.orders_buy[i].signer_id.clone(),
                     exchange_rate: self.orders_buy[i].exchange_rate.to_string(),
                     operation_amount: self.orders_buy[i].operation_amount,
                     fee_deducted: self.orders_buy[i].fee_deducted,
@@ -1736,7 +1769,7 @@ fn search_offer(data: Vec<OfferObject>,
     assert_ne!(limit, 0, "Cannot provide limit of 0.");
 
     if signer_id.is_some() {
-        result = result.iter().filter(|x| x.owner_id != signer_id.as_ref().unwrap().to_string())
+        result = result.iter().filter(|x| x.owner_id != AccountId::new_unchecked(signer_id.as_ref().unwrap().to_string()))
                     .map(|r| r.clone()).collect();
     }
     if amount.is_some() {
@@ -1756,7 +1789,7 @@ fn search_offer(data: Vec<OfferObject>,
                     .map(|r| r.clone()).collect();
     }
     if owner_id.is_some() {
-        result = result.iter().filter(|x| x.owner_id == owner_id.as_ref().unwrap().to_string())
+        result = result.iter().filter(|x| x.owner_id == AccountId::new_unchecked(owner_id.as_ref().unwrap().to_string()))
                     .map(|r| r.clone()).collect();
     }
     if status.is_some() {
@@ -1813,13 +1846,13 @@ fn search_order(data: Vec<OrderObject>,
 
     if owner_id.is_some() {
         let user = owner_id.unwrap().clone();
-        result = result.iter().filter(|x| x.owner_id == user.to_string())
+        result = result.iter().filter(|x| x.owner_id == AccountId::new_unchecked(user.to_string()))
                     .map(|r| r.clone()).collect();
     }
     
     if signer_id.is_some() {
         let user = signer_id.unwrap().clone();
-        result = result.iter().filter(|x| x.signer_id == user.to_string())
+        result = result.iter().filter(|x| x.signer_id == AccountId::new_unchecked(user.to_string()))
                     .map(|r| r.clone()).collect();
     }
     
@@ -1857,7 +1890,7 @@ fn search_order_history(data: Vec<OrderObject>,
 
     if user_id.is_some() {
         let user = user_id.unwrap().clone();
-        result = data.iter().filter(|s| s.owner_id == user.to_string() || s.signer_id == user.to_string())
+        result = data.iter().filter(|s| s.owner_id == AccountId::new_unchecked(user.to_string()) || s.signer_id == AccountId::new_unchecked(user.to_string()))
                 .map(|s| s.clone()).collect();
     }
 

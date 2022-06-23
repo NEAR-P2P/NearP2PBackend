@@ -5,10 +5,10 @@ authors = ["NEAR Inc <hello@near.org>"]
 edition = "2021"
 
 [lib]
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib"]
 
 [dependencies]
-near-sdk = "3.1.0"
+near-sdk = "=4.0.0-pre.9"
 serde = { version = "1.0" }
 serde_json = "1.0"
 
