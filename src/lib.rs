@@ -23,9 +23,9 @@ Develop by GlobalDv @2022
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use serde::Serialize;
 use serde::Deserialize;
-use near_sdk::{env, near_bindgen, AccountId, Promise, assert_one_yocto, ext_contract, Gas, promise_result_as_success}; // json_types::U128, 
+use near_sdk::{env, near_bindgen, AccountId, Promise, assert_one_yocto, ext_contract, Gas, promise_result_as_success, Balance}; // json_types::U128, 
 use near_sdk::json_types::U128;
-
+use std::collections::HashMap;
 
 //near_sdk::setup_alloc!();
 
@@ -37,6 +37,9 @@ const FEE_TRANSACTION: f64 = 0.003;
 const GAS_FOR_TRANSFER: Gas = Gas(40_000_000_000_000);
 const BASE_GAS_TOKEN: Gas = Gas(3_000_000_000_000);
 const CONTRACT_USDC: &str = "usdc.fakes.testnet";
+
+const INITIAL_BALANCE: Balance = 2_50_000_000_000_000_000_000_000; // 1e24yN, 0.25N
+const CODE: &[u8] = include_bytes!("./wasm/subcontract-p2-p.wasm");
 /////////////////////////////////////////////////////////////////////////////////////////////////
 /// Objects Definition///////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -53,9 +56,25 @@ trait ExtTranferUsdc {
     fn ft_balance_of(self, account_id: String);
 }
 
+#[ext_contract(ext_subcontract)]
+trait ExtTranferUsdc {
+    fn transfer(&mut self,
+        ft_token: String,
+        receiver_id: AccountId,
+        operation_amount: u128,
+        fee_deducted: u128,
+    );
+}
+
 #[ext_contract(ext_internal)]
 trait ExtNftDos {
     fn on_ft_balance_of(&mut self);
+
+    fn on_confirmation(&mut self,
+        order_id: i128,
+        status: i8,
+        order_type: i8,
+    );
 }
 
 /*
@@ -257,6 +276,8 @@ pub struct NearP2P {
     pub vault: AccountId,
 
     pub administrators: Vec<AccountId>,
+
+    pub contract_list: HashMap<AccountId, AccountId>,
 }
 
 /// Initializing deafult impl
@@ -302,6 +323,7 @@ impl Default for NearP2P {
                 AccountId::new_unchecked("info.testnet".to_string()),
                 AccountId::new_unchecked("gperez.testnet".to_string()),
                         ],
+            contract_list: HashMap::new(),
         }
     }
 }
@@ -333,6 +355,36 @@ impl NearP2P {
         }
         let ret = near_sdk::serde_json::from_slice::<String>(&result.unwrap()).expect("balance is None");
         return ret;
+    }
+
+
+    #[payable]
+    pub fn create_subcontract(&mut self) -> Promise {
+        assert!(
+            env::attached_deposit() >= 1,
+            "Requires attached deposit of at least 1 yoctoNEAR",
+        );
+        
+        let subaccount_id = AccountId::new_unchecked(
+          format!("{}.{}", env::signer_account_id(), env::current_account_id())
+        );
+        let result = Promise::new(subaccount_id.clone())
+            .create_account()
+            //.add_full_access_key(env::signer_account_pk())
+            .transfer(INITIAL_BALANCE)
+            .deploy_contract(CODE.to_vec());
+        
+        self.contract_list.insert(env::signer_account_id(), subaccount_id);
+
+        result
+    }
+
+    pub fn get_subcontract(self, user_id: AccountId) -> bool {
+        if self.contract_list.get(&user_id).is_some() {
+            true
+        } else {
+            false
+        }
     }
 
    
@@ -1350,8 +1402,11 @@ impl NearP2P {
     /// confirmation order into the contract
     /// Params: offer_type: 1 = sell, 2 = buy
     #[payable]
-    pub fn order_confirmation(&mut self, offer_type: i8, order_id: i128, token: String) {
+    pub fn order_confirmation(&mut self, offer_type: i8, order_id: i128) {
         assert_one_yocto();
+        let ft_token: String;
+        let fee_deducted: u128;
+        let operation_amount: u128;
         if offer_type == 1 {
             let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
             if self.orders_sell[i].owner_id == env::signer_account_id() {
@@ -1373,65 +1428,37 @@ impl NearP2P {
                 self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
                 self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
 
-                let fee_deducted = ((self.orders_sell[i].operation_amount * FEE_TRANSACTION) * YOCTO_NEAR as f64) as u128;
-                let operation_amount = (self.orders_sell[i].operation_amount * YOCTO_NEAR as f64) as u128;
-                
                 let index_offer = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer sell not found");
 
+                #[warn(unused_assignments)]
+                let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.orders_sell[i].signer_id).expect("the user does not have a sub contract deployed").to_string());
+                
                 if self.offers_sell[index_offer].asset == "USDC".to_string() {
-                    if KEY_TOKEN == token {
-                        let contract_name: AccountId = AccountId::new_unchecked(CONTRACT_USDC.to_string());
-                        // transfer usdc to owner
-                        ext_usdc::ft_transfer(
-                            self.orders_sell[i].owner_id.clone(),
-                            U128(self.orders_sell[i].operation_amount as u128),
-                            None,
-                            contract_name,
-                            1,
-                            GAS_FOR_TRANSFER,
-                        );
-                        /*// tranfer usdc fee al vault
-                        ext_usdc::ft_transfer(
-                            self.vault.clone(),
-                            U128(fee_deducted),
-                            None,
-                            &contract_name,
-                            1,
-                            GAS_FOR_TRANSFER,
-                        );*/
-                    } else {
-                        env::panic_str("Invalid Key_token");
-                    }
+                    ft_token = "USDC".to_string();
+                    fee_deducted = 0;
+                    operation_amount = self.orders_sell[i].operation_amount as u128;
                 } else {
-                    Promise::new(self.orders_sell[i].owner_id.clone()).transfer(operation_amount - fee_deducted);
-
-                    Promise::new(self.vault.clone()).transfer(fee_deducted);
-                }    
-
-                let data = OrderObject {
-                    offer_id:self.orders_sell[i].offer_id,
-                    order_id: self.orders_sell[i].order_id,
-                    owner_id: self.orders_sell[i].owner_id.clone(),
-                    signer_id: self.orders_sell[i].signer_id.clone(),
-                    exchange_rate: self.orders_sell[i].exchange_rate.to_string(),
-                    operation_amount: self.orders_sell[i].operation_amount,
-                    fee_deducted: self.orders_sell[i].fee_deducted,
-                    payment_method: self.orders_sell[i].payment_method,
-                    fiat_method: self.orders_sell[i].fiat_method,
-                    confirmation_owner_id: self.orders_sell[i].confirmation_owner_id,
-                    confirmation_signer_id: self.orders_sell[i].confirmation_signer_id,
-                    confirmation_current: self.orders_sell[i].confirmation_current,
-                    time: self.orders_sell[i].time,
-                    datetime: self.orders_sell[i].datetime.to_string(),
-                    terms_conditions: self.orders_sell[i].terms_conditions.to_string(),
-                    status: 2,
-                };
+                    ft_token = "NEAR".to_string();
+                    fee_deducted = ((self.orders_sell[i].operation_amount * FEE_TRANSACTION) * YOCTO_NEAR as f64) as u128;
+                    operation_amount = (self.orders_sell[i].operation_amount * YOCTO_NEAR as f64) as u128;
+                }   
                 
-                self.order_history_sell.push(data);
-                
-                self.orders_sell.remove(i);
-                
-                env::log_str("Order sell Completed");
+                ext_subcontract::transfer(
+                    ft_token,
+                    self.orders_sell[i].owner_id.clone(),
+                    operation_amount,
+                    fee_deducted,
+                    contract_name,
+                    0,
+                    GAS_FOR_TRANSFER,
+                ).then(ext_internal::on_confirmation(
+                    self.orders_sell[i].order_id,
+                    2,
+                    1,
+                    env::current_account_id(),
+                    0,
+                    GAS_FOR_TRANSFER,
+                ));
             } else {
                 env::panic_str("Server internar error, signer not found");
             }
@@ -1456,66 +1483,40 @@ impl NearP2P {
                 self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
                 self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
                 
-                let fee_deducted = ((self.orders_buy[i].operation_amount * FEE_TRANSACTION) * YOCTO_NEAR as f64) as u128;
-                let operation_amount = (self.orders_buy[i].operation_amount * YOCTO_NEAR as f64) as u128;
+                //let fee_deducted = ((self.orders_buy[i].operation_amount * FEE_TRANSACTION) * YOCTO_NEAR as f64) as u128;
+                //let operation_amount = (self.orders_buy[i].operation_amount * YOCTO_NEAR as f64) as u128;
 
                 let index_offer = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer buy not found");
 
+                #[warn(unused_assignments)]
+                let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.orders_buy[i].owner_id).expect("the user does not have a sub contract deployed").to_string());
+                
                 if self.offers_buy[index_offer].asset == "USDC".to_string() {
-                    if KEY_TOKEN == token {
-                        let contract_name: AccountId = AccountId::new_unchecked(CONTRACT_USDC.to_string());
-                        // transfer usdc to owner
-                        ext_usdc::ft_transfer(
-                            self.orders_buy[i].owner_id.clone(),
-                            U128(self.orders_buy[i].operation_amount as u128),
-                            None,
-                            contract_name,
-                            1,
-                            GAS_FOR_TRANSFER,
-                        );
-                        /*// tranfer usdc fee al vault
-                        ext_usdc::ft_transfer(
-                            self.vault.clone(),
-                            U128(fee_deducted),
-                            None,
-                            &contract_name,
-                            1,
-                            GAS_FOR_TRANSFER,
-                        );*/
-                    } else {
-                        env::panic_str("Invalid Key_token");
-                    }
+                    ft_token = "USDC".to_string();
+                    fee_deducted = 0;
+                    operation_amount = self.orders_buy[i].operation_amount as u128;
                 } else {
-                    Promise::new(self.orders_buy[i].signer_id.clone()).transfer(operation_amount - fee_deducted);
+                    ft_token = "NEAR".to_string();
+                    fee_deducted = ((self.orders_buy[i].operation_amount * FEE_TRANSACTION) * YOCTO_NEAR as f64) as u128;
+                    operation_amount = (self.orders_buy[i].operation_amount * YOCTO_NEAR as f64) as u128;
+                }   
                 
-                    Promise::new(self.vault.clone()).transfer(fee_deducted);
-                }
-                
-
-                
-                let data = OrderObject {
-                    offer_id: self.orders_buy[i].offer_id,
-                    order_id: self.orders_buy[i].order_id,
-                    owner_id: self.orders_buy[i].owner_id.clone(),
-                    signer_id: self.orders_buy[i].signer_id.clone(),
-                    exchange_rate: self.orders_buy[i].exchange_rate.to_string(),
-                    operation_amount: self.orders_buy[i].operation_amount,
-                    fee_deducted: self.orders_buy[i].fee_deducted,
-                    payment_method: self.orders_buy[i].payment_method,
-                    fiat_method: self.orders_buy[i].fiat_method,
-                    confirmation_owner_id: self.orders_buy[i].confirmation_owner_id,
-                    confirmation_signer_id: self.orders_buy[i].confirmation_signer_id,
-                    confirmation_current: self.orders_buy[i].confirmation_current,
-                    time: self.orders_buy[i].time,
-                    datetime: self.orders_buy[i].datetime.to_string(),
-                    terms_conditions: self.orders_buy[i].terms_conditions.to_string(),
-                    status: 2,
-                };
-                 
-                self.order_history_buy.push(data);
-                self.orders_buy.remove(i);
-                
-                env::log_str("Order buy Completed");
+                ext_subcontract::transfer(
+                    ft_token,
+                    self.orders_buy[i].signer_id.clone(),
+                    operation_amount,
+                    fee_deducted,
+                    contract_name,
+                    0,
+                    GAS_FOR_TRANSFER,
+                ).then(ext_internal::on_confirmation(
+                    self.orders_buy[i].order_id,
+                    2,
+                    2,
+                    env::current_account_id(),
+                    0,
+                    GAS_FOR_TRANSFER,
+                ));
             } else {
                 env::panic_str("Server internar error, signer not found");
             }
@@ -1602,8 +1603,11 @@ impl NearP2P {
 
 
     #[payable]
-    pub fn cancel_order(&mut self, offer_type: i8, order_id: i128, token: String) {
+    pub fn cancel_order(&mut self, offer_type: i8, order_id: i128) {
         assert_one_yocto();
+        let ft_token: String;
+        let fee_deducted: u128;
+        let operation_amount: u128;
         if offer_type == 1 {
             let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
             
@@ -1614,52 +1618,36 @@ impl NearP2P {
                     self.orders_sell[i].status = 4;
                 }
 
-                let index_offer = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer sell not found");
-
-                if self.offers_sell[index_offer].asset == "USDC".to_string() {
-                    if KEY_TOKEN == token {
-                        let contract_name: AccountId = AccountId::new_unchecked(CONTRACT_USDC.to_string());
-                        // transfer usdc to owner
-                        ext_usdc::ft_transfer(
-                            self.orders_sell[i].owner_id.clone(),
-                            U128(self.orders_sell[i].operation_amount as u128),
-                            None,
-                            contract_name,
-                            1,
-                            GAS_FOR_TRANSFER,
-                        );   
-                    } else {
-                        env::panic_str("Invalid Key_token");
-                    }
-                } else {
-                    Promise::new(self.orders_sell[i].signer_id.clone()).transfer(self.orders_sell[i].operation_amount as u128 * YOCTO_NEAR);
-                }
+                #[warn(unused_assignments)]
+                let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.orders_sell[i].signer_id).expect("the user does not have a sub contract deployed").to_string());
                 
-                let data = OrderObject {
-                    offer_id:self.orders_sell[i].offer_id,
-                    order_id: self.orders_sell[i].order_id,
-                    owner_id: self.orders_sell[i].owner_id.clone(),
-                    signer_id: self.orders_sell[i].signer_id.clone(),
-                    exchange_rate: self.orders_sell[i].exchange_rate.to_string(),
-                    operation_amount: self.orders_sell[i].operation_amount,
-                    fee_deducted: self.orders_sell[i].fee_deducted,
-                    payment_method: self.orders_sell[i].payment_method,
-                    fiat_method: self.orders_sell[i].fiat_method,
-                    confirmation_owner_id: self.orders_sell[i].confirmation_owner_id,
-                    confirmation_signer_id: self.orders_sell[i].confirmation_signer_id,
-                    confirmation_current: self.orders_sell[i].confirmation_current,
-                    time: self.orders_sell[i].time,
-                    datetime: self.orders_sell[i].datetime.to_string(),
-                    terms_conditions: self.orders_sell[i].terms_conditions.to_string(),
-                    status: 4,
-                };
-
-                self.order_history_sell.push(data);
-    
-                self.offers_sell[j].remaining_amount = self.offers_sell[j].remaining_amount + self.orders_sell[i].operation_amount;
-                self.offers_sell[j].status = 1;
-                self.orders_sell.remove(i);
-                env::log_str("Order sell canceled");
+                if self.offers_sell[j].asset == "USDC".to_string() {
+                    ft_token = "USDC".to_string();
+                    fee_deducted = 0;
+                    operation_amount = self.orders_sell[i].operation_amount as u128;
+                } else {
+                    ft_token = "NEAR".to_string();
+                    fee_deducted = 0;
+                    operation_amount = (self.orders_sell[i].operation_amount * YOCTO_NEAR as f64) as u128;
+                }   
+                
+                ext_subcontract::transfer(
+                    ft_token,
+                    self.orders_sell[i].signer_id.clone(),
+                    operation_amount,
+                    fee_deducted,
+                    contract_name,
+                    0,
+                    GAS_FOR_TRANSFER,
+                ).then(ext_internal::on_confirmation(
+                    self.orders_sell[i].order_id,
+                    4,
+                    1,
+                    env::current_account_id(),
+                    0,
+                    GAS_FOR_TRANSFER,
+                ));
+                
             } else if self.orders_sell[i].signer_id == env::signer_account_id() {
                 self.orders_sell[i].confirmation_signer_id = 3;
                 if self.orders_sell[i].status == 1 || self.orders_sell[i].status == 2 {
@@ -1685,59 +1673,106 @@ impl NearP2P {
                     self.orders_buy[i].status = 4;
                 }
 
-                let index_offer = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer buy not found");
-
-                if self.offers_buy[index_offer].asset == "USDC".to_string() {
-                    if KEY_TOKEN == token {
-                        let contract_name: AccountId = AccountId::new_unchecked(CONTRACT_USDC.to_string());
-                        // transfer usdc to owner
-                        ext_usdc::ft_transfer(
-                            self.orders_sell[i].owner_id.clone(),
-                            U128(self.orders_buy[i].operation_amount as u128),
-                            None,
-                            contract_name,
-                            1,
-                            GAS_FOR_TRANSFER,
-                        );
-                    } else {
-                        env::panic_str("Invalid Key_token");
-                    }
+                #[warn(unused_assignments)]
+                let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.orders_buy[i].owner_id).expect("the user does not have a sub contract deployed").to_string());
+                
+                if self.offers_buy[j].asset == "USDC".to_string() {
+                    ft_token = "USDC".to_string();
+                    fee_deducted = 0;
+                    operation_amount = self.orders_buy[i].operation_amount as u128;
                 } else {
-                    Promise::new(self.orders_buy[i].owner_id.clone()).transfer(self.orders_buy[i].operation_amount as u128 * YOCTO_NEAR);
-                }
+                    ft_token = "NEAR".to_string();
+                    fee_deducted = 0;
+                    operation_amount = (self.orders_buy[i].operation_amount * YOCTO_NEAR as f64) as u128;
+                }   
                 
+                ext_subcontract::transfer(
+                    ft_token,
+                    self.orders_buy[i].owner_id.clone(),
+                    operation_amount,
+                    fee_deducted,
+                    contract_name,
+                    0,
+                    GAS_FOR_TRANSFER,
+                ).then(ext_internal::on_confirmation(
+                    self.orders_buy[i].order_id,
+                    4,
+                    2,
+                    env::current_account_id(),
+                    0,
+                    GAS_FOR_TRANSFER,
+                ));
 
-                let data = OrderObject {
-                    offer_id:self.orders_buy[i].offer_id,
-                    order_id: self.orders_buy[i].order_id,
-                    owner_id: self.orders_buy[i].owner_id.clone(),
-                    signer_id: self.orders_buy[i].signer_id.clone(),
-                    exchange_rate: self.orders_buy[i].exchange_rate.to_string(),
-                    operation_amount: self.orders_buy[i].operation_amount,
-                    fee_deducted: self.orders_buy[i].fee_deducted,
-                    payment_method: self.orders_buy[i].payment_method,
-                    fiat_method: self.orders_buy[i].fiat_method,
-                    confirmation_owner_id: self.orders_buy[i].confirmation_owner_id,
-                    confirmation_signer_id: self.orders_buy[i].confirmation_signer_id,
-                    confirmation_current: self.orders_buy[i].confirmation_current,
-                    time: self.orders_buy[i].time,
-                    datetime: self.orders_buy[i].datetime.to_string(),
-                    terms_conditions: self.orders_buy[i].terms_conditions.to_string(),
-                    status: 4,
-                };
-
-                self.order_history_buy.push(data);
-                
-                self.offers_buy[j].remaining_amount = self.offers_buy[j].remaining_amount + self.orders_buy[i].operation_amount;
-                self.offers_buy[j].status = 1;
-                self.orders_buy.remove(i);
-                env::log_str("Order sell canceled");
             } else {
                 env::panic_str("Server internar error, signer not found");  
             }
         }  else {
             env::panic_str("Invalid offer type");
         }
+    }
+
+
+    #[private]
+    pub fn on_confirmation(&mut self, order_id: i128, status: i8, order_type: i8) {
+        let result = promise_result_as_success();
+        if result.is_none() {
+            env::panic_str("balance is None".as_ref());
+        }
+
+        let arreglo;
+        if order_type == 1 {
+            arreglo = self.orders_sell.clone();
+        } else if order_type == 2 {
+            arreglo = self.orders_buy.clone();
+        } else {
+            env::panic_str("order type incorret");
+        }
+
+        let index = arreglo.iter().position(|x| x.order_id == order_id).expect("Order not found");
+
+        let data = OrderObject {
+            offer_id: arreglo[index].offer_id,
+            order_id: arreglo[index].order_id,
+            owner_id: arreglo[index].owner_id.clone(),
+            signer_id: arreglo[index].signer_id.clone(),
+            exchange_rate: arreglo[index].exchange_rate.to_string(),
+            operation_amount: arreglo[index].operation_amount,
+            fee_deducted: arreglo[index].fee_deducted,
+            payment_method: arreglo[index].payment_method,
+            fiat_method: arreglo[index].fiat_method,
+            confirmation_owner_id: arreglo[index].confirmation_owner_id,
+            confirmation_signer_id: arreglo[index].confirmation_signer_id,
+            confirmation_current: arreglo[index].confirmation_current,
+            time: arreglo[index].time,
+            datetime: arreglo[index].datetime.to_string(),
+            terms_conditions: arreglo[index].terms_conditions.to_string(),
+            status: status,
+        };
+
+
+        if order_type == 1 {
+            self.order_history_sell.push(data);
+            if status == 4 {
+                let j = self.offers_sell.iter().position(|x| x.offer_id == arreglo[index].offer_id).expect("Offer Sell not found");
+                self.offers_sell[j].remaining_amount = self.offers_sell[j].remaining_amount + arreglo[index].operation_amount;
+                self.offers_sell[j].status = 1;
+                env::log_str("Order sell canceled");
+            } else {
+                env::log_str("Order sell Completed");
+            }
+            self.orders_sell.remove(index);
+        } else if order_type == 2 {
+            self.order_history_buy.push(data);
+            if status == 4 {
+                let j = self.offers_buy.iter().position(|x| x.offer_id == arreglo[index].offer_id).expect("Offer Sell not found");
+                self.offers_buy[j].remaining_amount = self.offers_buy[j].remaining_amount + arreglo[index].operation_amount;
+                self.offers_buy[j].status = 1;
+                env::log_str("Order Buy canceled");
+            } else {
+                env::log_str("Order Buy Completed");
+            }
+            self.orders_buy.remove(index);   
+        }   
     }
 
 }
