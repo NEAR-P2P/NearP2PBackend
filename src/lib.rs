@@ -740,7 +740,6 @@ impl NearP2P {
         , fiat_method: Option<i128>
         , time: Option<i64>
         , terms_conditions: Option<String>
-        , token: String
     ) -> OfferObject {
         let attached_deposit = env::attached_deposit();
         assert!(
@@ -757,24 +756,33 @@ impl NearP2P {
         if remaining_amount.is_some() {
             if remaining_amount.unwrap() < self.offers_buy[offer].remaining_amount {
                 let diff_return = self.offers_buy[offer].remaining_amount - remaining_amount.unwrap();
+
+                #[warn(unused_assignments)]
+                let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.offers_buy[offer].owner_id.clone()).expect("the user does not have a sub contract deployed").to_string());
+                
+                let ft_token: String;
+                let fee_deducted: u128;
+                let operation_amount: u128;
                 if self.offers_buy[offer].asset == "USDC".to_string() {
-                    if KEY_TOKEN == token {
-                        let contract_name: AccountId = AccountId::new_unchecked(CONTRACT_USDC.to_string());
-                        // transfer usdc to owner
-                        ext_usdc::ft_transfer(
-                            self.offers_buy[offer].owner_id.clone(),
-                            U128((diff_return as f64) as u128),
-                            None,
-                            contract_name,
-                            1,
-                            GAS_FOR_TRANSFER,
-                        );
-                    } else {
-                        env::panic_str("Invalid Key_token");
-                    }
+                    ft_token = "USDC".to_string();
+                    fee_deducted = 0;
+                    operation_amount = (diff_return as f64) as u128;
                 } else {
-                    Promise::new(self.offers_buy[offer].owner_id.clone()).transfer((diff_return * YOCTO_NEAR as f64) as u128);
-                }
+                    ft_token = "NEAR".to_string();
+                    fee_deducted = 0;
+                    operation_amount = (diff_return * YOCTO_NEAR as f64) as u128;
+                }   
+                
+                ext_subcontract::transfer(
+                    ft_token,
+                    self.offers_buy[offer].owner_id.clone(),
+                    operation_amount,
+                    fee_deducted,
+                    contract_name,
+                    0,
+                    GAS_FOR_TRANSFER,
+                );
+
             } else if remaining_amount.unwrap() > self.offers_buy[offer].remaining_amount {
                 assert!(
                     remaining_amount.unwrap() <= self.offers_buy[offer].amount,
@@ -829,26 +837,34 @@ impl NearP2P {
     }
     
 
-    pub fn delete_offers_buy(&mut self, offer_id: i128, token: String) {
+    pub fn delete_offers_buy(&mut self, offer_id: i128) {
         let offer = self.offers_buy.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id()).expect("Offer not found");
+        #[warn(unused_assignments)]
+        let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.offers_buy[offer].owner_id.clone()).expect("the user does not have a sub contract deployed").to_string());
+        
+        let ft_token: String;
+        let fee_deducted: u128;
+        let operation_amount: u128;
         if self.offers_buy[offer].asset == "USDC".to_string() {
-            if KEY_TOKEN == token {
-                let contract_name: AccountId = AccountId::new_unchecked(CONTRACT_USDC.to_string());
-                // transfer usdc to owner
-                ext_usdc::ft_transfer(
-                    self.offers_buy[offer].owner_id.clone(),
-                    U128((self.offers_buy[offer].remaining_amount as f64) as u128),
-                    None,
-                    contract_name,
-                    1,
-                    GAS_FOR_TRANSFER,
-                );
-            } else {
-                env::panic_str("Invalid Key_token");
-            }
+            ft_token = "USDC".to_string();
+            fee_deducted = 0;
+            operation_amount = (self.offers_buy[offer].remaining_amount as f64) as u128;
         } else {
-            Promise::new(self.offers_buy[offer].owner_id.clone()).transfer((self.offers_buy[offer].remaining_amount * YOCTO_NEAR as f64) as u128);
-        }
+            ft_token = "NEAR".to_string();
+            fee_deducted = 0;
+            operation_amount = (self.offers_buy[offer].remaining_amount * YOCTO_NEAR as f64) as u128;
+        }   
+        
+        ext_subcontract::transfer(
+            ft_token,
+            self.offers_buy[offer].owner_id.clone(),
+            operation_amount,
+            fee_deducted,
+            contract_name,
+            0,
+            GAS_FOR_TRANSFER,
+        );
+        
         self.offers_buy.remove(offer);
         env::log_str("Offer Buy Delete");
     }
@@ -1220,11 +1236,13 @@ impl NearP2P {
                     if self.offers_sell[i].owner_id == env::signer_account_id() {
                         env::panic_str("you can not accept your own offer");
                     }
-                    if (self.offers_sell[i].remaining_amount * YOCTO_NEAR as f64) as f64 >= attached_deposit as f64 {
+                    //if (self.offers_sell[i].remaining_amount * YOCTO_NEAR as f64) as f64 >= attached_deposit as f64 {
+                    if (self.offers_sell[i].remaining_amount * YOCTO_NEAR as f64) as f64 >= amount as f64 {
                         ////////////////////////////////////////////////////////////////////
                         /* colocar aqui el bloqueo de saldo del owner_id  cuando sea venta */
                         ////////////////////////////////////////////////////////////////////
-                        let remaining: f64 = self.offers_sell[i].remaining_amount  - (attached_deposit as f64 / YOCTO_NEAR as f64) as f64;
+                        //let remaining: f64 = self.offers_sell[i].remaining_amount  - (attached_deposit as f64 / YOCTO_NEAR as f64) as f64;
+                        let remaining: f64 = self.offers_sell[i].remaining_amount  - (amount / YOCTO_NEAR as f64) as f64;
                         if remaining <= 0.0 {
                             self.offers_sell[i].status = 2;
                         }
@@ -1236,8 +1254,8 @@ impl NearP2P {
                             self.offers_sell[i].min_limit = 1.0;
                         }
                         
-                        let fee = (attached_deposit as f64 / YOCTO_NEAR as f64) as f64 * FEE_TRANSACTION;
-                        let fee_deducted = (attached_deposit as f64 / YOCTO_NEAR as f64) as f64 - fee;
+                        let fee = (amount as f64 / YOCTO_NEAR as f64) as f64 * FEE_TRANSACTION;
+                        let fee_deducted = (amount as f64 / YOCTO_NEAR as f64) as f64 - fee;
                         self.offers_sell[i].remaining_amount = remaining;
                         self.order_sell_id += 1;
                         let data = OrderObject {
@@ -1246,7 +1264,7 @@ impl NearP2P {
                             owner_id: self.offers_sell[i].owner_id.clone(),
                             signer_id: env::signer_account_id(),
                             exchange_rate: rate.to_string(), // self.offers_sell[i].exchange_rate.to_string(),
-                            operation_amount: (attached_deposit as f64 / YOCTO_NEAR as f64) as f64,
+                            operation_amount: (amount as f64 / YOCTO_NEAR as f64) as f64,
                             fee_deducted: fee_deducted,
                             payment_method: payment_method,
                             fiat_method: self.offers_sell[i].fiat_method,
