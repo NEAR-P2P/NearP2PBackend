@@ -26,7 +26,7 @@ use serde::Deserialize;
 use near_sdk::{env, near_bindgen, AccountId, Promise, assert_one_yocto, ext_contract, Gas, promise_result_as_success, Balance}; // json_types::U128, 
 use near_sdk::json_types::U128;
 use std::collections::HashMap;
-
+use near_sdk::json_types::Base64VecU8;
 //near_sdk::setup_alloc!();
 
 const YOCTO_NEAR: u128 = 1000000000000000000000000;
@@ -355,6 +355,13 @@ impl NearP2P {
         }
         let ret = near_sdk::serde_json::from_slice::<String>(&result.unwrap()).expect("balance is None");
         return ret;
+    }
+
+    
+    pub fn clean(&mut self, keys: Vec<Base64VecU8>) {
+        for key in keys.iter() {
+            env::storage_remove(&key.0);
+        }
     }
 
 
