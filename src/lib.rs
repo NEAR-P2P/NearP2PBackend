@@ -380,8 +380,11 @@ impl NearP2P {
     }
 
     pub fn get_subcontract(self, user_id: AccountId) -> bool {
-        if self.contract_list.get(&user_id).is_some() {
+        let contract = self.contract_list.get(&user_id);
+        if contract.is_some() {
             true
+        } else if contract.is_none() {
+            false
         } else {
             false
         }
