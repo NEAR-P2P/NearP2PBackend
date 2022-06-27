@@ -361,8 +361,8 @@ impl NearP2P {
     #[payable]
     pub fn create_subcontract(&mut self) -> Promise {
         assert!(
-            env::attached_deposit() >= 1,
-            "Requires attached deposit of at least 1 yoctoNEAR",
+            env::attached_deposit() >= 250000000000000000000000,
+            "Requires attached deposit of at least 250000000000000000000000 yoctoNEAR",
         );
         
         let subaccount_id = AccountId::new_unchecked(
@@ -386,7 +386,6 @@ impl NearP2P {
             false
         }
     }
-
     
     pub fn delete_contract(&mut self) {
         let subcontract = self.contract_list.get(&env::signer_account_id());
