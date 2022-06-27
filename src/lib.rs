@@ -26,7 +26,6 @@ use serde::Deserialize;
 use near_sdk::{env, near_bindgen, AccountId, Promise, assert_one_yocto, ext_contract, Gas, promise_result_as_success, Balance}; // json_types::U128, 
 use near_sdk::json_types::U128;
 use std::collections::HashMap;
-use near_sdk::json_types::Base64VecU8;
 //near_sdk::setup_alloc!();
 
 const YOCTO_NEAR: u128 = 1000000000000000000000000;
@@ -39,7 +38,7 @@ const BASE_GAS_TOKEN: Gas = Gas(3_000_000_000_000);
 const CONTRACT_USDC: &str = "usdc.fakes.testnet";
 
 const INITIAL_BALANCE: Balance = 2_50_000_000_000_000_000_000_000; // 1e24yN, 0.25N
-const CODE: &[u8] = include_bytes!("./wasm/subcontract-p2-p.wasm");
+const CODE: &[u8] = include_bytes!("./wasm/subcrontract-p2-p.wasm");
 /////////////////////////////////////////////////////////////////////////////////////////////////
 /// Objects Definition///////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -318,9 +317,10 @@ impl Default for NearP2P {
             payment_method_id: 0,
             fiat_method: Vec::new(),
             fiat_method_id: 0,
-            vault: AccountId::new_unchecked("vault.p2p-testnet.testnet".to_string()),
+            vault: AccountId::new_unchecked("v.nearp2p.testnet".to_string()),
             administrators: vec![
                 AccountId::new_unchecked("info.testnet".to_string()),
+                AccountId::new_unchecked("nearp2p.testnet".to_string()),
                 AccountId::new_unchecked("gperez.testnet".to_string()),
                         ],
             contract_list: HashMap::new(),
@@ -356,14 +356,6 @@ impl NearP2P {
         let ret = near_sdk::serde_json::from_slice::<String>(&result.unwrap()).expect("balance is None");
         return ret;
     }
-
-    
-    pub fn clean(&mut self, keys: Vec<Base64VecU8>) {
-        for key in keys.iter() {
-            env::storage_remove(&key.0);
-        }
-    }
-
 
     #[payable]
     pub fn create_subcontract(&mut self) -> Promise {
