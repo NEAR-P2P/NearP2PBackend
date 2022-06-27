@@ -387,6 +387,14 @@ impl NearP2P {
         }
     }
 
+    
+    pub fn delete_contract(&mut self) {
+        let user_id = self.contract_list.get(&env::signer_account_id());
+        if user_id.is_some() {
+            env::panic_str("El usuario no cuenta con un contrato desplegado")
+        }
+        Promise::new(AccountId::from(env::current_account_id())).delete_account(AccountId::new_unchecked(user_id.unwrap().to_string()));
+    }
    
     pub fn set_admin(&mut self, user_id: AccountId) {
         self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
