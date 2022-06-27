@@ -80,7 +80,7 @@ trait ExtNftDos {
 User UserObject: Struct for the user that contains info about the logged user.
 This object contains, user_id, name, last_name, phone, email, country
 */
-#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize)]
+#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct UserObject {
     user_id: String,
@@ -180,7 +180,7 @@ pub struct PaymentMethodsObject {
 }
 
 
-#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize)]
+#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct PaymentMethodUserObject {
     user_id: AccountId,
@@ -424,43 +424,47 @@ impl NearP2P {
         from_index: Option<U128>,
         limit: Option<u64>,
     ) -> Vec<UserObject> {
-        let start_index: u128 = from_index.map(From::from).unwrap_or_default();
-        assert!(
-            (self.users.len() as u128) > start_index,
-            "Out of bounds, please use a smaller from_index."
-        );
-        let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
-        assert_ne!(limit, 0, "Cannot provide limit of 0.");
+        if self.users.len() > 0 {
+            let start_index: u128 = from_index.map(From::from).unwrap_or_default();
+            assert!(
+                (self.users.len() as u128) > start_index,
+                "Out of bounds, please use a smaller from_index."
+            );
+            let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
+            assert_ne!(limit, 0, "Cannot provide limit of 0.");
 
-        if user_id.is_some() {
-            let user = user_id.unwrap().clone();
-            self.users.iter().filter(|x| x.user_id == user.to_string())
-            .skip(start_index as usize)
-            .take(limit)
-            .map(|x| UserObject {
-                user_id: x.user_id.to_string(),
-                name: x.name.to_string(),
-                last_name: x.last_name.to_string(),
-                phone: x.phone.to_string(),
-                email: x.email.to_string(),
-                country: x.country.to_string(),
-                mediator: x.mediator,
-                is_active: x.is_active,
-            }).collect()
+            if user_id.is_some() {
+                let user = user_id.unwrap().clone();
+                self.users.iter().filter(|x| x.user_id == user.to_string())
+                .skip(start_index as usize)
+                .take(limit)
+                .map(|x| UserObject {
+                    user_id: x.user_id.to_string(),
+                    name: x.name.to_string(),
+                    last_name: x.last_name.to_string(),
+                    phone: x.phone.to_string(),
+                    email: x.email.to_string(),
+                    country: x.country.to_string(),
+                    mediator: x.mediator,
+                    is_active: x.is_active,
+                }).collect()
+            } else {
+                self.users.iter()
+                .skip(start_index as usize)
+                .take(limit)
+                .map(|x| UserObject {
+                    user_id: x.user_id.to_string(),
+                    name: x.name.to_string(),
+                    last_name: x.last_name.to_string(),
+                    phone: x.phone.to_string(),
+                    email: x.email.to_string(),
+                    country: x.country.to_string(),
+                    mediator: x.mediator,
+                    is_active: x.is_active,
+                }).collect()
+            }
         } else {
-            self.users.iter()
-            .skip(start_index as usize)
-            .take(limit)
-            .map(|x| UserObject {
-                user_id: x.user_id.to_string(),
-                name: x.name.to_string(),
-                last_name: x.last_name.to_string(),
-                phone: x.phone.to_string(),
-                email: x.email.to_string(),
-                country: x.country.to_string(),
-                mediator: x.mediator,
-                is_active: x.is_active,
-            }).collect()
+            [].to_vec()
         }
     }
 
@@ -561,7 +565,14 @@ impl NearP2P {
         from_index: Option<U128>,
         limit: Option<u64>,
     ) -> SearchOfferObject {
-        search_offer(self.offers_sell, amount, fiat_method, payment_method, is_merchant, owner_id, status, offer_id, asset, signer_id, from_index, limit)
+        if self.offers_sell.len() > 0 {
+            search_offer(self.offers_sell, amount, fiat_method, payment_method, is_merchant, owner_id, status, offer_id, asset, signer_id, from_index, limit)
+        } else {
+            SearchOfferObject {
+                total_index: 0,
+                data: [].to_vec(),
+            }
+        }
     }
 
 
@@ -688,7 +699,14 @@ impl NearP2P {
         from_index: Option<U128>,
         limit: Option<u64>,
     ) -> SearchOfferObject {
-        search_offer(self.offers_buy, amount, fiat_method, payment_method, is_merchant, owner_id, status, offer_id, asset, signer_id, from_index, limit)
+        if self.offers_buy.len() > 0 {
+            search_offer(self.offers_buy, amount, fiat_method, payment_method, is_merchant, owner_id, status, offer_id, asset, signer_id, from_index, limit)
+        } else {
+            SearchOfferObject {
+                total_index: 0,
+                data: [].to_vec(),
+            }
+        }
     }
 
 
@@ -885,24 +903,28 @@ impl NearP2P {
         from_index: Option<U128>,
         limit: Option<u64>,
     ) -> Vec<MerchantObject> {
-        let start_index: u128 = from_index.map(From::from).unwrap_or_default();
-        assert!(
-            (self.merchant.len() as u128) > start_index,
-            "Out of bounds, please use a smaller from_index."
-        );
-        let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
-        assert_ne!(limit, 0, "Cannot provide limit of 0.");
+        if self.merchant.len() > 0 {
+            let start_index: u128 = from_index.map(From::from).unwrap_or_default();
+            assert!(
+                (self.merchant.len() as u128) > start_index,
+                "Out of bounds, please use a smaller from_index."
+            );
+            let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
+            assert_ne!(limit, 0, "Cannot provide limit of 0.");
 
-        if user_id.to_string() == "%".to_string() {
-            self.merchant.iter()  // Return all merchants
-            .skip(start_index as usize)
-            .take(limit) 
-            .map(|x| x.clone()).collect()
+            if user_id.to_string() == "%".to_string() {
+                self.merchant.iter()  // Return all merchants
+                .skip(start_index as usize)
+                .take(limit) 
+                .map(|x| x.clone()).collect()
+            } else {
+                self.merchant.iter().filter(|x| x.user_id == user_id)
+                .skip(start_index as usize)
+                .take(limit)
+                .map(|x| x.clone()).collect()                
+            }
         } else {
-            self.merchant.iter().filter(|x| x.user_id == user_id)
-            .skip(start_index as usize)
-            .take(limit)
-            .map(|x| x.clone()).collect()                
+            [].to_vec()
         }
     }
 
@@ -934,18 +956,22 @@ impl NearP2P {
         from_index: Option<U128>,
         limit: Option<u64>
     ) -> Vec<PaymentMethodsObject> {
-        let start_index: u128 = from_index.map(From::from).unwrap_or_default();
-        assert!(
-            (self.payment_method.len() as u128) > start_index,
-            "Out of bounds, please use a smaller from_index."
-        );
-        let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
-        assert_ne!(limit, 0, "Cannot provide limit of 0.");
+        if self.payment_method.len() > 0 {
+            let start_index: u128 = from_index.map(From::from).unwrap_or_default();
+            assert!(
+                (self.payment_method.len() as u128) > start_index,
+                "Out of bounds, please use a smaller from_index."
+            );
+            let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
+            assert_ne!(limit, 0, "Cannot provide limit of 0.");
 
-        self.payment_method.iter()
-        .skip(start_index as usize)
-        .take(limit)
-        .map(|x| x.clone()).collect()
+            self.payment_method.iter()
+            .skip(start_index as usize)
+            .take(limit)
+            .map(|x| x.clone()).collect()
+        } else {
+            [].to_vec()
+        }
     }
 
 
@@ -1042,18 +1068,22 @@ impl NearP2P {
         from_index: Option<U128>,
         limit: Option<u64>
     ) -> Vec<FiatMethodsObject> {
-        let start_index: u128 = from_index.map(From::from).unwrap_or_default();
-        assert!(
-            (self.fiat_method.len() as u128) > start_index,
-            "Out of bounds, please use a smaller from_index."
-        );
-        let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
-        assert_ne!(limit, 0, "Cannot provide limit of 0.");
+        if self.fiat_method.len() > 0 {
+            let start_index: u128 = from_index.map(From::from).unwrap_or_default();
+            assert!(
+                (self.fiat_method.len() as u128) > start_index,
+                "Out of bounds, please use a smaller from_index."
+            );
+            let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
+            assert_ne!(limit, 0, "Cannot provide limit of 0.");
 
-        self.fiat_method.iter()
-        .skip(start_index as usize)
-        .take(limit)
-        .map(|x| x.clone()).collect()
+            self.fiat_method.iter()
+            .skip(start_index as usize)
+            .take(limit)
+            .map(|x| x.clone()).collect()
+        } else {
+            [].to_vec()
+        }
     }
 
     /// Set the Fiat Method object into the contract
@@ -1103,50 +1133,54 @@ impl NearP2P {
 
      /// Returns the users object loaded in contract
      pub fn get_payment_method_user(self, user_id: AccountId, method_id: Option<i128>) -> Vec<PaymentMethodUserObject> {
-        let mut result: Vec<PaymentMethodUserObject> = Vec::new();
         if self.payment_method_user.len() > 0 {
-            for i in 0..self.payment_method_user.len() {
-                if method_id.is_some() {
-                    if self.payment_method_user.get(i).unwrap().payment_method_id == method_id.unwrap() && self.payment_method_user.get(i).unwrap().user_id == user_id {
-                        result.push(PaymentMethodUserObject {
-                            user_id: self.payment_method_user[i].user_id.clone(),
-                            payment_method_id: self.payment_method_user[i].payment_method_id,
-                            payment_method: self.payment_method_user[i].payment_method.to_string(),
-                            desc1: self.payment_method_user[i].desc1.to_string(),
-                            input1: self.payment_method_user[i].input1.to_string(),
-                            desc2: self.payment_method_user[i].desc2.to_string(),
-                            input2: self.payment_method_user[i].input2.to_string(),
-                            desc3: self.payment_method_user[i].desc3.to_string(),
-                            input3: self.payment_method_user[i].input3.to_string(),
-                            desc4: self.payment_method_user[i].desc4.to_string(),
-                            input4: self.payment_method_user[i].input4.to_string(),
-                            desc5: self.payment_method_user[i].desc5.to_string(),
-                            input5: self.payment_method_user[i].input5.to_string(),
-                        });
-                    }
-                } else {
-                    if self.payment_method_user.get(i).unwrap().user_id == user_id {
-                        result.push(PaymentMethodUserObject {
-                            user_id: self.payment_method_user[i].user_id.clone(),
-                            payment_method_id: self.payment_method_user[i].payment_method_id,
-                            payment_method: self.payment_method_user[i].payment_method.to_string(),
-                            desc1: self.payment_method_user[i].desc1.to_string(),
-                            input1: self.payment_method_user[i].input1.to_string(),
-                            desc2: self.payment_method_user[i].desc2.to_string(),
-                            input2: self.payment_method_user[i].input2.to_string(),
-                            desc3: self.payment_method_user[i].desc3.to_string(),
-                            input3: self.payment_method_user[i].input3.to_string(),
-                            desc4: self.payment_method_user[i].desc4.to_string(),
-                            input4: self.payment_method_user[i].input4.to_string(),
-                            desc5: self.payment_method_user[i].desc5.to_string(),
-                            input5: self.payment_method_user[i].input5.to_string(),
-                        });
+            let mut result: Vec<PaymentMethodUserObject> = Vec::new();
+            if self.payment_method_user.len() > 0 {
+                for i in 0..self.payment_method_user.len() {
+                    if method_id.is_some() {
+                        if self.payment_method_user.get(i).unwrap().payment_method_id == method_id.unwrap() && self.payment_method_user.get(i).unwrap().user_id == user_id {
+                            result.push(PaymentMethodUserObject {
+                                user_id: self.payment_method_user[i].user_id.clone(),
+                                payment_method_id: self.payment_method_user[i].payment_method_id,
+                                payment_method: self.payment_method_user[i].payment_method.to_string(),
+                                desc1: self.payment_method_user[i].desc1.to_string(),
+                                input1: self.payment_method_user[i].input1.to_string(),
+                                desc2: self.payment_method_user[i].desc2.to_string(),
+                                input2: self.payment_method_user[i].input2.to_string(),
+                                desc3: self.payment_method_user[i].desc3.to_string(),
+                                input3: self.payment_method_user[i].input3.to_string(),
+                                desc4: self.payment_method_user[i].desc4.to_string(),
+                                input4: self.payment_method_user[i].input4.to_string(),
+                                desc5: self.payment_method_user[i].desc5.to_string(),
+                                input5: self.payment_method_user[i].input5.to_string(),
+                            });
+                        }
+                    } else {
+                        if self.payment_method_user.get(i).unwrap().user_id == user_id {
+                            result.push(PaymentMethodUserObject {
+                                user_id: self.payment_method_user[i].user_id.clone(),
+                                payment_method_id: self.payment_method_user[i].payment_method_id,
+                                payment_method: self.payment_method_user[i].payment_method.to_string(),
+                                desc1: self.payment_method_user[i].desc1.to_string(),
+                                input1: self.payment_method_user[i].input1.to_string(),
+                                desc2: self.payment_method_user[i].desc2.to_string(),
+                                input2: self.payment_method_user[i].input2.to_string(),
+                                desc3: self.payment_method_user[i].desc3.to_string(),
+                                input3: self.payment_method_user[i].input3.to_string(),
+                                desc4: self.payment_method_user[i].desc4.to_string(),
+                                input4: self.payment_method_user[i].input4.to_string(),
+                                desc5: self.payment_method_user[i].desc5.to_string(),
+                                input5: self.payment_method_user[i].input5.to_string(),
+                            });
+                        }
                     }
                 }
+                result
+            } else {
+                result
             }
-            result
         } else {
-            result
+            [].to_vec()
         }
     }
     
@@ -1388,7 +1422,14 @@ impl NearP2P {
         from_index: Option<U128>,
         limit: Option<u64>,
     ) -> SearchOrderObject {
-        search_order(self.orders_sell, order_id, offer_id, owner_id, signer_id, status, from_index, limit)
+        if self.orders_sell.len() > 0 {
+            search_order(self.orders_sell, order_id, offer_id, owner_id, signer_id, status, from_index, limit)
+        } else {
+            SearchOrderObject {
+                total_index: 0,
+                data: [].to_vec(),
+            }
+        }
     }
 
 
@@ -1401,7 +1442,14 @@ impl NearP2P {
         from_index: Option<U128>,
         limit: Option<u64>,
     ) -> SearchOrderObject {
-        search_order(self.orders_buy, order_id, offer_id, owner_id, signer_id, status, from_index, limit)
+        if self.orders_buy.len() > 0 {
+            search_order(self.orders_buy, order_id, offer_id, owner_id, signer_id, status, from_index, limit)
+        } else {
+            SearchOrderObject {
+                total_index: 0,
+                data: [].to_vec(),
+            }
+        }
     }
     
     pub fn get_order_history_sell(self,
@@ -1411,7 +1459,14 @@ impl NearP2P {
         from_index: Option<U128>,
         limit: Option<u64>,
     ) -> SearchOrderObject {
-        search_order_history(self.order_history_sell, user_id, order_id, status, from_index, limit)
+        if self.order_history_sell.len() > 0 {
+            search_order_history(self.order_history_sell, user_id, order_id, status, from_index, limit)
+        } else {
+            SearchOrderObject {
+                total_index: 0,
+                data: [].to_vec(),
+            }
+        }
     }
 
     pub fn get_order_history_buy(self,
@@ -1421,7 +1476,14 @@ impl NearP2P {
         from_index: Option<U128>,
         limit: Option<u64>,
     ) -> SearchOrderObject {
-        search_order_history(self.order_history_buy, user_id, order_id, status, from_index, limit)
+        if self.order_history_buy.len() > 0 {
+            search_order_history(self.order_history_buy, user_id, order_id, status, from_index, limit)
+        } else {
+            SearchOrderObject {
+                total_index: 0,
+                data: [].to_vec(),
+            }
+        }
     }
     
     
