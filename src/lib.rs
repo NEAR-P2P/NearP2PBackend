@@ -1284,7 +1284,7 @@ impl NearP2P {
 
         if offer_type == 1 {
             let contract = self.contract_list.get(&env::signer_account_id());
-            if(contract.is_some()) {
+            if contract.is_some() {
                 for i in 0..self.offers_sell.len() {
                     if self.offers_sell.get(i).unwrap().offer_id == offer_id {
                         if self.offers_sell[i].owner_id == env::signer_account_id() {
@@ -1351,7 +1351,7 @@ impl NearP2P {
                         }
                     }
                 }
-            } else if(contract.is_none()) {
+            } else if contract.is_none() {
                 env::panic_str("no tiene un contrato desplegado parta aceptar la oferta de venta");
             }
             return String::from("Offer sell not found");
