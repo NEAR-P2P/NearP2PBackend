@@ -371,9 +371,9 @@ impl NearP2P {
             env::attached_deposit() >= 250000000000000000000000,
             "Requires attached deposit of at least 250000000000000000000000 yoctoNEAR",
         );
-        
+        let signer: AccountId = AccountId::new_unchecked(env::signer_account_id().as_str().split('.').collect::<Vec<&str>>()[0].to_string());
         let subaccount_id = AccountId::new_unchecked(
-          format!("{}.{}", env::signer_account_id(), env::current_account_id())
+          format!("{}.{}", signer, env::current_account_id())
         );
         let result = Promise::new(subaccount_id.clone())
             .create_account()
