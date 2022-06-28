@@ -390,11 +390,9 @@ impl NearP2P {
     }
     
     pub fn delete_contract(&mut self) {
-        let subcontract = self.contract_list.get(&env::signer_account_id());
-        if subcontract.is_some() {
-            env::panic_str("El usuario no cuenta con un contrato desplegado")
-        }
+        let subcontract = self.contract_list.get(&env::signer_account_id()).expect("El usuario no cuenta con un contrato desplegado");
         Promise::new(AccountId::from(env::current_account_id())).delete_account(AccountId::new_unchecked(subcontract.unwrap().to_string()));
+        self.contract_list.remove(&env::signer_account_id());
     }
    
     pub fn set_admin(&mut self, user_id: AccountId) {
