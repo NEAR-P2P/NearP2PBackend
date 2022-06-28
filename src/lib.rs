@@ -389,10 +389,16 @@ impl NearP2P {
         }
     }
     
+    #[payable]
     pub fn delete_contract(&mut self) {
+        let attached_deposit = env::attached_deposit();
+        assert!(
+            attached_deposit >= 1,
+            "you have to deposit a minimum of one yoctoNear"
+        );
         let subcontract = self.contract_list.get(&env::signer_account_id());
         if subcontract.is_some() {
-            env::panic_str("El usuario no cuenta con un contrato desplegado")
+            env::panic_str("The user does not have a deployed contract")
         }
         Promise::new(AccountId::from(env::current_account_id())).delete_account(AccountId::new_unchecked(subcontract.unwrap().to_string()));
     }
