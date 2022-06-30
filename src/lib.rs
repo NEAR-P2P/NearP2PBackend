@@ -345,7 +345,6 @@ impl NearP2P {
         );
         let result = Promise::new(subaccount_id.clone())
             .create_account()
-            //.add_full_access_key(env::signer_account_pk())
             .transfer(env::attached_deposit())
             .deploy_contract(CODE.to_vec())
             .then(ext_subcontract::new(
@@ -358,7 +357,6 @@ impl NearP2P {
             ));
         
         self.contract_list.insert(env::predecessor_account_id(), subaccount_id);
-        env::log_str(format!("predecesor: {} signer: {}", env::predecessor_account_id(), env::signer_account_id()).as_str());
 
         result
     }
