@@ -23,7 +23,7 @@ Develop by GlobalDv @2022
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use serde::Serialize;
 use serde::Deserialize;
-use near_sdk::{env, near_bindgen, AccountId, Promise, assert_one_yocto, ext_contract, Gas, promise_result_as_success, Balance}; // json_types::U128, 
+use near_sdk::{env, near_bindgen, AccountId, Promise, assert_one_yocto, ext_contract, Gas, promise_result_as_success}; // json_types::U128, 
 use near_sdk::json_types::U128;
 use std::collections::HashMap;
 //near_sdk::setup_alloc!();
@@ -34,47 +34,21 @@ const FEE_TRANSACTION: f64 = 0.003;
 
 //const GAS_FOR_RESOLVE_TRANSFER: Gas = Gas(10_000_000_000_000);
 const GAS_FOR_TRANSFER: Gas = Gas(40_000_000_000_000);
-const BASE_GAS_TOKEN: Gas = Gas(3_000_000_000_000);
+const BASE_GAS: Gas = Gas(3_000_000_000_000);
 const CONTRACT_USDC: &str = "usdc.fakes.testnet";
 
-const INITIAL_BALANCE: Balance = 2_50_000_000_000_000_000_000_000; // 1e24yN, 0.25N
-const CODE: &[u8] = include_bytes!("./wasm/subcrontract-p2-p.wasm");
+//const INITIAL_BALANCE: Balance = 2_50_000_000_000_000_000_000_000; // 1e24yN, 0.25N
+//const INITIAL_BALANCE: Balance = 1_080_000_000_000_000_000_000_000; // 1e24yN, 0.25N
+const CODE: &[u8] = include_bytes!("./wasm/subcontract_p2_p.wasm");
 /////////////////////////////////////////////////////////////////////////////////////////////////
 /// Objects Definition///////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+use crate::external::*;
+use crate::internal::*;
 
-#[ext_contract(ext_usdc)]
-trait ExtTranferUsdc {
-    fn ft_transfer(&mut self,
-        receiver_id: AccountId,
-        amount: U128,
-        memo: Option<String>
-    );
-
-    fn ft_balance_of(self, account_id: String);
-}
-
-#[ext_contract(ext_subcontract)]
-trait ExtTranferUsdc {
-    fn transfer(&mut self,
-        ft_token: String,
-        receiver_id: AccountId,
-        operation_amount: u128,
-        fee_deducted: u128,
-    );
-}
-
-#[ext_contract(ext_internal)]
-trait ExtNftDos {
-    fn on_ft_balance_of(&mut self);
-
-    fn on_confirmation(&mut self,
-        order_id: i128,
-        status: i8,
-        order_type: i8,
-    );
-}
+mod external;
+mod internal;
 
 /*
 User UserObject: Struct for the user that contains info about the logged user.
@@ -234,7 +208,7 @@ pub struct SearchOrderObject {
 Near P2P Struct
 */
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct NearP2P {
     // Users
@@ -338,7 +312,7 @@ impl NearP2P {
             account_id,
             nft_contract,
             0,
-            BASE_GAS_TOKEN,
+            BASE_GAS,
         )
         .then(ext_internal::on_ft_balance_of(
             env::current_account_id(),
@@ -357,11 +331,13 @@ impl NearP2P {
         return ret;
     }
 
+
     #[payable]
     pub fn create_subcontract(&mut self) -> Promise {
+        let attached_deposit = env::attached_deposit();
         assert!(
-            env::attached_deposit() >= 250000000000000000000000,
-            "Requires attached deposit of at least 250000000000000000000000 yoctoNEAR",
+            attached_deposit >= 1140000000000000000000000,
+            "Requires attached deposit of at least 1140000000000000000000000 yoctoNEAR",
         );
         let signer: AccountId = AccountId::new_unchecked(env::signer_account_id().as_str().split('.').collect::<Vec<&str>>()[0].to_string());
         let subaccount_id = AccountId::new_unchecked(
@@ -370,10 +346,19 @@ impl NearP2P {
         let result = Promise::new(subaccount_id.clone())
             .create_account()
             //.add_full_access_key(env::signer_account_pk())
-            .transfer(INITIAL_BALANCE)
-            .deploy_contract(CODE.to_vec());
+            .transfer(env::attached_deposit())
+            .deploy_contract(CODE.to_vec())
+            .then(ext_subcontract::new(
+                AccountId::new_unchecked("info.testnet".to_string()),
+                env::current_account_id(), 
+                AccountId::new_unchecked("info.testnet".to_string()),
+                subaccount_id.clone(),
+                0,
+                BASE_GAS,
+            ));
         
-        self.contract_list.insert(env::signer_account_id(), subaccount_id);
+        self.contract_list.insert(env::predecessor_account_id(), subaccount_id);
+        env::log_str(format!("predecesor: {} signer: {}", env::predecessor_account_id(), env::signer_account_id()).as_str());
 
         result
     }
@@ -396,13 +381,25 @@ impl NearP2P {
             attached_deposit >= 1,
             "you have to deposit a minimum of one yoctoNear"
         );
-        let subcontract = self.contract_list.get(&env::signer_account_id()).expect("The user does not have a deployed contract");
-        Promise::new(AccountId::from(env::current_account_id())).delete_account(AccountId::new_unchecked(subcontract.to_string()));
-        self.contract_list.remove(&env::signer_account_id());
+        let contract = self.contract_list.get(&env::signer_account_id()).expect("el usuario no tiene congtrato desplegado");
+        ext_subcontract::delete_contract(
+            contract.clone(),
+            0,
+            BASE_GAS,
+        ).then(ext_internal::on_delete_contract(
+            env::signer_account_id(),
+            env::current_account_id(),
+            0,
+            BASE_GAS,
+        ));
     }
 
-    #[payable]
-    pub fn delete_contract_user(&mut self, account_id: AccountId) {
+    #[private]
+    pub fn on_delete_contract(&mut self, account_id: AccountId) {
+        let result = promise_result_as_success();
+        if result.is_none() {
+            env::panic_str("Error al eliminar la cuenta".as_ref());
+        }
         self.contract_list.remove(&account_id);
     }
    
@@ -796,24 +793,24 @@ impl NearP2P {
                 #[warn(unused_assignments)]
                 let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.offers_buy[offer].owner_id.clone()).expect("the user does not have a sub contract deployed").to_string());
                 
-                let ft_token: String;
+                let contract_ft: Option<AccountId>;
                 let fee_deducted: u128;
                 let operation_amount: u128;
                 if self.offers_buy[offer].asset == "USDC".to_string() {
-                    ft_token = "USDC".to_string();
+                    contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
                     fee_deducted = 0;
                     operation_amount = (diff_return as f64) as u128;
                 } else {
-                    ft_token = "NEAR".to_string();
+                    contract_ft = None;
                     fee_deducted = 0;
                     operation_amount = (diff_return * YOCTO_NEAR as f64) as u128;
                 }   
                 
                 ext_subcontract::transfer(
-                    ft_token,
                     self.offers_buy[offer].owner_id.clone(),
                     operation_amount,
                     fee_deducted,
+                    contract_ft,
                     contract_name,
                     0,
                     GAS_FOR_TRANSFER,
@@ -878,24 +875,24 @@ impl NearP2P {
         #[warn(unused_assignments)]
         let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.offers_buy[offer].owner_id.clone()).expect("the user does not have a sub contract deployed").to_string());
         
-        let ft_token: String;
+        let contract_ft: Option<AccountId>;
         let fee_deducted: u128;
         let operation_amount: u128;
         if self.offers_buy[offer].asset == "USDC".to_string() {
-            ft_token = "USDC".to_string();
+            contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
             fee_deducted = 0;
             operation_amount = (self.offers_buy[offer].remaining_amount as f64) as u128;
         } else {
-            ft_token = "NEAR".to_string();
+            contract_ft = None;
             fee_deducted = 0;
             operation_amount = (self.offers_buy[offer].remaining_amount * YOCTO_NEAR as f64) as u128;
         }   
         
         ext_subcontract::transfer(
-            ft_token,
             self.offers_buy[offer].owner_id.clone(),
             operation_amount,
             fee_deducted,
+            contract_ft,
             contract_name,
             0,
             GAS_FOR_TRANSFER,
@@ -1507,7 +1504,7 @@ impl NearP2P {
     #[payable]
     pub fn order_confirmation(&mut self, offer_type: i8, order_id: i128) {
         assert_one_yocto();
-        let ft_token: String;
+        let contract_ft: Option<AccountId>;
         let fee_deducted: u128;
         let operation_amount: u128;
         if offer_type == 1 {
@@ -1535,22 +1532,22 @@ impl NearP2P {
 
                 #[warn(unused_assignments)]
                 let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.orders_sell[i].signer_id).expect("the user does not have a sub contract deployed").to_string());
-                
+
                 if self.offers_sell[index_offer].asset == "USDC".to_string() {
-                    ft_token = "USDC".to_string();
+                    contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
                     fee_deducted = 0;
                     operation_amount = self.orders_sell[i].operation_amount as u128;
                 } else {
-                    ft_token = "NEAR".to_string();
+                    contract_ft = None;
                     fee_deducted = ((self.orders_sell[i].operation_amount * FEE_TRANSACTION) * YOCTO_NEAR as f64) as u128;
                     operation_amount = (self.orders_sell[i].operation_amount * YOCTO_NEAR as f64) as u128;
                 }   
                 
                 ext_subcontract::transfer(
-                    ft_token,
                     self.orders_sell[i].owner_id.clone(),
                     operation_amount,
                     fee_deducted,
+                    contract_ft,
                     contract_name,
                     0,
                     GAS_FOR_TRANSFER,
@@ -1593,22 +1590,22 @@ impl NearP2P {
 
                 #[warn(unused_assignments)]
                 let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.orders_buy[i].owner_id).expect("the user does not have a sub contract deployed").to_string());
-                
+               
                 if self.offers_buy[index_offer].asset == "USDC".to_string() {
-                    ft_token = "USDC".to_string();
+                    contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
                     fee_deducted = 0;
                     operation_amount = self.orders_buy[i].operation_amount as u128;
                 } else {
-                    ft_token = "NEAR".to_string();
+                    contract_ft = None;
                     fee_deducted = ((self.orders_buy[i].operation_amount * FEE_TRANSACTION) * YOCTO_NEAR as f64) as u128;
                     operation_amount = (self.orders_buy[i].operation_amount * YOCTO_NEAR as f64) as u128;
                 }   
                 
                 ext_subcontract::transfer(
-                    ft_token,
                     self.orders_buy[i].signer_id.clone(),
                     operation_amount,
                     fee_deducted,
+                    contract_ft,
                     contract_name,
                     0,
                     GAS_FOR_TRANSFER,
@@ -1708,7 +1705,7 @@ impl NearP2P {
     #[payable]
     pub fn cancel_order(&mut self, offer_type: i8, order_id: i128) {
         assert_one_yocto();
-        let ft_token: String;
+        let contract_ft: Option<AccountId>;
         let fee_deducted: u128;
         let operation_amount: u128;
         if offer_type == 1 {
@@ -1723,22 +1720,22 @@ impl NearP2P {
 
                 #[warn(unused_assignments)]
                 let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.orders_sell[i].signer_id).expect("the user does not have a sub contract deployed").to_string());
-                
+
                 if self.offers_sell[j].asset == "USDC".to_string() {
-                    ft_token = "USDC".to_string();
+                    contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
                     fee_deducted = 0;
                     operation_amount = self.orders_sell[i].operation_amount as u128;
                 } else {
-                    ft_token = "NEAR".to_string();
+                    contract_ft = None;
                     fee_deducted = 0;
                     operation_amount = (self.orders_sell[i].operation_amount * YOCTO_NEAR as f64) as u128;
                 }   
                 
                 ext_subcontract::transfer(
-                    ft_token,
                     self.orders_sell[i].signer_id.clone(),
                     operation_amount,
                     fee_deducted,
+                    contract_ft,
                     contract_name,
                     0,
                     GAS_FOR_TRANSFER,
@@ -1778,22 +1775,22 @@ impl NearP2P {
 
                 #[warn(unused_assignments)]
                 let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.orders_buy[i].owner_id).expect("the user does not have a sub contract deployed").to_string());
-                
+
                 if self.offers_buy[j].asset == "USDC".to_string() {
-                    ft_token = "USDC".to_string();
+                    contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
                     fee_deducted = 0;
                     operation_amount = self.orders_buy[i].operation_amount as u128;
                 } else {
-                    ft_token = "NEAR".to_string();
+                    contract_ft = None;
                     fee_deducted = 0;
                     operation_amount = (self.orders_buy[i].operation_amount * YOCTO_NEAR as f64) as u128;
                 }   
                 
                 ext_subcontract::transfer(
-                    ft_token,
                     self.orders_buy[i].owner_id.clone(),
                     operation_amount,
                     fee_deducted,
+                    contract_ft,
                     contract_name,
                     0,
                     GAS_FOR_TRANSFER,
