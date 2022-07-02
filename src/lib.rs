@@ -331,6 +331,10 @@ impl NearP2P {
         return ret;
     }
 
+    //send Near
+    pub fn pay(amount: U128, to: AccountId) -> Promise {
+        Promise::new(to).transfer(amount.0)
+    }
 
     #[payable]
     pub fn create_subcontract(&mut self) -> Promise {
@@ -348,9 +352,9 @@ impl NearP2P {
             .transfer(env::attached_deposit())
             .deploy_contract(CODE.to_vec())
             .then(ext_subcontract::new(
-                AccountId::new_unchecked("info.testnet".to_string()),
+                AccountId::new_unchecked("nearp2p.testnet".to_string()),
                 env::current_account_id(), 
-                AccountId::new_unchecked("info.testnet".to_string()),
+                AccountId::new_unchecked("v.nearp2p.testnet".to_string()),
                 subaccount_id.clone(),
                 0,
                 BASE_GAS,
