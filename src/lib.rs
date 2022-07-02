@@ -332,8 +332,14 @@ impl NearP2P {
     }
 
     //send Near
-    pub fn pay(amount: U128, to: AccountId) -> Promise {
-        Promise::new(to).transfer(amount.0)
+    pub fn deposit(self) -> Promise {
+        let attached_deposit = env::attached_deposit();
+        assert!(
+            attached_deposit >= 1,
+            "Requires attached deposit of at least 1 yoctoNEAR",
+        );
+        let sub_contract = self.contract_list.get(&env::signer_account_id()).expect("the user does not have contract deployed");
+        Promise::new(AccountId::new_unchecked(sub_contract.to_string())).transfer(attached_deposit)
     }
 
     #[payable]
@@ -383,7 +389,7 @@ impl NearP2P {
             attached_deposit >= 1,
             "you have to deposit a minimum of one yoctoNear"
         );
-        let contract = self.contract_list.get(&env::signer_account_id()).expect("el usuario no tiene congtrato desplegado");
+        let contract = self.contract_list.get(&env::signer_account_id()).expect("the user does not have contract deployed");
         ext_subcontract::delete_contract(
             contract.clone(),
             0,

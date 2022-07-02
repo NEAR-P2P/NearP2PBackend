@@ -14,4 +14,6 @@ trait ExtNftDos {
         account_id: AccountId
     );
 
+    fn on_deposit(account_id: AccountId) -> Promise;
+
 }
