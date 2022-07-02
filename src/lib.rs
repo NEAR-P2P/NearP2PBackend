@@ -332,6 +332,7 @@ impl NearP2P {
     }
 
     //send Near
+    #[payable]
     pub fn deposit(self) -> Promise {
         let attached_deposit = env::attached_deposit();
         assert!(
