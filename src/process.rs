@@ -54,7 +54,7 @@ impl NearP2P {
                     contract_name,
                     0,
                     GAS_FOR_TRANSFER,
-                ).then(ext_internal::on_confirmation(
+                ).then(int_process::on_confirmation(
                     self.orders_sell[i].order_id,
                     2,
                     1,
@@ -112,7 +112,7 @@ impl NearP2P {
                     contract_name,
                     0,
                     GAS_FOR_TRANSFER,
-                ).then(ext_internal::on_confirmation(
+                ).then(int_process::on_confirmation(
                     self.orders_buy[i].order_id,
                     2,
                     2,
@@ -127,7 +127,7 @@ impl NearP2P {
             env::panic_str("Invalid offer type");
         }
     }
-    
+
 
     #[payable]
     pub fn cancel_order(&mut self, offer_type: i8, order_id: i128) {
@@ -166,7 +166,7 @@ impl NearP2P {
                     contract_name,
                     0,
                     GAS_FOR_TRANSFER,
-                ).then(ext_internal::on_confirmation(
+                ).then(int_process::on_confirmation(
                     self.orders_sell[i].order_id,
                     4,
                     1,
@@ -221,7 +221,7 @@ impl NearP2P {
                     contract_name,
                     0,
                     GAS_FOR_TRANSFER,
-                ).then(ext_internal::on_confirmation(
+                ).then(int_process::on_confirmation(
                     self.orders_buy[i].order_id,
                     4,
                     2,

@@ -39,7 +39,7 @@ const CONTRACT_USDC: &str = "usdc.fakes.testnet";
 
 //const INITIAL_BALANCE: Balance = 2_50_000_000_000_000_000_000_000; // 1e24yN, 0.25N
 //const INITIAL_BALANCE: Balance = 1_080_000_000_000_000_000_000_000; // 1e24yN, 0.25N
-const CODE: &[u8] = include_bytes!("./wasm/subcontract_p2_p.wasm");
+const CODE: &[u8] = include_bytes!("./wasm/subcontract_p2_p_v2.wasm");
 /////////////////////////////////////////////////////////////////////////////////////////////////
 /// Objects Definition///////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -320,7 +320,7 @@ impl NearP2P {
             0,
             BASE_GAS,
         )
-        .then(ext_internal::on_ft_balance_of(
+        .then(int_sub_contract::on_ft_balance_of(
             env::current_account_id(),
             0,
             gas_internal,

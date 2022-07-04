@@ -29,4 +29,14 @@ trait ExtTranferSubContract {
     fn get_balance_near(self) -> Balance;
 
     fn delete_contract(&mut self);
+
+    fn block_balance_near(&mut self, amount: U128) -> bool;
+    
+    fn block_balance_token(&mut self,
+        contract_ft: AccountId,
+        ft_token: String,
+        amount: U128
+    ) -> bool;
+
+
 }
