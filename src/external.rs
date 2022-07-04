@@ -29,4 +29,6 @@ trait ExtTranferSubContract {
     fn get_balance_near(self) -> Balance;
 
     fn delete_contract(&mut self);
+
+    fn verificacion(&mut self);
 }

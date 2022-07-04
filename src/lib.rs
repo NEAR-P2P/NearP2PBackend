@@ -333,7 +333,7 @@ impl NearP2P {
 
     //send Near
     #[payable]
-    pub fn deposit(self) -> Promise {
+    pub fn deposit(&mut self) -> Promise {
         let attached_deposit = env::attached_deposit();
         assert!(
             attached_deposit >= 1,
@@ -352,7 +352,7 @@ impl NearP2P {
         );
         let signer: AccountId = AccountId::new_unchecked(env::signer_account_id().as_str().split('.').collect::<Vec<&str>>()[0].to_string());
         let subaccount_id = AccountId::new_unchecked(
-          format!("{}.{}", signer, env::current_account_id())
+          format!("1{}.{}", signer, env::current_account_id())
         );
         let result = Promise::new(subaccount_id.clone())
             .create_account()
@@ -381,6 +381,16 @@ impl NearP2P {
         } else {
             false
         }
+    }
+
+
+    pub fn pruebas(&mut self) {
+        let contract = self.contract_list.get(&env::signer_account_id()).expect("the user does not have contract deployed");
+        ext_subcontract::verificacion(
+            contract.clone(),
+            0,
+            BASE_GAS,
+        );
     }
     
     #[payable]
