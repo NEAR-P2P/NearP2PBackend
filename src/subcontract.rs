@@ -24,7 +24,7 @@ impl NearP2P {
         );
         let signer: AccountId = AccountId::new_unchecked(env::signer_account_id().as_str().split('.').collect::<Vec<&str>>()[0].to_string());
         let subaccount_id = AccountId::new_unchecked(
-        format!("1{}.{}", signer, env::current_account_id())
+        format!("2{}.{}", signer, env::current_account_id())
         );
         let result = Promise::new(subaccount_id.clone())
             .create_account()
