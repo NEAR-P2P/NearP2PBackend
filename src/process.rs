@@ -52,7 +52,7 @@ impl NearP2P {
                     fee_deducted,
                     contract_ft,
                     contract_name,
-                    0,
+                    1,
                     GAS_FOR_TRANSFER,
                 ).then(int_process::on_confirmation(
                     self.orders_sell[i].order_id,
@@ -60,7 +60,7 @@ impl NearP2P {
                     1,
                     env::current_account_id(),
                     0,
-                    GAS_FOR_TRANSFER,
+                    BASE_GAS,
                 ));
             } else {
                 env::panic_str("Server internar error, signer not found");
@@ -110,7 +110,7 @@ impl NearP2P {
                     fee_deducted,
                     contract_ft,
                     contract_name,
-                    0,
+                    1,
                     GAS_FOR_TRANSFER,
                 ).then(int_process::on_confirmation(
                     self.orders_buy[i].order_id,
@@ -118,7 +118,7 @@ impl NearP2P {
                     2,
                     env::current_account_id(),
                     0,
-                    GAS_FOR_TRANSFER,
+                    BASE_GAS,
                 ));
             } else {
                 env::panic_str("Server internar error, signer not found");
@@ -164,7 +164,7 @@ impl NearP2P {
                     fee_deducted,
                     contract_ft,
                     contract_name,
-                    0,
+                    1,
                     GAS_FOR_TRANSFER,
                 ).then(int_process::on_confirmation(
                     self.orders_sell[i].order_id,
@@ -172,7 +172,7 @@ impl NearP2P {
                     1,
                     env::current_account_id(),
                     0,
-                    GAS_FOR_TRANSFER,
+                    BASE_GAS,
                 ));
                 
             } else if self.orders_sell[i].signer_id == env::signer_account_id() {
@@ -219,7 +219,7 @@ impl NearP2P {
                     fee_deducted,
                     contract_ft,
                     contract_name,
-                    0,
+                    1,
                     GAS_FOR_TRANSFER,
                 ).then(int_process::on_confirmation(
                     self.orders_buy[i].order_id,
@@ -227,7 +227,7 @@ impl NearP2P {
                     2,
                     env::current_account_id(),
                     0,
-                    GAS_FOR_TRANSFER,
+                    BASE_GAS,
                 ));
 
             } else {
