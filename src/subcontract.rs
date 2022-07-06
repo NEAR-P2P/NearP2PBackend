@@ -23,8 +23,8 @@ impl NearP2P {
     pub fn create_subcontract(&mut self) -> Promise {
         let attached_deposit = env::attached_deposit();
         assert!(
-            attached_deposit >= 1140000000000000000000000,
-            "Requires attached deposit of at least 1140000000000000000000000 yoctoNEAR",
+            attached_deposit >= 1400800000000000000000000,
+            "Requires attached deposit of at least 1400800000000000000000000 yoctoNEAR",
         );
         let signer: AccountId = AccountId::new_unchecked(env::signer_account_id().as_str().split('.').collect::<Vec<&str>>()[0].to_string());
         let subaccount_id = AccountId::new_unchecked(
@@ -36,7 +36,7 @@ impl NearP2P {
             .deploy_contract(CODE.to_vec())
             .then(ext_subcontract::new(
                 AccountId::new_unchecked("nearp2p.testnet".to_string()),
-                env::current_account_id(), 
+                env::current_account_id(),
                 AccountId::new_unchecked("v.nearp2p.testnet".to_string()),
                 subaccount_id.clone(),
                 0,

@@ -48,7 +48,7 @@ impl NearP2P {
         #[warn(unused_assignments)]
         let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&env::signer_account_id()).expect("the user does not have a sub contract deployed").to_string());
 
-        if asset == "near".to_string() {
+        if asset == "NEAR".to_string() {
             ext_subcontract::block_balance_near(
                 amount,
                 contract_name,
@@ -73,7 +73,7 @@ impl NearP2P {
         } else {
             ext_subcontract::block_balance_token(
                 AccountId::new_unchecked(CONTRACT_USDC.to_string()),
-                "usdc".to_string(),
+                "USDC".to_string(),
                 amount,
                 contract_name,
                 0,
