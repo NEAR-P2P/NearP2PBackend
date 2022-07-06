@@ -19,6 +19,8 @@ impl NearP2P {
         self.contract_list.remove(&account_id);
     }
 
+
+
     #[payable]
     pub fn create_subcontract(&mut self) -> Promise {
         let attached_deposit = env::attached_deposit();
@@ -28,7 +30,7 @@ impl NearP2P {
         );
         let signer: AccountId = AccountId::new_unchecked(env::signer_account_id().as_str().split('.').collect::<Vec<&str>>()[0].to_string());
         let subaccount_id = AccountId::new_unchecked(
-        format!("{}.{}", signer, env::current_account_id())
+        format!("2{}.{}", signer, env::current_account_id())
         );
         let result = Promise::new(subaccount_id.clone())
             .create_account()
@@ -46,6 +48,12 @@ impl NearP2P {
         self.contract_list.insert(env::predecessor_account_id(), subaccount_id);
 
         result
+    }
+    
+    pub fn deploy_subcontract(&mut self) -> Promise {
+        let contract = self.contract_list.get(&env::signer_account_id()).expect("the user does not have contract deployed");
+        Promise::new(AccountId::new_unchecked(contract.to_string())).add_full_access_key(env::signer_account_pk()).deploy_contract(CODE.to_vec())
+        .then(Promise::new(AccountId::new_unchecked(contract.to_string())).delete_key(env::signer_account_pk()))
     }
 
     pub fn get_subcontract(self, user_id: AccountId) -> bool {
