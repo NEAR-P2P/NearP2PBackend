@@ -5,7 +5,7 @@ use crate::*;
 impl NearP2P {
     /// Returns the order object loaded in contract
     /// Params: campo: String, valor: String
-    pub fn get_offers_buy(self, amount: Option<f64>,
+    pub fn get_offers_buy(self, amount: Option<U128>,
         fiat_method: Option<i128>,
         payment_method: Option<i128>,
         is_merchant: Option<bool>,
@@ -37,8 +37,8 @@ impl NearP2P {
         , asset: String
         , exchange_rate: String
         , amount: U128
-        , min_limit: f64
-        , max_limit: f64
+        , min_limit: U128
+        , max_limit: U128
         , payment_method: Vec<PaymentMethodsOfferObject>
         , fiat_method: i128
         , time: i64
@@ -102,8 +102,8 @@ impl NearP2P {
         , asset: String
         , exchange_rate: String
         , amount: U128
-        , min_limit: f64
-        , max_limit: f64
+        , min_limit: U128
+        , max_limit: U128
         , payment_method: Vec<PaymentMethodsOfferObject>
         , fiat_method: i128
         , time: i64
@@ -121,10 +121,10 @@ impl NearP2P {
                 owner_id: owner_id,
                 asset: String::from(asset),
                 exchange_rate: String::from(exchange_rate),
-                amount: amount.0 as f64,
-                remaining_amount: amount.0 as f64,
-                min_limit: min_limit,
-                max_limit: max_limit,
+                amount: amount.0,
+                remaining_amount: amount.0,
+                min_limit: min_limit.0,
+                max_limit: max_limit.0,
                 payment_method: payment_method,
                 fiat_method: fiat_method,
                 is_merchant: self.merchant[index].is_merchant,
@@ -145,9 +145,9 @@ impl NearP2P {
     pub fn put_offers_buy(&mut self, offer_id: i128
         , asset: Option<String>
         , exchange_rate: Option<String>
-        , remaining_amount: Option<f64>
-        , min_limit: Option<f64>
-        , max_limit: Option<f64>
+        , remaining_amount: Option<U128>
+        , min_limit: Option<U128>
+        , max_limit: Option<U128>
         , payment_method: Option<Vec<PaymentMethodsOfferObject>>
         , fiat_method: Option<i128>
         , time: Option<i64>
@@ -162,8 +162,8 @@ impl NearP2P {
         let offer = self.offers_buy.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id()).expect("Offer not found");
         
         if remaining_amount.is_some() {
-            if remaining_amount.unwrap() < self.offers_buy[offer].remaining_amount {
-                let diff_return = self.offers_buy[offer].remaining_amount - remaining_amount.unwrap();
+            if remaining_amount.unwrap().0 < self.offers_buy[offer].remaining_amount {
+                let diff_return = self.offers_buy[offer].remaining_amount - remaining_amount.unwrap().0;
 
                 #[warn(unused_assignments)]
                 let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.offers_buy[offer].owner_id.clone()).expect("the user does not have a sub contract deployed").to_string());
@@ -174,11 +174,11 @@ impl NearP2P {
                 if self.offers_buy[offer].asset == "USDC".to_string() {
                     contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
                     fee_deducted = 0;
-                    operation_amount = (diff_return as f64) as u128;
+                    operation_amount = diff_return;
                 } else {
                     contract_ft = None;
                     fee_deducted = 0;
-                    operation_amount = (diff_return * YOCTO_NEAR as f64) as u128;
+                    operation_amount = diff_return;
                 }   
                 
                 ext_subcontract::transfer(
@@ -206,17 +206,11 @@ impl NearP2P {
                     , BASE_GAS
                 ));
 
-            } else if remaining_amount.unwrap() > self.offers_buy[offer].remaining_amount {
+            } else if remaining_amount.unwrap().0 > self.offers_buy[offer].remaining_amount {
                 assert!(
-                    remaining_amount.unwrap() <= self.offers_buy[offer].amount,
+                    remaining_amount.unwrap().0 <= self.offers_buy[offer].amount,
                     "the remaining amount is greater than the original amount of the offer, original amount {}, remaining amount {}.",
-                    self.offers_buy[offer].amount, remaining_amount.unwrap()
-                );
-                let diff_pay = self.offers_buy[offer].remaining_amount - remaining_amount.unwrap();
-                assert!(
-                    (attached_deposit as f64 / YOCTO_NEAR as f64) as f64 >= diff_pay,
-                    "the deposit attached is less than the remaining supplied : {}",
-                    diff_pay
+                    self.offers_buy[offer].amount, remaining_amount.unwrap().0
                 );  
             }
         } else {
@@ -224,7 +218,7 @@ impl NearP2P {
                 , offer
                 , asset
                 , exchange_rate
-                , Some(self.offers_buy[offer].remaining_amount)
+                , Some(U128(self.offers_buy[offer].remaining_amount))
                 , min_limit
                 , max_limit
                 , payment_method
@@ -241,9 +235,9 @@ impl NearP2P {
         , offer: usize
         , asset: Option<String>
         , exchange_rate: Option<String>
-        , remaining_amount: Option<f64>
-        , min_limit: Option<f64>
-        , max_limit: Option<f64>
+        , remaining_amount: Option<U128>
+        , min_limit: Option<U128>
+        , max_limit: Option<U128>
         , payment_method: Option<Vec<PaymentMethodsOfferObject>>
         , fiat_method: Option<i128>
         , time: Option<i64>
@@ -272,9 +266,9 @@ impl NearP2P {
         , offer: usize
         , asset: Option<String>
         , exchange_rate: Option<String>
-        , remaining_amount: Option<f64>
-        , min_limit: Option<f64>
-        , max_limit: Option<f64>
+        , remaining_amount: Option<U128>
+        , min_limit: Option<U128>
+        , max_limit: Option<U128>
         , payment_method: Option<Vec<PaymentMethodsOfferObject>>
         , fiat_method: Option<i128>
         , time: Option<i64>
@@ -287,13 +281,13 @@ impl NearP2P {
             self.offers_buy[offer].exchange_rate = exchange_rate.unwrap();
         }
         if remaining_amount.is_some() {
-            self.offers_buy[offer].remaining_amount = remaining_amount.unwrap();
+            self.offers_buy[offer].remaining_amount = remaining_amount.unwrap().0;
         }
         if min_limit.is_some() {
-            self.offers_buy[offer].min_limit = min_limit.unwrap();
+            self.offers_buy[offer].min_limit = min_limit.unwrap().0;
         }
         if max_limit.is_some() {
-            self.offers_buy[offer].max_limit = max_limit.unwrap();
+            self.offers_buy[offer].max_limit = max_limit.unwrap().0;
         }
         if payment_method.is_some() {
             self.offers_buy[offer].payment_method = payment_method.unwrap().iter().map(|x| PaymentMethodsOfferObject {id: x.id, payment_method: x.payment_method.clone()}).collect();
@@ -339,11 +333,11 @@ impl NearP2P {
         if self.offers_buy[offer].asset == "USDC".to_string() {
             contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
             fee_deducted = 0;
-            operation_amount = (self.offers_buy[offer].remaining_amount as f64) as u128;
+            operation_amount = self.offers_buy[offer].remaining_amount;
         } else {
             contract_ft = None;
             fee_deducted = 0;
-            operation_amount = (self.offers_buy[offer].remaining_amount * YOCTO_NEAR as f64) as u128;
+            operation_amount = self.offers_buy[offer].remaining_amount;
         }   
         
         ext_subcontract::transfer(
@@ -354,8 +348,20 @@ impl NearP2P {
             contract_name,
             0,
             GAS_FOR_TRANSFER,
-        );
-        
+        ).then(int_buy::on_delete_offers_buy(
+            offer,
+            env::current_account_id(),
+            0,
+            BASE_GAS,
+        ));
+    }
+
+    #[private]
+    fn on_delete_offers_buy(&mut self, offer: usize) {
+        let result = promise_result_as_success();
+        if result.is_none() {
+            env::panic_str("Error al eliminar".as_ref());
+        }
         self.offers_buy.remove(offer);
         env::log_str("Offer Buy Delete");
     }

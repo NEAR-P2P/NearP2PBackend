@@ -12,7 +12,7 @@ trait ExtTranferUsdc {
 }
 
 #[ext_contract(ext_subcontract)]
-trait ExtTranferSubContract {
+trait ExtSubContract {
     fn new(
         owner_id: AccountId,
         user_admin: AccountId, 
@@ -31,7 +31,7 @@ trait ExtTranferSubContract {
     fn delete_contract(&mut self);
 
     fn block_balance_near(&mut self, amount: U128) -> bool;
-    
+
     fn block_balance_token(&mut self,
         contract_ft: AccountId,
         ft_token: String,

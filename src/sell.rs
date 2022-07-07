@@ -5,7 +5,7 @@ use crate::*;
 impl NearP2P {
     /// Returns the order object loaded in contract
     /// Params: campo: String, valor: String
-    pub fn get_offers_sell(self, amount: Option<f64>,
+    pub fn get_offers_sell(self, amount: Option<U128>,
         fiat_method: Option<i128>,
         payment_method: Option<i128>,
         is_merchant: Option<bool>,
@@ -36,9 +36,9 @@ impl NearP2P {
     pub fn set_offers_sell(&mut self, owner_id: AccountId
         , asset: String
         , exchange_rate: String
-        , amount: f64
-        , min_limit: f64
-        , max_limit: f64
+        , amount: U128
+        , min_limit: U128
+        , max_limit: U128
         , payment_method: Vec<PaymentMethodsOfferObject>
         , fiat_method: i128
         , time: i64
@@ -52,10 +52,10 @@ impl NearP2P {
             owner_id: owner_id,
             asset: String::from(asset),
             exchange_rate: String::from(exchange_rate),
-            amount: amount,
-            remaining_amount: amount,
-            min_limit: min_limit,
-            max_limit: max_limit,
+            amount: amount.0,
+            remaining_amount: amount.0,
+            min_limit: min_limit.0,
+            max_limit: max_limit.0,
             payment_method: payment_method,
             fiat_method: fiat_method,
             is_merchant: self.merchant[index].is_merchant,
@@ -73,9 +73,9 @@ impl NearP2P {
     pub fn put_offers_sell(&mut self, offer_id: i128
         , asset: Option<String>
         , exchange_rate: Option<String>
-        , remaining_amount: Option<f64>
-        , min_limit: Option<f64>
-        , max_limit: Option<f64>
+        , remaining_amount: Option<U128>
+        , min_limit: Option<U128>
+        , max_limit: Option<U128>
         , payment_method: Option<Vec<PaymentMethodsOfferObject>>
         , fiat_method: Option<i128>
         , time: Option<i64>
@@ -89,13 +89,13 @@ impl NearP2P {
             self.offers_sell[offer].exchange_rate = exchange_rate.unwrap();
         }
         if remaining_amount.is_some() {
-            self.offers_sell[offer].remaining_amount = remaining_amount.unwrap();
+            self.offers_sell[offer].remaining_amount = remaining_amount.unwrap().0;
         }
         if min_limit.is_some() {
-            self.offers_sell[offer].min_limit = min_limit.unwrap();
+            self.offers_sell[offer].min_limit = min_limit.unwrap().0;
         }
         if max_limit.is_some() {
-            self.offers_sell[offer].max_limit = max_limit.unwrap();
+            self.offers_sell[offer].max_limit = max_limit.unwrap().0;
         }
         if payment_method.is_some() {
             self.offers_sell[offer].payment_method = payment_method.unwrap().iter().map(|x| PaymentMethodsOfferObject {id: x.id, payment_method: x.payment_method.clone()}).collect();

@@ -8,8 +8,6 @@ impl NearP2P {
     pub fn order_confirmation(&mut self, offer_type: i8, order_id: i128) {
         assert_one_yocto();
         let contract_ft: Option<AccountId>;
-        let fee_deducted: u128;
-        let operation_amount: u128;
         if offer_type == 1 {
             let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
             if self.orders_sell[i].owner_id == env::signer_account_id() {
@@ -36,20 +34,15 @@ impl NearP2P {
                 #[warn(unused_assignments)]
                 let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.orders_sell[i].signer_id).expect("the user does not have a sub contract deployed").to_string());
 
-                if self.offers_sell[index_offer].asset == "USDC".to_string() {
-                    contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
-                    fee_deducted = 0;
-                    operation_amount = self.orders_sell[i].operation_amount as u128;
-                } else {
-                    contract_ft = None;
-                    fee_deducted = ((self.orders_sell[i].operation_amount * FEE_TRANSACTION) * YOCTO_NEAR as f64) as u128;
-                    operation_amount = (self.orders_sell[i].operation_amount * YOCTO_NEAR as f64) as u128;
-                }   
+                match self.offers_sell[index_offer].asset.as_str(){
+                    "NEAR" => contract_ft = None,
+                    _=> contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string())),
+                };
                 
                 ext_subcontract::transfer(
                     self.orders_sell[i].owner_id.clone(),
-                    operation_amount,
-                    fee_deducted,
+                    self.orders_sell[i].operation_amount,
+                    self.orders_sell[i].fee_deducted,
                     contract_ft,
                     contract_name,
                     1,
@@ -85,29 +78,21 @@ impl NearP2P {
                 index = self.merchant.iter().position(|x| x.user_id == self.orders_buy[i].signer_id.clone()).expect("owner not merchant");
                 self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
                 self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
-                
-                //let fee_deducted = ((self.orders_buy[i].operation_amount * FEE_TRANSACTION) * YOCTO_NEAR as f64) as u128;
-                //let operation_amount = (self.orders_buy[i].operation_amount * YOCTO_NEAR as f64) as u128;
 
                 let index_offer = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer buy not found");
 
                 #[warn(unused_assignments)]
                 let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.orders_buy[i].owner_id).expect("the user does not have a sub contract deployed").to_string());
                
-                if self.offers_buy[index_offer].asset == "USDC".to_string() {
-                    contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
-                    fee_deducted = 0;
-                    operation_amount = self.orders_buy[i].operation_amount as u128;
-                } else {
-                    contract_ft = None;
-                    fee_deducted = ((self.orders_buy[i].operation_amount * FEE_TRANSACTION) * YOCTO_NEAR as f64) as u128;
-                    operation_amount = (self.orders_buy[i].operation_amount * YOCTO_NEAR as f64) as u128;
-                }   
+                match self.offers_buy[index_offer].asset.as_str(){
+                    "NEAR" => contract_ft = None,
+                    _=> contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string())),
+                };
                 
                 ext_subcontract::transfer(
                     self.orders_buy[i].signer_id.clone(),
-                    operation_amount,
-                    fee_deducted,
+                    self.orders_buy[i].operation_amount,
+                    self.orders_sell[i].fee_deducted,
                     contract_ft,
                     contract_name,
                     1,
@@ -133,8 +118,6 @@ impl NearP2P {
     pub fn cancel_order(&mut self, offer_type: i8, order_id: i128) {
         assert_one_yocto();
         let contract_ft: Option<AccountId>;
-        let fee_deducted: u128;
-        let operation_amount: u128;
         if offer_type == 1 {
             let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
             
@@ -148,20 +131,15 @@ impl NearP2P {
                 #[warn(unused_assignments)]
                 let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.orders_sell[i].signer_id).expect("the user does not have a sub contract deployed").to_string());
 
-                if self.offers_sell[j].asset == "USDC".to_string() {
-                    contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
-                    fee_deducted = 0;
-                    operation_amount = self.orders_sell[i].operation_amount as u128;
-                } else {
-                    contract_ft = None;
-                    fee_deducted = 0;
-                    operation_amount = (self.orders_sell[i].operation_amount * YOCTO_NEAR as f64) as u128;
-                }   
+                match self.offers_sell[j].asset.as_str(){
+                    "NEAR" => contract_ft = None,
+                    _=> contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string())),
+                };
                 
                 ext_subcontract::transfer(
                     self.orders_sell[i].signer_id.clone(),
-                    operation_amount,
-                    fee_deducted,
+                    self.orders_sell[i].operation_amount,
+                    0,
                     contract_ft,
                     contract_name,
                     1,
@@ -203,20 +181,15 @@ impl NearP2P {
                 #[warn(unused_assignments)]
                 let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.orders_buy[i].owner_id).expect("the user does not have a sub contract deployed").to_string());
 
-                if self.offers_buy[j].asset == "USDC".to_string() {
-                    contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
-                    fee_deducted = 0;
-                    operation_amount = self.orders_buy[i].operation_amount as u128;
-                } else {
-                    contract_ft = None;
-                    fee_deducted = 0;
-                    operation_amount = (self.orders_buy[i].operation_amount * YOCTO_NEAR as f64) as u128;
-                }   
-                
+                match self.offers_buy[j].asset.as_str(){
+                    "NEAR" => contract_ft = None,
+                    _=> contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string())),
+                };
+
                 ext_subcontract::transfer(
                     self.orders_buy[i].owner_id.clone(),
-                    operation_amount,
-                    fee_deducted,
+                    self.orders_buy[i].operation_amount,
+                    0,
                     contract_ft,
                     contract_name,
                     1,

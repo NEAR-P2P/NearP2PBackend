@@ -23,14 +23,13 @@ Develop by GlobalDv @2022
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use serde::Serialize;
 use serde::Deserialize;
-use near_sdk::{env, near_bindgen, AccountId, Promise, assert_one_yocto, ext_contract, Gas, promise_result_as_success}; // json_types::U128, 
+use near_sdk::{env, near_bindgen, AccountId, Promise, assert_one_yocto, ext_contract, Gas, promise_result_as_success, require}; // json_types::U128, 
 use near_sdk::json_types::U128;
 use std::collections::HashMap;
 //near_sdk::setup_alloc!();
 
-const YOCTO_NEAR: u128 = 1000000000000000000000000;
 const KEY_TOKEN: &str = "qbogcyqiqO7Utwqm3VgKhxrmQIc0ROjj";
-const FEE_TRANSACTION: f64 = 0.003;
+const FEE_TRANSACTION_NEAR: u128 = 30; // 0.003%
 
 //const GAS_FOR_RESOLVE_TRANSFER: Gas = Gas(10_000_000_000_000);
 const GAS_FOR_TRANSFER: Gas = Gas(40_000_000_000_000);
@@ -39,7 +38,7 @@ const CONTRACT_USDC: &str = "usdc.fakes.testnet";
 
 //const INITIAL_BALANCE: Balance = 2_50_000_000_000_000_000_000_000; // 1e24yN, 0.25N
 //const INITIAL_BALANCE: Balance = 1_080_000_000_000_000_000_000_000; // 1e24yN, 0.25N
-const CODE: &[u8] = include_bytes!("./wasm/subcontract_p2_p.wasm");
+const CODE: &[u8] = include_bytes!("./wasm/subcontract_p2_p_v6.wasm");
 /////////////////////////////////////////////////////////////////////////////////////////////////
 /// Objects Definition///////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -93,10 +92,10 @@ pub struct OfferObject {
     owner_id: AccountId,
     asset: String, // NEAR, USD
     exchange_rate: String,
-    amount: f64,
-    remaining_amount: f64,
-    min_limit: f64,
-    max_limit: f64,
+    amount: u128,
+    remaining_amount: u128,
+    min_limit: u128,
+    max_limit: u128,
     payment_method: Vec<PaymentMethodsOfferObject>, // Info concerning to payment asociated to payment contract
     fiat_method: i128,
     is_merchant: bool,
@@ -114,8 +113,8 @@ pub struct OrderObject {
     owner_id: AccountId,
     signer_id: AccountId,
     exchange_rate: String,
-    operation_amount: f64,
-    fee_deducted: f64,
+    operation_amount: u128,
+    fee_deducted: u128,
     payment_method: i128, // Info concerning to payment asociated to payment contract
     fiat_method: i128,
     confirmation_owner_id: i8,
@@ -926,7 +925,7 @@ impl NearP2P {
 
 
 fn search_offer(data: Vec<OfferObject>,
-    amount: Option<f64>,
+    amount: Option<U128>,
     fiat_method: Option<i128>,
     payment_method: Option<i128>,
     is_merchant: Option<bool>,
@@ -955,7 +954,7 @@ fn search_offer(data: Vec<OfferObject>,
                     .map(|r| r.clone()).collect();
     }
     if amount.is_some() {
-        result = result.iter().filter(|x| x.amount >= amount.unwrap())
+        result = result.iter().filter(|x| x.amount >= amount.unwrap().0)
                     .map(|r| r.clone()).collect();
     }
     if fiat_method.is_some() {

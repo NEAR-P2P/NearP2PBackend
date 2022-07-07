@@ -19,8 +19,8 @@ trait IntBuy {
         , asset: String
         , exchange_rate: String
         , amount:  U128
-        , min_limit: f64
-        , max_limit: f64
+        , min_limit: U128
+        , max_limit: U128
         , payment_method: Vec<PaymentMethodsOfferObject>
         , fiat_method: i128
         , time: i64
@@ -31,13 +31,25 @@ trait IntBuy {
         , offer: usize
         , asset: Option<String>
         , exchange_rate: Option<String>
-        , remaining_amount: Option<f64>
-        , min_limit: Option<f64>
-        , max_limit: Option<f64>
+        , remaining_amount: Option<U128>
+        , min_limit: Option<U128>
+        , max_limit: Option<U128>
         , payment_method: Option<Vec<PaymentMethodsOfferObject>>
         , fiat_method: Option<i128>
         , time: Option<i64>
         , terms_conditions: Option<String>
+    );
+
+    fn on_delete_offers_buy(&mut self, offer: usize);
+}
+
+#[ext_contract(int_offer)]
+trait IntOffer {
+    fn on_accept_offer_sell(&mut self, offer: usize
+        , amount: U128
+        , payment_method: i128
+        , datetime: String
+        , rate: f64
     );
 }
 
