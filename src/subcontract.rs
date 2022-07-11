@@ -43,8 +43,8 @@ impl NearP2P {
                 BASE_GAS,
             ).then(ext_usdc::storage_deposit(
                 true,
-                subaccount_id,
-                CONTRACT_USDC,
+                subaccount_id.clone(),
+                AccountId::new_unchecked(CONTRACT_USDC.to_string()),
                 1,
                 BASE_GAS)
             ));
