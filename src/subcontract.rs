@@ -27,7 +27,7 @@ impl NearP2P {
             "Requires attached deposit of at least 1500000000000000000000000 yoctoNEAR",
         );
         let signer: AccountId = AccountId::new_unchecked(env::signer_account_id().as_str().split('.').collect::<Vec<&str>>()[0].to_string());
-        let subaccount_id = AccountId::new_unchecked(
+        let subaccount_id: AccountId = AccountId::new_unchecked(
         format!("{}.{}", signer, env::current_account_id())
         );
         let result = Promise::new(subaccount_id.clone())
@@ -41,12 +41,14 @@ impl NearP2P {
                 subaccount_id.clone(),
                 0,
                 BASE_GAS,
-            )).and(ext_usdc::storage_deposit(
+            ));
+
+            ext_usdc::storage_deposit(
                 true,
                 subaccount_id.clone(),
                 AccountId::new_unchecked(CONTRACT_USDC.to_string()),
                 1,
-                BASE_GAS)
+                BASE_GAS,
             );
         
         self.contract_list.insert(env::signer_account_id(), subaccount_id);
