@@ -140,7 +140,7 @@ impl NearP2P {
         }
     }
 
-    #[warn(dead_code)]
+    /*#[warn(dead_code)]
     #[payable]
     pub fn put_offers_buy(&mut self, offer_id: i128
         , asset: Option<String>
@@ -319,7 +319,7 @@ impl NearP2P {
             terms_conditions: String::from(self.offers_buy[offer].terms_conditions.clone()),
             status: self.offers_buy[offer].status,
         }
-    }
+    }*/
     
 
     pub fn delete_offers_buy(&mut self, offer_id: i128) {

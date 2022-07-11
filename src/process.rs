@@ -234,6 +234,7 @@ impl NearP2P {
             offer_id: arreglo[index].offer_id,
             order_id: arreglo[index].order_id,
             owner_id: arreglo[index].owner_id.clone(),
+            asset: arreglo[index].asset.clone(),
             signer_id: arreglo[index].signer_id.clone(),
             exchange_rate: arreglo[index].exchange_rate.to_string(),
             operation_amount: arreglo[index].operation_amount,

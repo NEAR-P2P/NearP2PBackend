@@ -111,6 +111,7 @@ pub struct OrderObject {
     offer_id: i128,
     order_id: i128,
     owner_id: AccountId,
+    asset: String,
     signer_id: AccountId,
     exchange_rate: String,
     operation_amount: u128,
@@ -854,11 +855,12 @@ impl NearP2P {
         owner_id: Option<AccountId>,
         signer_id: Option<AccountId>,
         status: Option<i8>,
+        asset: Option<String>,
         from_index: Option<U128>,
         limit: Option<u64>,
     ) -> SearchOrderObject {
         if self.orders_sell.len() > 0 {
-            search_order(self.orders_sell, order_id, offer_id, owner_id, signer_id, status, from_index, limit)
+            search_order(self.orders_sell, order_id, offer_id, owner_id, signer_id, status, asset, from_index, limit)
         } else {
             SearchOrderObject {
                 total_index: 0,
@@ -874,11 +876,12 @@ impl NearP2P {
         owner_id: Option<AccountId>,
         signer_id: Option<AccountId>,
         status: Option<i8>,
+        asset: Option<String>,
         from_index: Option<U128>,
         limit: Option<u64>,
     ) -> SearchOrderObject {
         if self.orders_buy.len() > 0 {
-            search_order(self.orders_buy, order_id, offer_id, owner_id, signer_id, status, from_index, limit)
+            search_order(self.orders_buy, order_id, offer_id, owner_id, signer_id, status, asset, from_index, limit)
         } else {
             SearchOrderObject {
                 total_index: 0,
@@ -891,11 +894,12 @@ impl NearP2P {
         user_id: Option<AccountId>,
         order_id: Option<i128>,
         status: Option<i8>,
+        asset: Option<String>,
         from_index: Option<U128>,
         limit: Option<u64>,
     ) -> SearchOrderObject {
         if self.order_history_sell.len() > 0 {
-            search_order_history(self.order_history_sell, user_id, order_id, status, from_index, limit)
+            search_order_history(self.order_history_sell, user_id, order_id, status, asset, from_index, limit)
         } else {
             SearchOrderObject {
                 total_index: 0,
@@ -908,11 +912,12 @@ impl NearP2P {
         user_id: Option<AccountId>,
         order_id: Option<i128>,
         status: Option<i8>,
+        asset: Option<String>,
         from_index: Option<U128>,
         limit: Option<u64>,
     ) -> SearchOrderObject {
         if self.order_history_buy.len() > 0 {
-            search_order_history(self.order_history_buy, user_id, order_id, status, from_index, limit)
+            search_order_history(self.order_history_buy, user_id, order_id, status, asset, from_index, limit)
         } else {
             SearchOrderObject {
                 total_index: 0,
@@ -1002,6 +1007,7 @@ fn search_order(data: Vec<OrderObject>,
     owner_id: Option<AccountId>,
     signer_id: Option<AccountId>,
     status: Option<i8>,
+    asset: Option<String>,
     from_index: Option<U128>,
     limit: Option<u64>,
 ) -> SearchOrderObject {
@@ -1042,6 +1048,11 @@ fn search_order(data: Vec<OrderObject>,
                     .map(|r| r.clone()).collect();
     }
 
+    if asset.is_some() {
+        result = result.iter().filter(|x| x.asset == asset.as_ref().unwrap().clone())
+                    .map(|r| r.clone()).collect();
+    }
+
     SearchOrderObject {
         total_index: result.len() as i128,
         data: result.iter()
@@ -1055,6 +1066,7 @@ fn search_order_history(data: Vec<OrderObject>,
     user_id: Option<AccountId>,
     order_id: Option<i128>,
     status: Option<i8>,
+    asset: Option<String>,
     from_index: Option<U128>,
     limit: Option<u64>,
 ) -> SearchOrderObject {
@@ -1082,6 +1094,11 @@ fn search_order_history(data: Vec<OrderObject>,
 
     if status.is_some() {
         result = data.iter().filter(|s| s.status == status.unwrap())
+                .map(|s| s.clone()).collect();
+    }
+
+    if asset.is_some() {
+        result = data.iter().filter(|s| s.asset == asset.as_ref().unwrap().clone())
                 .map(|s| s.clone()).collect();
     }
 

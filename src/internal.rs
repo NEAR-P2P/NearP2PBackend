@@ -27,7 +27,7 @@ trait IntBuy {
         , terms_conditions: String
     ) -> i128;
 
-    fn on_put_offers_buy(&mut self, offer_id: i128
+    /*fn on_put_offers_buy(&mut self, offer_id: i128
         , offer: usize
         , asset: Option<String>
         , exchange_rate: Option<String>
@@ -38,7 +38,7 @@ trait IntBuy {
         , fiat_method: Option<i128>
         , time: Option<i64>
         , terms_conditions: Option<String>
-    );
+    );*/
 
     fn on_delete_offers_buy(&mut self, offer: usize);
 }

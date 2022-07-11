@@ -69,7 +69,7 @@ impl NearP2P {
     }
 
 
-    #[payable]
+    /*#[payable]
     pub fn put_offers_sell(&mut self, offer_id: i128
         , asset: Option<String>
         , exchange_rate: Option<String>
@@ -127,7 +127,7 @@ impl NearP2P {
             terms_conditions: String::from(self.offers_sell[offer].terms_conditions.clone()),
             status: self.offers_sell[offer].status,
         }
-    }
+    }*/
 
 
     pub fn delete_offers_sell(&mut self, offer_id: i128) {
