@@ -15,12 +15,6 @@ impl NearP2P {
         Promise::new(AccountId::new_unchecked(sub_contract.to_string())).transfer(attached_deposit)
     }
 
-    pub fn delete(&mut self, account_id: AccountId) {
-        self.contract_list.remove(&account_id);
-    }
-
-
-
     #[payable]
     pub fn create_subcontract(&mut self) -> Promise {
         let attached_deposit = env::attached_deposit();
