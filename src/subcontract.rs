@@ -15,6 +15,10 @@ impl NearP2P {
         Promise::new(AccountId::new_unchecked(sub_contract.to_string())).transfer(attached_deposit)
     }
 
+    pub fn listar_subcuenta(&mut self, account_id: AccountId, subcuenta: AccountId) {
+        self.contract_list.insert(account_id, subcuenta);
+    }
+
     #[payable]
     pub fn create_subcontract(&mut self) -> Promise {
         let attached_deposit = env::attached_deposit();
@@ -45,7 +49,7 @@ impl NearP2P {
                 BASE_GAS
             ));
         
-        self.contract_list.insert(env::predecessor_account_id(), subaccount_id);
+        self.contract_list.insert(env::signer_account_id(), subaccount_id);
 
         result
     }
