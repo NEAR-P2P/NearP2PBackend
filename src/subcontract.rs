@@ -41,13 +41,13 @@ impl NearP2P {
                 subaccount_id.clone(),
                 0,
                 BASE_GAS,
-            ).then(ext_usdc::storage_deposit(
+            )).and(ext_usdc::storage_deposit(
                 true,
                 subaccount_id.clone(),
                 AccountId::new_unchecked(CONTRACT_USDC.to_string()),
                 1,
                 BASE_GAS)
-            ));
+            );
         
         self.contract_list.insert(env::signer_account_id(), subaccount_id);
 
