@@ -115,6 +115,7 @@ pub struct OrderObject {
     signer_id: AccountId,
     exchange_rate: String,
     operation_amount: u128,
+    amount_delivered: u128,
     fee_deducted: u128,
     payment_method: i128, // Info concerning to payment asociated to payment contract
     fiat_method: i128,
