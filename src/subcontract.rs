@@ -46,7 +46,7 @@ impl NearP2P {
                 subaccount_id,
                 CONTRACT_USDC
                 1,
-                BASE_GAS
+                BASE_GAS)
             ));
         
         self.contract_list.insert(env::signer_account_id(), subaccount_id);
