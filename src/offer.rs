@@ -1,5 +1,8 @@
 use crate::*;
 
+const GAS_BLOCK_BALANCE: Gas = Gas(5_000_000_000_000);
+
+
 #[near_bindgen]
 impl NearP2P {
     /// accept offer into the contract
@@ -49,7 +52,7 @@ impl NearP2P {
                         amount,
                         contract_name,
                         0,
-                        BASE_GAS,
+                        GAS_BLOCK_BALANCE,
                     ).then(
                         int_offer::on_accept_offer_sell(
                             offer

@@ -53,7 +53,7 @@ impl NearP2P {
                 0,
                 BASE_GAS,
             ));
-
+            
             ext_usdc::storage_deposit(
                 true,
                 subaccount_id.clone(),
