@@ -44,7 +44,7 @@ impl NearP2P {
             ).then(ext_usdc::storage_deposit(
                 true,
                 subaccount_id,
-                CONTRACT_USDC
+                CONTRACT_USDC,
                 1,
                 BASE_GAS)
             ));
