@@ -37,6 +37,12 @@ impl NearP2P {
                 subaccount_id.clone(),
                 0,
                 BASE_GAS,
+            ).then(ext_usdc::storage_deposit(
+                true,
+                subaccount_id,
+                CONTRACT_USDC
+                1,
+                BASE_GAS
             ));
         
         self.contract_list.insert(env::predecessor_account_id(), subaccount_id);

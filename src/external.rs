@@ -8,6 +8,9 @@ trait ExtTranferUsdc {
         memo: Option<String>
     );
 
+    fn storage_deposit(&mut self, registration_only: bool,
+        account_id: AccountId);
+
     fn ft_balance_of(self, account_id: String);
 }
 
