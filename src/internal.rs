@@ -8,7 +8,23 @@ trait IntSubContract {
         account_id: AccountId
     );
 
-    fn on_deposit(account_id: AccountId) -> Promise;
+    fn on_withdraw_near(&mut self,
+        sub_contract: AccountId,
+        signer_id: AccountId
+    ) -> Promise;
+
+    fn on_withdraw_token_block(&mut self,
+        sub_contract: AccountId,
+        signer_id: AccountId,
+        ft_token: String,
+    ) -> Promise;
+
+    fn on_withdraw_token(&mut self,
+        sub_contract: AccountId,
+        signer_id: AccountId,
+        ft_token: String,
+        balance_general: U128,
+    ) -> Promise;
 }
 
 

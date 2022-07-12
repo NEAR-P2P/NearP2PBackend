@@ -53,7 +53,7 @@ impl NearP2P {
                 0,
                 BASE_GAS,
             ));
-            
+
             ext_usdc::storage_deposit(
                 true,
                 subaccount_id.clone(),
@@ -112,4 +112,139 @@ impl NearP2P {
         }
         self.contract_list.remove(&account_id);
     }
+
+    #[payable]
+    pub fn withdraw(&mut self, ft_token: String) -> Promise {
+        assert!(
+            env::attached_deposit() >= 1,
+            "Requires attached deposit of at least 1 yoctoNEAR",
+        );
+        let contract: AccountId = AccountId::new_unchecked(self.contract_list.get(&env::signer_account_id()).expect("the user does not have contract deployed").to_string());
+        match ft_token.as_ref() {
+            "NEAR" => { 
+                ext_subcontract::get_balance_near(
+                    true,
+                    contract.clone(),
+                    0,
+                    BASE_GAS,
+                ).then(int_sub_contract::on_withdraw_near(
+                    contract,
+                    env::signer_account_id(),
+                    env::current_account_id(),
+                    0,
+                    BASE_GAS,
+                ))
+            },
+            "USDC" => {
+                ext_usdc::ft_balance_of(
+                    contract.to_string(),
+                    AccountId::new_unchecked(CONTRACT_USDC.to_string()),
+                    0,
+                    BASE_GAS,
+                ).then(int_sub_contract::on_withdraw_token_block(
+                    contract,
+                    env::signer_account_id(),
+                    "USDC".to_string(),
+                    env::current_account_id(),
+                    0,
+                    BASE_GAS,
+                ))
+            },
+            _=> env::panic_str("ft_token not found")
+
+        }
+    }
+
+    #[private]
+    pub fn on_withdraw_near(&mut self,
+        sub_contract: AccountId,
+        signer_id: AccountId
+    ) -> Promise {
+        require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
+        let result = promise_result_as_success();
+        if result.is_none() {
+            env::panic_str("Error Balance NEAR".as_ref());
+        }
+        
+        let amount_withdraw: u128 = near_sdk::serde_json::from_slice::<u128>(&result.unwrap()).expect("u128");
+        
+        require!(amount_withdraw > 0, "No balance available to withdraw");
+
+        ext_subcontract::transfer(
+            signer_id,
+            U128(amount_withdraw),
+            U128(0u128),
+            None,
+            true,
+            "NEAR".to_string(),
+            sub_contract,
+            1,
+            GAS_FOR_TRANSFER,
+        )
+    }
+
+
+
+    #[private]
+    pub fn on_withdraw_token_block(&mut self,
+        sub_contract: AccountId,
+        signer_id: AccountId,
+        ft_token: String,
+    ) -> Promise {
+        require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
+        let result = promise_result_as_success();
+        if result.is_none() {
+            env::panic_str("Error balance token general".as_ref());
+        }
+        
+        let balannce_general: U128 = near_sdk::serde_json::from_slice::<U128>(&result.unwrap()).expect("U128");
+        
+        ext_subcontract::get_balance_block_token(
+            ft_token.clone(),
+            sub_contract.clone(),
+            0,
+            BASE_GAS,
+        ).then(int_sub_contract::on_withdraw_token(
+            sub_contract,
+            signer_id,
+            ft_token,
+            balannce_general,
+            env::current_account_id(),
+            0,
+            BASE_GAS,
+        ))
+    }
+
+    #[private]
+    pub fn on_withdraw_token(&mut self,
+        sub_contract: AccountId,
+        signer_id: AccountId,
+        ft_token: String,
+        balance_general: U128,
+    ) -> Promise {
+        require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
+        let result = promise_result_as_success();
+        if result.is_none() {
+            env::panic_str("Error Balance block".as_ref());
+        }
+        
+        let balannce_block: u128 = near_sdk::serde_json::from_slice::<u128>(&result.unwrap()).expect("u128");
+        let amount_withdraw: u128 = balance_general.0 - balannce_block;
+        
+        require!(amount_withdraw > 0, "No balance available to withdraw");
+
+        ext_subcontract::transfer(
+            signer_id,
+            U128(amount_withdraw),
+            U128(0u128),
+            Some(AccountId::new_unchecked(CONTRACT_USDC.to_string())),
+            true,
+            ft_token,
+            sub_contract,
+            1,
+            GAS_FOR_TRANSFER,
+        )
+
+    }
+
 }
