@@ -27,6 +27,8 @@ trait ExtSubContract {
         operation_amount: u128,
         fee_deducted: u128,
         contract_ft: Option<AccountId>,
+        retiro: bool,
+        ft_token: String,
     );
 
     fn get_balance_near(self) -> Balance;

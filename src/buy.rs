@@ -329,23 +329,23 @@ impl NearP2P {
         let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.offers_buy[offer].owner_id.clone()).expect("the user does not have a sub contract deployed").to_string());
         
         let contract_ft: Option<AccountId>;
-        let fee_deducted: u128;
-        let operation_amount: u128;
+        let ft_token: String;
+        
         if self.offers_buy[offer].asset == "USDC".to_string() {
             contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
-            fee_deducted = 0;
-            operation_amount = self.offers_buy[offer].remaining_amount;
+            ft_token = "USDC".to_string();
         } else {
             contract_ft = None;
-            fee_deducted = 0;
-            operation_amount = self.offers_buy[offer].remaining_amount;
+            ft_token = "NEAR".to_string();
         }   
         
         ext_subcontract::transfer(
             self.offers_buy[offer].owner_id.clone(),
-            operation_amount,
-            fee_deducted,
+            self.offers_buy[offer].remaining_amount,
+            0,
             contract_ft,
+            false,
+            ft_token,
             contract_name,
             0,
             GAS_FOR_TRANSFER,

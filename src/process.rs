@@ -8,6 +8,7 @@ impl NearP2P {
     pub fn order_confirmation(&mut self, offer_type: i8, order_id: i128) {
         assert_one_yocto();
         let contract_ft: Option<AccountId>;
+        let ft_token: String;
         if offer_type == 1 {
             let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
             if self.orders_sell[i].owner_id == env::signer_account_id() {
@@ -35,8 +36,14 @@ impl NearP2P {
                 let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.orders_sell[i].signer_id).expect("the user does not have a sub contract deployed").to_string());
 
                 match self.offers_sell[index_offer].asset.as_str(){
-                    "NEAR" => contract_ft = None,
-                    _=> contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string())),
+                    "NEAR" => {
+                        contract_ft = None;
+                        ft_token = "NEAR".to_string();
+                    },
+                    _=> {
+                        contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
+                        ft_token = "USDC".to_string();
+                    },
                 };
                 
                 ext_subcontract::transfer(
@@ -44,6 +51,8 @@ impl NearP2P {
                     self.orders_sell[i].operation_amount,
                     self.orders_sell[i].fee_deducted,
                     contract_ft,
+                    false,
+                    ft_token,
                     contract_name,
                     1,
                     GAS_FOR_TRANSFER,
@@ -85,8 +94,14 @@ impl NearP2P {
                 let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.orders_buy[i].owner_id).expect("the user does not have a sub contract deployed").to_string());
                
                 match self.offers_buy[index_offer].asset.as_str(){
-                    "NEAR" => contract_ft = None,
-                    _=> contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string())),
+                    "NEAR" => {
+                        contract_ft = None;
+                        ft_token = "NEAR".to_string();
+                    },
+                    _=> {
+                        contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
+                        ft_token = "USDC".to_string();
+                    },
                 };
                 
                 ext_subcontract::transfer(
@@ -94,6 +109,8 @@ impl NearP2P {
                     self.orders_buy[i].operation_amount,
                     self.orders_sell[i].fee_deducted,
                     contract_ft,
+                    false,
+                    ft_token,
                     contract_name,
                     1,
                     GAS_FOR_TRANSFER,
@@ -118,6 +135,7 @@ impl NearP2P {
     pub fn cancel_order(&mut self, offer_type: i8, order_id: i128) {
         assert_one_yocto();
         let contract_ft: Option<AccountId>;
+        let ft_token: String;
         if offer_type == 1 {
             let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
             
@@ -132,8 +150,14 @@ impl NearP2P {
                 let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.orders_sell[i].signer_id).expect("the user does not have a sub contract deployed").to_string());
 
                 match self.offers_sell[j].asset.as_str(){
-                    "NEAR" => contract_ft = None,
-                    _=> contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string())),
+                    "NEAR" => {
+                        contract_ft = None;
+                        ft_token = "NEAR".to_string();
+                    },
+                    _=> {
+                        contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
+                        ft_token = "USDC".to_string();
+                    },
                 };
                 
                 ext_subcontract::transfer(
@@ -141,6 +165,8 @@ impl NearP2P {
                     self.orders_sell[i].operation_amount,
                     0,
                     contract_ft,
+                    false,
+                    ft_token,
                     contract_name,
                     1,
                     GAS_FOR_TRANSFER,
@@ -182,8 +208,14 @@ impl NearP2P {
                 let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.orders_buy[i].owner_id).expect("the user does not have a sub contract deployed").to_string());
 
                 match self.offers_buy[j].asset.as_str(){
-                    "NEAR" => contract_ft = None,
-                    _=> contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string())),
+                    "NEAR" => {
+                        contract_ft = None;
+                        ft_token = "NEAR".to_string();
+                    },
+                    _=> {
+                        contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
+                        ft_token = "USDC".to_string();
+                    },
                 };
 
                 ext_subcontract::transfer(
@@ -191,6 +223,8 @@ impl NearP2P {
                     self.orders_buy[i].operation_amount,
                     0,
                     contract_ft,
+                    false,
+                    ft_token,
                     contract_name,
                     1,
                     GAS_FOR_TRANSFER,
