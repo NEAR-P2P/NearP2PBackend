@@ -32,13 +32,13 @@ const KEY_TOKEN: &str = "qbogcyqiqO7Utwqm3VgKhxrmQIc0ROjj";
 const FEE_TRANSACTION_NEAR: u128 = 30; // 0.003%
 
 //const GAS_FOR_RESOLVE_TRANSFER: Gas = Gas(10_000_000_000_000);
-const GAS_FOR_TRANSFER: Gas = Gas(40_000_000_000_000);
+const GAS_FOR_TRANSFER: Gas = Gas(15_000_000_000_000);
 const BASE_GAS: Gas = Gas(3_000_000_000_000);
 const CONTRACT_USDC: &str = "usdc.fakes.testnet";
 
 //const INITIAL_BALANCE: Balance = 2_50_000_000_000_000_000_000_000; // 1e24yN, 0.25N
 //const INITIAL_BALANCE: Balance = 1_080_000_000_000_000_000_000_000; // 1e24yN, 0.25N
-const CODE: &[u8] = include_bytes!("./wasm/subcontract_p2_p_v8.wasm");
+const CODE: &[u8] = include_bytes!("./wasm/subcontract_p2_p_v9.wasm");
 /////////////////////////////////////////////////////////////////////////////////////////////////
 /// Objects Definition///////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
