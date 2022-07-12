@@ -341,8 +341,8 @@ impl NearP2P {
         
         ext_subcontract::transfer(
             self.offers_buy[offer].owner_id.clone(),
-            self.offers_buy[offer].remaining_amount,
-            0,
+            U128(self.offers_buy[offer].remaining_amount),
+            U128(0u128),
             contract_ft,
             false,
             ft_token,

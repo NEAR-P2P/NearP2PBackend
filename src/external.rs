@@ -24,8 +24,8 @@ trait ExtSubContract {
 
     fn transfer(&mut self,
         receiver_id: AccountId,
-        operation_amount: u128,
-        fee_deducted: u128,
+        operation_amount: U128,
+        fee_deducted: U128,
         contract_ft: Option<AccountId>,
         retiro: bool,
         ft_token: String,
