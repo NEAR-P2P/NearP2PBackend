@@ -41,5 +41,4 @@ trait ExtSubContract {
         amount: U128
     ) -> bool;
 
-
 }

@@ -5,6 +5,20 @@ const GAS_BLOCK_BALANCE: Gas = Gas(5_000_000_000_000);
 
 #[near_bindgen]
 impl NearP2P {
+    pub fn bloquear(&mut self, contract_name: AccountId) -> Promise {
+        //let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&env::signer_account_id()).expect("the user does not have a sub contract deployed").to_string());
+        ext_subcontract::block_balance_token(
+            AccountId::new_unchecked(CONTRACT_USDC.to_string()),
+            "USDC".to_string(),
+            U128(1000000),
+            contract_name,
+            0,
+            Gas(40000000000000),
+        )
+    }
+
+
+
     /// accept offer into the contract
     /// Params: offer_type: 1 = sell, 2 = buy
     #[payable]
