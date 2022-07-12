@@ -143,12 +143,13 @@ impl NearP2P {
     }
 
     #[private]
-    fn on_accept_offer_sell(&mut self, offer: usize
+    pub fn on_accept_offer_sell(&mut self, offer: usize
         , amount: U128
         , payment_method: i128
         , datetime: String
         , rate: f64
     ) { 
+        require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         let remaining: u128 = self.offers_sell[offer].remaining_amount - amount.0;
         if remaining <= 0 {
             self.offers_sell[offer].status = 2;

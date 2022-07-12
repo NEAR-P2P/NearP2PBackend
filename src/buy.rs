@@ -358,7 +358,8 @@ impl NearP2P {
     }
 
     #[private]
-    fn on_delete_offers_buy(&mut self, offer: usize) {
+    pub fn on_delete_offers_buy(&mut self, offer: usize) {
+        require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         let result = promise_result_as_success();
         if result.is_none() {
             env::panic_str("Error al eliminar".as_ref());
