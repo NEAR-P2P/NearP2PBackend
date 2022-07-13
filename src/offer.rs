@@ -17,8 +17,45 @@ impl NearP2P {
         )
     }
 
+    #[payable]
+    pub fn transferir(&mut self, sub_contract: AccountId) -> Promise {
+        ext_subcontract::transfer(
+            env::signer_account_id(),
+            U128(1000000),
+            U128(100),
+            Some(AccountId::new_unchecked(CONTRACT_USDC.to_string())),
+            true,
+            "USDC".to_string(),
+            sub_contract,
+            2,
+            Gas(30_000_000_000_000),
+        )
+    }
 
+    #[payable]
+    pub fn transferir2(&mut self, sub_contract: AccountId) -> Promise {
+        ext_usdc::ft_transfer(
+            sub_contract,
+            U128(1000000),
+            None,
+            AccountId::new_unchecked(CONTRACT_USDC.to_string()),
+            1,
+            BASE_GAS,
+        )
+        /*ext_subcontract::transfer(
+            env::signer_account_id(),
+            U128(1000000000000000000000000u128),
+            U128(1000000000000),
+            Some(AccountId::new_unchecked(CONTRACT_USDC.to_string())),
+            false,
+            "USDC".to_string(),
+            sub_contract,
+            2,
+            Gas(8_000_000_000_000),
+        )*/
+    }
 
+    
     /// accept offer into the contract
     /// Params: offer_type: 1 = sell, 2 = buy
     #[payable]

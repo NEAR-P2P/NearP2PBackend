@@ -32,7 +32,7 @@ const KEY_TOKEN: &str = "qbogcyqiqO7Utwqm3VgKhxrmQIc0ROjj";
 const FEE_TRANSACTION_NEAR: u128 = 30; // 0.003%
 
 //const GAS_FOR_RESOLVE_TRANSFER: Gas = Gas(10_000_000_000_000);
-const GAS_FOR_TRANSFER: Gas = Gas(15_000_000_000_000);
+const GAS_FOR_TRANSFER: Gas = Gas(30_000_000_000_000);
 const BASE_GAS: Gas = Gas(3_000_000_000_000);
 const CONTRACT_USDC: &str = "usdc.fakes.testnet";
 
