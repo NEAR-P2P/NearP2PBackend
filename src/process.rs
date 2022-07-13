@@ -272,7 +272,7 @@ impl NearP2P {
             signer_id: arreglo[index].signer_id.clone(),
             exchange_rate: arreglo[index].exchange_rate.to_string(),
             operation_amount: arreglo[index].operation_amount,
-            amount_delivered: arreglo[index].operation_amount,
+            amount_delivered: arreglo[index].amount_delivered,
             fee_deducted: arreglo[index].fee_deducted,
             payment_method: arreglo[index].payment_method,
             fiat_method: arreglo[index].fiat_method,
