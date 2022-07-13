@@ -53,7 +53,7 @@ impl NearP2P {
                 amount,
                 contract_name,
                 0,
-                BASE_GAS,
+                GAS_FOR_BLOCK,
             ).then(
                 int_buy::on_set_offers_buy(index
                 , owner_id
@@ -77,7 +77,7 @@ impl NearP2P {
                 amount,
                 contract_name,
                 0,
-                BASE_GAS,
+                GAS_FOR_BLOCK,
             ).then(
                 int_buy::on_set_offers_buy(index
                 , owner_id
