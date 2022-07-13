@@ -119,7 +119,7 @@ impl NearP2P {
             env::attached_deposit() >= 1,
             "Requires attached deposit of at least 1 yoctoNEAR",
         );
-        let contract: AccountId = AccountId::new_unchecked(self.contract_list.get(&env::signer_account_id()).expect("the user does not have contract deployed").to_string());
+        let contract: AccountId = AccountId::new_unchecked("pruebaa.globaldv.testnet".to_string());//AccountId::new_unchecked(self.contract_list.get(&env::signer_account_id()).expect("the user does not have contract deployed").to_string());
         match ft_token.as_ref() {
             "NEAR" => { 
                 ext_subcontract::get_balance_near(
@@ -132,7 +132,7 @@ impl NearP2P {
                     env::signer_account_id(),
                     env::current_account_id(),
                     0,
-                    BASE_GAS,
+                    GAS_ON_WITHDRAW_NEAR,
                 ))
             },
             "USDC" => {
@@ -147,7 +147,7 @@ impl NearP2P {
                     "USDC".to_string(),
                     env::current_account_id(),
                     0,
-                    BASE_GAS,
+                    GAS_ON_WITHDRAW_TOKEN_BLOCK,
                 ))
             },
             _=> env::panic_str("ft_token not found")
@@ -162,18 +162,18 @@ impl NearP2P {
     ) -> Promise {
         require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         let result = promise_result_as_success();
-        if result.is_none() {
+        /*if result.is_none() {
             env::panic_str("Error Balance NEAR".as_ref());
-        }
+        }*/
         
         let amount_withdraw: u128 = near_sdk::serde_json::from_slice::<u128>(&result.unwrap()).expect("u128");
         
         require!(amount_withdraw > 0, "No balance available to withdraw");
-
+        env::log_str(format!("{}",amount_withdraw).as_str());
         ext_subcontract::transfer(
             signer_id,
             U128(amount_withdraw),
-            U128(0u128),
+            U128(0),
             None,
             true,
             "NEAR".to_string(),
@@ -182,8 +182,6 @@ impl NearP2P {
             GAS_FOR_TRANSFER,
         )
     }
-
-
 
     #[private]
     pub fn on_withdraw_token_block(&mut self,
@@ -211,7 +209,7 @@ impl NearP2P {
             balannce_general,
             env::current_account_id(),
             0,
-            BASE_GAS,
+            GAS_ON_WITHDRAW_TOKEN,
         ))
     }
 

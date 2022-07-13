@@ -347,7 +347,7 @@ impl NearP2P {
             false,
             ft_token,
             contract_name,
-            0,
+            1,
             GAS_FOR_TRANSFER,
         ).then(int_buy::on_delete_offers_buy(
             offer,
