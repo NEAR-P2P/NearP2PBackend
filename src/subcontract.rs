@@ -119,7 +119,8 @@ impl NearP2P {
             env::attached_deposit() >= 1,
             "Requires attached deposit of at least 1 yoctoNEAR",
         );
-        let contract: AccountId = AccountId::new_unchecked("pruebaa.globaldv.testnet".to_string());//AccountId::new_unchecked(self.contract_list.get(&env::signer_account_id()).expect("the user does not have contract deployed").to_string());
+        //let contract: AccountId = AccountId::new_unchecked("pruebaa.globaldv.testnet".to_string());
+        let contract: AccountId = AccountId::new_unchecked(self.contract_list.get(&env::signer_account_id()).expect("the user does not have contract deployed").to_string());
         match ft_token.as_ref() {
             "NEAR" => { 
                 ext_subcontract::get_balance_near(
