@@ -1,7 +1,5 @@
 use crate::*;
 
-const GAS_BLOCK_BALANCE: Gas = Gas(5_000_000_000_000);
-
 
 #[near_bindgen]
 impl NearP2P {
@@ -13,7 +11,7 @@ impl NearP2P {
             U128(1000000),
             contract_name,
             0,
-            Gas(40000000000000),
+            Gas(30_000_000_000_000),
         )
     }
 
@@ -83,7 +81,7 @@ impl NearP2P {
                         amount,
                         contract_name,
                         0,
-                        BASE_GAS,
+                        GAS_FOR_BLOCK,
                     ).then(
                         int_offer::on_accept_offer_sell(
                             offer
@@ -103,7 +101,7 @@ impl NearP2P {
                         amount,
                         contract_name,
                         0,
-                        GAS_BLOCK_BALANCE,
+                        GAS_FOR_BLOCK,
                     ).then(
                         int_offer::on_accept_offer_sell(
                             offer
@@ -187,6 +185,12 @@ impl NearP2P {
         , rate: f64
     ) { 
         require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
+        let result = promise_result_as_success();
+        require!(result.is_none(), "balance is None");
+        
+        let valid: bool = near_sdk::serde_json::from_slice::<bool>(&result.unwrap()).expect("bool");
+        require!(valid, "No balance");
+
         let remaining: u128 = self.offers_sell[offer].remaining_amount - amount.0;
         if remaining <= 0 {
             self.offers_sell[offer].status = 2;
