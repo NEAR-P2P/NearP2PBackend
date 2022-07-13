@@ -167,9 +167,9 @@ impl NearP2P {
         }*/
         
         let amount_withdraw: u128 = near_sdk::serde_json::from_slice::<u128>(&result.unwrap()).expect("u128");
-        
-        require!(amount_withdraw > 0, "No balance available to withdraw");
         env::log_str(format!("{}",amount_withdraw).as_str());
+        require!(amount_withdraw > 0, "No balance available to withdraw");
+        
         ext_subcontract::transfer(
             signer_id,
             U128(amount_withdraw),
