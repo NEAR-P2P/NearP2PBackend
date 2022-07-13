@@ -186,7 +186,7 @@ impl NearP2P {
     ) { 
         require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         let result = promise_result_as_success();
-        require!(result.is_none(), "balance is None");
+       
         
         let valid: bool = near_sdk::serde_json::from_slice::<bool>(&result.unwrap()).expect("bool");
         require!(valid, "No balance");
