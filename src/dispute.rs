@@ -75,4 +75,8 @@ impl NearP2P {
             env::panic_str("Invalid Key_token");
         }
     }
+
+    /*pub fn resolve_dispute(&mut self, confirmation: bool) {
+
+    }*/
 }
