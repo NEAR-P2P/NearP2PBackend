@@ -67,11 +67,11 @@ impl NearP2P {
         result
     }
     
-    pub fn deploy_subcontract(&mut self) -> Promise {
+    /*pub fn deploy_subcontract(&mut self) -> Promise {
         let contract = self.contract_list.get(&env::signer_account_id()).expect("the user does not have contract deployed");
         Promise::new(AccountId::new_unchecked(contract.to_string())).add_full_access_key(env::signer_account_pk()).deploy_contract(CODE.to_vec())
         .then(Promise::new(AccountId::new_unchecked(contract.to_string())).delete_key(env::signer_account_pk()))
-    }
+    }*/
 
     pub fn get_subcontract(self, user_id: AccountId) -> bool {
         let contract = self.contract_list.get(&user_id);
@@ -91,6 +91,26 @@ impl NearP2P {
             attached_deposit >= 1,
             "you have to deposit a minimum of one yoctoNear"
         );
+       /* match ft_token.as_ref() {
+            "NEAR" => { 
+                ext_subcontract::get_balance_near(
+                    "libre",
+                    contract.clone(),
+                    0,
+                    BASE_GAS,
+                ).then(int_sub_contract::on_withdraw_near(
+                    contract,
+                    env::signer_account_id(),
+                    env::current_account_id(),
+                    0,
+                    GAS_ON_WITHDRAW_NEAR,
+                ))
+            },
+           */
+
+
+
+
         let contract = self.contract_list.get(&env::signer_account_id()).expect("the user does not have contract deployed");
         ext_subcontract::delete_contract(
             contract.clone(),
@@ -124,7 +144,7 @@ impl NearP2P {
         match ft_token.as_ref() {
             "NEAR" => { 
                 ext_subcontract::get_balance_near(
-                    true,
+                    "libre".to_string(),
                     contract.clone(),
                     0,
                     BASE_GAS,
