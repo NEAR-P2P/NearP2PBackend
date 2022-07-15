@@ -263,6 +263,8 @@ pub struct NearP2P {
     pub administrators: Vec<AccountId>,
 
     pub contract_list: HashMap<AccountId, AccountId>,
+
+    pub disputer: AccountId,
 }
 
 /// Initializing deafult impl
@@ -310,6 +312,7 @@ impl Default for NearP2P {
                 AccountId::new_unchecked("gperez.testnet".to_string()),
                         ],
             contract_list: HashMap::new(),
+            disputer: AccountId::new_unchecked("nearp2p.sputnikv2.testnet".to_string()),
         }
     }
 }

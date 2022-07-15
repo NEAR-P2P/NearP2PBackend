@@ -23,12 +23,7 @@ impl NearP2P {
                     self.orders_sell[i].status = 2;
                 }
 
-                let mut index = self.merchant.iter().position(|x| x.user_id == self.orders_sell[i].owner_id.clone()).expect("owner not merchant");
-                self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
-                self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
-                index = self.merchant.iter().position(|x| x.user_id == self.orders_sell[i].signer_id.clone()).expect("owner not merchant");
-                self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
-                self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+                self.orders_sell_completed(i);
 
                 let index_offer = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer sell not found");
 
@@ -81,12 +76,7 @@ impl NearP2P {
                     self.orders_buy[i].status = 2;
                 }
 
-                let mut index = self.merchant.iter().position(|x| x.user_id == self.orders_buy[i].owner_id.clone()).expect("owner not merchant");
-                self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
-                self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
-                index = self.merchant.iter().position(|x| x.user_id == self.orders_buy[i].signer_id.clone()).expect("owner not merchant");
-                self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
-                self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+                self.orders_buy_completed(i);
 
                 let index_offer = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer buy not found");
 
@@ -309,5 +299,25 @@ impl NearP2P {
             }
             self.orders_buy.remove(index);   
         }   
+    }
+
+    #[private]
+    pub fn orders_sell_completed(&mut self, index_order: usize) {
+        let mut index = self.merchant.iter().position(|x| x.user_id == self.orders_sell[index_order].owner_id.clone()).expect("owner not merchant");
+        self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
+        self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+        index = self.merchant.iter().position(|x| x.user_id == self.orders_sell[index_order].signer_id.clone()).expect("owner not merchant");
+        self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
+        self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+    }
+
+    #[private]
+    pub fn orders_buy_completed(&mut self, index_order: usize) {
+        let mut index = self.merchant.iter().position(|x| x.user_id == self.orders_buy[index_order].owner_id.clone()).expect("owner not merchant");
+        self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
+        self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+        index = self.merchant.iter().position(|x| x.user_id == self.orders_buy[index_order].signer_id.clone()).expect("owner not merchant");
+        self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
+        self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
     }
 }
