@@ -91,33 +91,15 @@ impl NearP2P {
             attached_deposit >= 1,
             "you have to deposit a minimum of one yoctoNear"
         );
-       /* match ft_token.as_ref() {
-            "NEAR" => { 
-                ext_subcontract::get_balance_near(
-                    "libre",
-                    contract.clone(),
-                    0,
-                    BASE_GAS,
-                ).then(int_sub_contract::on_withdraw_near(
-                    contract,
-                    env::signer_account_id(),
-                    env::current_account_id(),
-                    0,
-                    GAS_ON_WITHDRAW_NEAR,
-                ))
-            },
-           */
-
-
-
 
         let contract = self.contract_list.get(&env::signer_account_id()).expect("the user does not have contract deployed");
-        ext_subcontract::delete_contract(
+        ext_subcontract::get_balance_block_total(
             contract.clone(),
             0,
             BASE_GAS,
         ).then(int_sub_contract::on_delete_contract(
             env::signer_account_id(),
+            contract.clone(),
             env::current_account_id(),
             0,
             BASE_GAS,
@@ -125,13 +107,37 @@ impl NearP2P {
     }
 
     #[private]
-    pub fn on_delete_contract(&mut self, account_id: AccountId) {
+    pub fn on_delete_contract(&mut self, signer_id: AccountId, sub_contract: AccountId) {
+        let result = promise_result_as_success();
+        if result.is_none() {
+            env::panic_str("Error check balance blocked".as_ref());
+        }
+        let balance_block = near_sdk::serde_json::from_slice::<u128>(&result.unwrap()).expect("u128");
+        require!(balance_block <= 0, "You still have operations in progress, finish all the operations to be able to delete the contract");
+        
+        ext_subcontract::delete_contract(
+            sub_contract.clone(),
+            0,
+            BASE_GAS,
+        ).then(int_sub_contract::on_delete_contract_list(
+            signer_id,
+            env::current_account_id(),
+            0,
+            BASE_GAS,
+        ));
+
+        
+    }
+
+    #[private]
+    pub fn on_delete_contract_list(&mut self, signer_id: AccountId) {
         let result = promise_result_as_success();
         if result.is_none() {
             env::panic_str("Error al eliminar la cuenta".as_ref());
         }
-        self.contract_list.remove(&account_id);
+        self.contract_list.remove(&signer_id);
     }
+
 
     #[payable]
     pub fn withdraw(&mut self, ft_token: String) -> Promise {

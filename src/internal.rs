@@ -5,7 +5,12 @@ trait IntSubContract {
     fn on_ft_balance_of(&mut self);
 
     fn on_delete_contract(&mut self,
-        account_id: AccountId
+        signer_id: AccountId,
+        sub_contract: AccountId
+    );
+    
+    fn on_delete_contract_list(&mut self,
+        signer_id: AccountId
     );
 
     fn on_withdraw_near(&mut self,

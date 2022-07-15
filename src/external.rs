@@ -35,6 +35,8 @@ trait ExtSubContract {
 
     fn get_balance_block_token(self, ft_token: String) -> Balance;
 
+    fn get_balance_block_total(self) -> Balance;
+
     fn delete_contract(&mut self);
 
     fn block_balance_near(&mut self, amount: U128) -> bool;
