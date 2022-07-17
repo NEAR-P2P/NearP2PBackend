@@ -273,7 +273,7 @@ impl Default for NearP2P {
     fn default() -> Self {
         Self {
             users: vec![UserObject {
-                user_id: "andromeda2018.testnet".to_string(),
+                user_id: "info.testnet".to_string(),
                 name: "Andrés".to_string(),
                 last_name: "Dominguez".to_string(),
                 phone: "0413-4158733".to_string(),
