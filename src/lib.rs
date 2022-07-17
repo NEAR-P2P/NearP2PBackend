@@ -293,7 +293,7 @@ impl Default for NearP2P {
             order_history_sell: Vec::new(),
             order_history_buy: Vec::new(),
             merchant: vec![MerchantObject {
-                user_id: AccountId::new_unchecked("info.testnet".to_string()),
+                user_id: AccountId::new_unchecked("andromeda2018.testnet".to_string()),
                 total_orders: 1,
                 orders_completed: 1,
                 percentaje_completion: 0.0,
@@ -308,6 +308,7 @@ impl Default for NearP2P {
             vault: AccountId::new_unchecked("v.nearp2p.testnet".to_string()),
             administrators: vec![
                 AccountId::new_unchecked("andromeda2018.testnet".to_string()),
+                AccountId::new_unchecked("nearp2p.testnet".to_string()),
                 AccountId::new_unchecked("gperez.testnet".to_string()),
                         ],
             contract_list: HashMap::new(),
