@@ -273,7 +273,7 @@ impl Default for NearP2P {
     fn default() -> Self {
         Self {
             users: vec![UserObject {
-                user_id: "info.testnet".to_string(),
+                user_id: "andromeda2018.testnet".to_string(),
                 name: "Andrés".to_string(),
                 last_name: "Dominguez".to_string(),
                 phone: "0413-4158733".to_string(),
@@ -307,8 +307,7 @@ impl Default for NearP2P {
             fiat_method_id: 0,
             vault: AccountId::new_unchecked("v.nearp2p.testnet".to_string()),
             administrators: vec![
-                AccountId::new_unchecked("info.testnet".to_string()),
-                AccountId::new_unchecked("nearp2p.testnet".to_string()),
+                AccountId::new_unchecked("andromeda2018.testnet".to_string()),
                 AccountId::new_unchecked("gperez.testnet".to_string()),
                         ],
             contract_list: HashMap::new(),
