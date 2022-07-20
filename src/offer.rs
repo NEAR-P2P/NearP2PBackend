@@ -91,12 +91,16 @@ impl NearP2P {
         , rate: f64
     ) {
         let attached_deposit = env::attached_deposit();
-        require!(attached_deposit >= 1, "you have to deposit a minimum of one yoctoNear");
-
         if offer_type == 1 {
-            /*let signer: AccountId = AccountId::new_unchecked(env::signer_account_id().as_str().split('.').collect::<Vec<&str>>()[0].to_string());
+            require!(attached_deposit >= 100000000000000000000000, "you have to deposit a minimum 0.1 NEAR");
+
+            let offer: usize = self.offers_sell.iter().position(|x| x.offer_id == offer_id).expect("Offer sell not found");
+            
+            require!(self.offers_sell[offer].owner_id != env::signer_account_id(), "you can not accept your own offer");
+
+            let signer: AccountId = AccountId::new_unchecked(env::signer_account_id().as_str().split('.').collect::<Vec<&str>>()[0].to_string());
             let subaccount_id: AccountId = AccountId::new_unchecked(
-            format!("2{}.{}", signer, env::current_account_id())
+            format!("{}.{}", signer, env::current_account_id())
             );
             Promise::new(subaccount_id.clone())
             .create_account()
@@ -111,63 +115,46 @@ impl NearP2P {
                 BASE_GAS,
             ));
 
-            ext_usdc::storage_deposit(
-                true,
-                subaccount_id.clone(),
-                AccountId::new_unchecked(CONTRACT_USDC.to_string()),
-                100000000000000000000000,
-                BASE_GAS,
-            );*/
-        
-            #[warn(unused_assignments)]
-            let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&env::signer_account_id()).expect("the user does not have a sub contract deployed").to_string());
-              
-            let offer: usize = self.offers_sell.iter().position(|x| x.offer_id == offer_id).expect("Offer sell not found");
-            
-            require!(self.offers_sell[offer].owner_id != env::signer_account_id(), "you can not accept your own offer");
-            
+            self.contract_list.insert(env::signer_account_id(), subaccount_id.clone());
+
             match self.offers_sell[offer].asset.as_str() {
-                "NEAR" => {
-                    ext_subcontract::block_balance_near(
-                        amount,
-                        contract_name,
-                        0,
-                        GAS_FOR_BLOCK,
-                    ).then(
-                        int_offer::on_accept_offer_sell(
-                            offer
-                            , amount
-                            , payment_method
-                            , datetime
-                            , rate
-                            , env::current_account_id()
-                            , 0
-                            , BASE_GAS
-                    ));
-                }, 
+                "NEAR" => {    
+                    int_offer::on_accept_offer_block_balance(
+                        env::signer_account_id()
+                        , offer
+                        , amount
+                        , payment_method
+                        , datetime
+                        , rate
+                        , env::current_account_id()
+                        , 0
+                        , GAS_ACCEPT_OFFER_BLOCK_BALANCE
+                    );
+                },
                 "USDC" => {
-                    ext_subcontract::block_balance_token(
+                    ext_usdc::storage_deposit(
+                        true,
+                        subaccount_id,
                         AccountId::new_unchecked(CONTRACT_USDC.to_string()),
-                        "USDC".to_string(),
-                        amount,
-                        contract_name,
-                        0,
-                        GAS_FOR_BLOCK,
-                    ).then(
-                        int_offer::on_accept_offer_sell(
-                            offer
-                            , amount
-                            , payment_method
-                            , datetime
-                            , rate
-                            , env::current_account_id()
-                            , 0
-                            , BASE_GAS
+                        100000000000000000000000,
+                        BASE_GAS,
+                    ).then(int_offer::on_accept_offer_block_balance(
+                        env::signer_account_id()
+                        , offer
+                        , amount
+                        , payment_method
+                        , datetime
+                        , rate
+                        , env::current_account_id()
+                        , 0
+                        , GAS_ACCEPT_OFFER_BLOCK_BALANCE
                     ));
                 },
                 _=> env::panic_str("The requested asset does not exist")
             };
         } else if offer_type == 2 {
+            require!(attached_deposit >= 1, "you have to deposit a minimum of one YoctoNear");
+
             let offer: usize = self.offers_buy.iter().position(|x| x.offer_id == offer_id).expect("Offer buy not found");
             
             require!(self.offers_buy[offer].owner_id != env::signer_account_id(), "you can not accept your own offer");
@@ -224,8 +211,64 @@ impl NearP2P {
             env::log_str("Offer buy accepted");
         
         }   else {
+            require!(attached_deposit >= 1, "you have to deposit a minimum of one YoctoNear");
             env::panic_str("Invalid offer type");
         }
+    }
+
+    #[private]
+    pub fn on_accept_offer_block_balance(self,
+        signer_id: AccountId,
+        offer: usize,
+        amount: U128,
+        payment_method: i128,
+        datetime: String,
+        rate: f64,
+    ) {
+        #[warn(unused_assignments)]
+        let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&signer_id).expect("the user does not have a sub contract deployed").to_string());
+        
+        match self.offers_sell[offer].asset.as_str() {
+            "NEAR" => {
+                ext_subcontract::block_balance_near(
+                    amount,
+                    contract_name,
+                    0,
+                    GAS_FOR_BLOCK,
+                ).then(
+                    int_offer::on_accept_offer_sell(
+                        offer
+                        , amount
+                        , payment_method
+                        , datetime
+                        , rate
+                        , env::current_account_id()
+                        , 0
+                        , BASE_GAS
+                ));
+            }, 
+            "USDC" => {
+                ext_subcontract::block_balance_token(
+                    AccountId::new_unchecked(CONTRACT_USDC.to_string()),
+                    "USDC".to_string(),
+                    amount,
+                    contract_name,
+                    0,
+                    GAS_FOR_BLOCK,
+                ).then(
+                    int_offer::on_accept_offer_sell(
+                        offer
+                        , amount
+                        , payment_method
+                        , datetime
+                        , rate
+                        , env::current_account_id()
+                        , 0
+                        , BASE_GAS
+                ));
+            },
+            _=> env::panic_str("The requested asset does not exist")
+        };
     }
 
     #[private]

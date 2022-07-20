@@ -48,16 +48,18 @@ impl NearP2P {
                     contract_ft,
                     false,
                     ft_token,
-                    contract_name,
+                    contract_name.clone(),
                     2,
                     GAS_FOR_TRANSFER,
                 ).then(int_process::on_confirmation(
                     self.orders_sell[i].order_id,
                     2,
                     1,
+                    contract_name,
+                    env::signer_account_id(),
                     env::current_account_id(),
                     0,
-                    BASE_GAS,
+                    GAS_ON_CONFIRMATION,
                 ));
             } else {
                 env::panic_str("Server internar error, signer not found");
@@ -101,13 +103,15 @@ impl NearP2P {
                     contract_ft,
                     false,
                     ft_token,
-                    contract_name,
+                    contract_name.clone(),
                     2,
                     GAS_FOR_TRANSFER,
                 ).then(int_process::on_confirmation(
                     self.orders_buy[i].order_id,
                     2,
                     2,
+                    contract_name,
+                    env::signer_account_id(),
                     env::current_account_id(),
                     0,
                     BASE_GAS,
@@ -157,16 +161,18 @@ impl NearP2P {
                     contract_ft,
                     false,
                     ft_token,
-                    contract_name,
+                    contract_name.clone(),
                     1,
                     GAS_FOR_TRANSFER,
                 ).then(int_process::on_confirmation(
                     self.orders_sell[i].order_id,
                     4,
                     1,
+                    contract_name,
+                    env::signer_account_id(),
                     env::current_account_id(),
                     0,
-                    BASE_GAS,
+                    GAS_ON_CONFIRMATION,
                 ));
                 
             } else if self.orders_sell[i].signer_id == env::signer_account_id() {
@@ -215,13 +221,15 @@ impl NearP2P {
                     contract_ft,
                     false,
                     ft_token,
-                    contract_name,
+                    contract_name.clone(),
                     1,
                     GAS_FOR_TRANSFER,
                 ).then(int_process::on_confirmation(
                     self.orders_buy[i].order_id,
                     4,
                     2,
+                    contract_name,
+                    env::signer_account_id(),
                     env::current_account_id(),
                     0,
                     BASE_GAS,
@@ -237,7 +245,7 @@ impl NearP2P {
 
 
     #[private]
-    pub fn on_confirmation(&mut self, order_id: i128, status: i8, order_type: i8) {
+    pub fn on_confirmation(&mut self, order_id: i128, status: i8, order_type: i8, contract_name: AccountId, signer_id: AccountId) {
         let result = promise_result_as_success();
         if result.is_none() {
             env::panic_str("balance is None".as_ref());
@@ -274,10 +282,18 @@ impl NearP2P {
             terms_conditions: arreglo[index].terms_conditions.to_string(),
             status: status,
         };
-
-
         if order_type == 1 {
             self.order_history_sell.push(data);
+            ext_subcontract::delete_contract(
+                contract_name,
+                0,
+                BASE_GAS,
+            ).then(int_sub_contract::on_delete_contract_list(
+                signer_id,
+                env::current_account_id(),
+                0,
+                BASE_GAS,
+            ));
             if status == 4 {
                 let j = self.offers_sell.iter().position(|x| x.offer_id == arreglo[index].offer_id).expect("Offer Sell not found");
                 self.offers_sell[j].remaining_amount = self.offers_sell[j].remaining_amount + arreglo[index].operation_amount;

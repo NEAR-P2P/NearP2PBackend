@@ -72,6 +72,15 @@ trait IntOffer {
         , datetime: String
         , rate: f64
     );
+
+    fn on_accept_offer_block_balance(self,
+        signer_id: AccountId,
+        offer: usize,
+        amount: U128,
+        payment_method: i128,
+        datetime: String,
+        rate: f64,
+    );
 }
 
 #[ext_contract(int_process)]
@@ -80,5 +89,7 @@ trait IntProcess {
         order_id: i128,
         status: i8,
         order_type: i8,
+        contract_name: AccountId,
+        signer_id: AccountId,
     );
 }
