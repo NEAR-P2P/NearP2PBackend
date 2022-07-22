@@ -106,7 +106,7 @@ impl NearP2P {
                         let index_offer = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer sell not found");
         
                         #[warn(unused_assignments)]
-                        let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.orders_sell[i].signer_id).expect("the user does not have a sub contract deployed").to_string());
+                        let contract_name: AccountId = AccountId::new_unchecked(self.contract_list_user.get(&self.orders_sell[i].signer_id).expect("the user does not have a sub contract deployed").to_string());
         
                         match self.offers_sell[index_offer].asset.as_str(){
                             "NEAR" => {
@@ -154,7 +154,7 @@ impl NearP2P {
                         let index_offer = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer buy not found");
         
                         #[warn(unused_assignments)]
-                        let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.orders_buy[i].owner_id).expect("the user does not have a sub contract deployed").to_string());
+                        let contract_name: AccountId = AccountId::new_unchecked(self.contract_list_user.get(&self.orders_buy[i].owner_id).expect("the user does not have a sub contract deployed").to_string());
                         
                         match self.offers_buy[index_offer].asset.as_str(){
                             "NEAR" => {
@@ -203,7 +203,7 @@ impl NearP2P {
                         }
 
                         #[warn(unused_assignments)]
-                        let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.orders_sell[i].signer_id).expect("the user does not have a sub contract deployed").to_string());
+                        let contract_name: AccountId = AccountId::new_unchecked(self.contract_list_user.get(&self.orders_sell[i].signer_id).expect("the user does not have a sub contract deployed").to_string());
 
                         match self.offers_sell[j].asset.as_str(){
                             "NEAR" => {
@@ -247,7 +247,7 @@ impl NearP2P {
                         }
 
                         #[warn(unused_assignments)]
-                        let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.orders_buy[i].owner_id).expect("the user does not have a sub contract deployed").to_string());
+                        let contract_name: AccountId = AccountId::new_unchecked(self.contract_list_user.get(&self.orders_buy[i].owner_id).expect("the user does not have a sub contract deployed").to_string());
 
                         match self.offers_buy[j].asset.as_str(){
                             "NEAR" => {

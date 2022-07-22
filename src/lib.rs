@@ -37,8 +37,7 @@ const GAS_FOR_BLOCK: Gas = Gas(30_000_000_000_000);
 const GAS_ON_WITHDRAW_NEAR: Gas = Gas(40_000_000_000_000);
 const GAS_ON_WITHDRAW_TOKEN_BLOCK: Gas = Gas(60_000_000_000_000);
 const GAS_ON_WITHDRAW_TOKEN: Gas = Gas(45_000_000_000_000);
-const GAS_ACCEPT_OFFER_BLOCK_BALANCE: Gas = Gas(46_000_000_000_000);
-const GAS_ON_CONFIRMATION: Gas = Gas(10_000_000_000_000);
+const GAS_ON_CONFIRMATION: Gas = Gas(46_000_000_000_000);
 const BASE_GAS: Gas = Gas(3_000_000_000_000);
 
 //const CONSUMO_STORAGE_NEAR_SUBCONTRACT: u128 = 1412439322253799699999999;
@@ -267,6 +266,8 @@ pub struct NearP2P {
 
     pub contract_list: HashMap<AccountId, AccountId>,
 
+    pub contract_list_user: HashMap<AccountId, AccountId>,
+
     pub disputer: AccountId,
 }
 
@@ -314,6 +315,7 @@ impl Default for NearP2P {
                 AccountId::new_unchecked("gperez.testnet".to_string()),
                         ],
             contract_list: HashMap::new(),
+            contract_list_user: HashMap::new(),
             disputer: AccountId::new_unchecked("nearp2p.sputnikv2.testnet".to_string()),
         }
     }

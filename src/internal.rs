@@ -73,14 +73,9 @@ trait IntOffer {
         , rate: f64
     );
 
-    fn on_accept_offer_block_balance(self,
-        signer_id: AccountId,
-        offer: usize,
-        amount: U128,
-        payment_method: i128,
-        datetime: String,
-        rate: f64,
-    );
+    fn on_delete_contract_user(&mut self, signer_id: AccountId, sub_contract: AccountId);
+
+    fn on_delete_contract_list_user(&mut self, signer_id: AccountId);
 }
 
 #[ext_contract(int_process)]
