@@ -189,9 +189,9 @@ impl NearP2P {
     ) -> Promise {
         require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         let result = promise_result_as_success();
-        /*if result.is_none() {
+        if result.is_none() {
             env::panic_str("Error Balance NEAR".as_ref());
-        }*/
+        }
         
         let amount_withdraw: u128 = near_sdk::serde_json::from_slice::<u128>(&result.unwrap()).expect("u128");
         env::log_str(format!("{}",amount_withdraw).as_str());
