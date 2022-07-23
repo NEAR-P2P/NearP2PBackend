@@ -78,7 +78,8 @@ impl NearP2P {
             Gas(8_000_000_000_000),
         )*/
     }
-
+    
+    #[payable]
     pub fn create_subcontract_user(&mut self) -> Promise {
         require!(env::attached_deposit() >= 100000000000000000000000, "you have to deposit a minimum 0.1 NEAR");
         let signer: AccountId = AccountId::new_unchecked(env::signer_account_id().as_str().split('.').collect::<Vec<&str>>()[0].to_string());
