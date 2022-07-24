@@ -116,16 +116,6 @@ impl NearP2P {
         }
     }
 
-    pub fn get_subcontract_user(self, user_id: AccountId) -> bool {
-        let contract = self.contract_list_user.get(&user_id);
-        if contract.is_some() {
-            true
-        } else if contract.is_none() {
-            false
-        } else {
-            false
-        }
-    }
 
     #[payable]
     pub fn delete_contract(&mut self) {
