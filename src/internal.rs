@@ -84,7 +84,7 @@ trait IntProcess {
         order_id: i128,
         status: i8,
         order_type: i8,
-        contract_name: AccountId,
+        data_contract: ContractList,
         signer_id: AccountId,
     );
 }

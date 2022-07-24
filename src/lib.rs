@@ -213,6 +213,13 @@ pub struct SearchOrderObject {
     data: Vec<OrderObject>,
 }
 
+#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub struct ContractList {
+    contract: AccountId,
+    type_contract: i8,
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /// Objects Definition////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -264,9 +271,7 @@ pub struct NearP2P {
 
     pub administrators: Vec<AccountId>,
 
-    pub contract_list: HashMap<AccountId, AccountId>,
-
-    pub contract_list_user: HashMap<AccountId, AccountId>,
+    pub contract_list: HashMap<AccountId, ContractList>,
 
     pub disputer: AccountId,
 }
@@ -315,7 +320,6 @@ impl Default for NearP2P {
                 AccountId::new_unchecked("gperez.testnet".to_string()),
                         ],
             contract_list: HashMap::new(),
-            contract_list_user: HashMap::new(),
             disputer: AccountId::new_unchecked("nearp2p.sputnikv2.testnet".to_string()),
         }
     }

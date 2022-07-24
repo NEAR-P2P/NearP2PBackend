@@ -46,12 +46,12 @@ impl NearP2P {
     ) -> Promise {
         let index = self.merchant.iter().position(|x| x.user_id == env::signer_account_id()).expect("the user is not in the list of users");
         #[warn(unused_assignments)]
-        let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&env::signer_account_id()).expect("the user does not have a sub contract deployed").to_string());
+        let contract_name = self.contract_list.get(&env::signer_account_id()).expect("the user does not have a sub contract deployed");
 
         if asset == "NEAR".to_string() {
             ext_subcontract::block_balance_near(
                 amount,
-                contract_name,
+                contract_name.contract.clone(),
                 0,
                 GAS_FOR_BLOCK,
             ).then(
@@ -75,7 +75,7 @@ impl NearP2P {
                 AccountId::new_unchecked(CONTRACT_USDC.to_string()),
                 "USDC".to_string(),
                 amount,
-                contract_name,
+                contract_name.contract.clone(),
                 0,
                 GAS_FOR_BLOCK,
             ).then(
@@ -326,7 +326,7 @@ impl NearP2P {
         assert_one_yocto();
         let offer = self.offers_buy.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id()).expect("Offer not found");
         #[warn(unused_assignments)]
-        let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&self.offers_buy[offer].owner_id.clone()).expect("the user does not have a sub contract deployed").to_string());
+        let contract_name = self.contract_list.get(&self.offers_buy[offer].owner_id.clone()).expect("the user does not have a sub contract deployed");
         
         let contract_ft: Option<AccountId>;
         let ft_token: String;
@@ -346,7 +346,7 @@ impl NearP2P {
             contract_ft,
             false,
             ft_token,
-            contract_name,
+            contract_name.contract.clone(),
             1,
             GAS_FOR_TRANSFER,
         ).then(int_buy::on_delete_offers_buy(

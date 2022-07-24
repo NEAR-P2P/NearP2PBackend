@@ -28,7 +28,7 @@ impl NearP2P {
                 let index_offer = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer sell not found");
 
                 #[warn(unused_assignments)]
-                let contract_name: AccountId = AccountId::new_unchecked(self.contract_list_user.get(&self.orders_sell[i].signer_id).expect("the user does not have a sub contract deployed").to_string());
+                let contract_name = self.contract_list.get(&self.orders_sell[i].signer_id).expect("the user does not have a sub contract deployed");
 
                 match self.offers_sell[index_offer].asset.as_str(){
                     "NEAR" => {
@@ -48,14 +48,14 @@ impl NearP2P {
                     contract_ft,
                     false,
                     ft_token,
-                    contract_name.clone(),
+                    contract_name.contract.clone(),
                     2,
                     GAS_FOR_TRANSFER,
                 ).then(int_process::on_confirmation(
                     self.orders_sell[i].order_id,
                     2,
                     1,
-                    contract_name,
+                    ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
                     env::signer_account_id(),
                     env::current_account_id(),
                     0,
@@ -83,7 +83,7 @@ impl NearP2P {
                 let index_offer = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer buy not found");
 
                 #[warn(unused_assignments)]
-                let contract_name: AccountId = AccountId::new_unchecked(self.contract_list_user.get(&self.orders_buy[i].owner_id).expect("the user does not have a sub contract deployed").to_string());
+                let contract_name = self.contract_list.get(&self.orders_buy[i].owner_id).expect("the user does not have a sub contract deployed");
                
                 match self.offers_buy[index_offer].asset.as_str(){
                     "NEAR" => {
@@ -103,14 +103,14 @@ impl NearP2P {
                     contract_ft,
                     false,
                     ft_token,
-                    contract_name.clone(),
+                    contract_name.contract.clone(),
                     2,
                     GAS_FOR_TRANSFER,
                 ).then(int_process::on_confirmation(
                     self.orders_buy[i].order_id,
                     2,
                     2,
-                    contract_name,
+                    ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
                     env::signer_account_id(),
                     env::current_account_id(),
                     0,
@@ -141,7 +141,7 @@ impl NearP2P {
                 }
 
                 #[warn(unused_assignments)]
-                let contract_name: AccountId = AccountId::new_unchecked(self.contract_list_user.get(&self.orders_sell[i].signer_id).expect("the user does not have a sub contract deployed").to_string());
+                let contract_name = self.contract_list.get(&self.orders_sell[i].signer_id).expect("the user does not have a sub contract deployed");
 
                 match self.offers_sell[j].asset.as_str(){
                     "NEAR" => {
@@ -161,14 +161,14 @@ impl NearP2P {
                     contract_ft,
                     false,
                     ft_token,
-                    contract_name.clone(),
+                    contract_name.contract.clone(),
                     1,
                     GAS_FOR_TRANSFER,
                 ).then(int_process::on_confirmation(
                     self.orders_sell[i].order_id,
                     4,
                     1,
-                    contract_name,
+                    ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
                     env::signer_account_id(),
                     env::current_account_id(),
                     0,
@@ -201,7 +201,7 @@ impl NearP2P {
                 }
 
                 #[warn(unused_assignments)]
-                let contract_name: AccountId = AccountId::new_unchecked(self.contract_list_user.get(&self.orders_buy[i].owner_id).expect("the user does not have a sub contract deployed").to_string());
+                let contract = self.contract_list.get(&self.orders_buy[i].owner_id).expect("the user does not have a sub contract deployed");
 
                 match self.offers_buy[j].asset.as_str(){
                     "NEAR" => {
@@ -221,14 +221,14 @@ impl NearP2P {
                     contract_ft,
                     false,
                     ft_token,
-                    contract_name.clone(),
+                    contract.contract.clone(),
                     1,
                     GAS_FOR_TRANSFER,
                 ).then(int_process::on_confirmation(
                     self.orders_buy[i].order_id,
                     4,
                     2,
-                    contract_name,
+                    ContractList{contract: contract.contract.clone(), type_contract: contract.type_contract.clone()},
                     env::signer_account_id(),
                     env::current_account_id(),
                     0,
@@ -245,7 +245,7 @@ impl NearP2P {
 
 
     #[private]
-    pub fn on_confirmation(&mut self, order_id: i128, status: i8, order_type: i8, contract_name: AccountId, signer_id: AccountId) {
+    pub fn on_confirmation(&mut self, order_id: i128, status: i8, order_type: i8, data_contract: ContractList, signer_id: AccountId) {
         let result = promise_result_as_success();
         if result.is_none() {
             env::panic_str("balance is None".as_ref());
@@ -284,19 +284,20 @@ impl NearP2P {
         };
         if order_type == 1 {
             self.order_history_sell.push(data);
-            ext_subcontract::get_balance_block_total(
-                contract_name.clone(),
-                0,
-                BASE_GAS,
-            ).then(int_offer::on_delete_contract_user(
-                signer_id,
-                contract_name.clone(),
-                env::current_account_id(),
-                0,
-                Gas(30_000_000_000_000),
-            ));
+                if data_contract.type_contract == 2 {
+                ext_subcontract::get_balance_block_total(
+                    data_contract.contract.clone(),
+                    0,
+                    BASE_GAS,
+                ).then(int_offer::on_delete_contract_user(
+                    signer_id,
+                    data_contract.contract,
+                    env::current_account_id(),
+                    0,
+                    Gas(30_000_000_000_000),
+                ));
+            } 
 
-            
             if status == 4 {
                 let j = self.offers_sell.iter().position(|x| x.offer_id == arreglo[index].offer_id).expect("Offer Sell not found");
                 self.offers_sell[j].remaining_amount = self.offers_sell[j].remaining_amount + arreglo[index].operation_amount;
@@ -352,7 +353,7 @@ impl NearP2P {
         if result.is_none() {
             env::panic_str("Error al eliminar la cuenta".as_ref());
         }
-        self.contract_list_user.remove(&signer_id);
+        self.contract_list.remove(&signer_id);
     }
 
     #[private]
