@@ -54,15 +54,27 @@ impl NearP2P {
                 BASE_GAS,
             ));
 
-            ext_usdc::storage_deposit(
-                true,
-                subaccount_id.clone(),
-                AccountId::new_unchecked(CONTRACT_USDC.to_string()),
-                100000000000000000000000,
-                BASE_GAS,
-            );
-        
-        self.contract_list.insert(env::signer_account_id(), ContractList{ contract: subaccount_id, type_contract: 1 });
+            self.contract_list.insert(env::signer_account_id(), ContractList{ contract: subaccount_id.clone(), type_contract: 1 });
+
+            let verificar_token = self.activate_token_list.get(&env::signer_account_id());
+
+            if verificar_token.is_none() || verificar_token.unwrap().get(verificar_token.unwrap().iter().position(|x| *x == "USDC".to_string()).unwrap() as usize).is_none() {
+                ext_usdc::storage_deposit(
+                    true,
+                    subaccount_id,
+                    AccountId::new_unchecked(CONTRACT_USDC.to_string()),
+                    100000000000000000000000,
+                    BASE_GAS,
+                ).then(int_sub_contract::on_listar_token_activo(
+                    env::signer_account_id(),
+                    "USDC".to_string(),
+                    env::current_account_id(),
+                    0,
+                    BASE_GAS
+                ));
+            } else {
+                Promise::new(env::signer_account_id()).transfer(100000000000000000000000);
+            }  
 
         result
     }
@@ -88,18 +100,48 @@ impl NearP2P {
         ));
 
         self.contract_list.insert(env::signer_account_id(), ContractList{ contract: subaccount_id.clone(), type_contract: 2 });
+        
+        let verificar_token = self.activate_token_list.get(&env::signer_account_id());
 
-        ext_usdc::storage_deposit(
-            true,
-            subaccount_id,
-            AccountId::new_unchecked(CONTRACT_USDC.to_string()),
-            100000000000000000000000,
-            BASE_GAS,
-        );
+        if verificar_token.is_none() || verificar_token.unwrap().get(verificar_token.unwrap().iter().position(|x| *x == "USDC".to_string()).unwrap() as usize).is_none() {
+        
+            ext_usdc::storage_deposit(
+                true,
+                subaccount_id,
+                AccountId::new_unchecked(CONTRACT_USDC.to_string()),
+                100000000000000000000000,
+                BASE_GAS,
+            ).then(int_sub_contract::on_listar_token_activo(
+                env::signer_account_id(),
+                "USDC".to_string(),
+                env::current_account_id(),
+                0,
+                BASE_GAS
+            ));
+        } else {
+            Promise::new(env::signer_account_id()).transfer(100000000000000000000000);
+        }
 
         result
     }
     
+    #[private]
+    pub fn on_listar_token_activo(&mut self, signer_id: AccountId, ft_token: String) {
+        let result = promise_result_as_success();
+        if result.is_none() {
+            env::panic_str("Error activate ft_token".as_ref());
+        }
+        let listar_token_activo = self.activate_token_list.get(&signer_id);
+
+        if listar_token_activo.is_some() {
+            let mut tokens: Vec<String> = listar_token_activo.unwrap().iter().map(|x| x.clone()).collect::<Vec<String>>();
+            tokens.push(ft_token);
+            self.activate_token_list.insert(signer_id, tokens);
+        } else {
+            self.activate_token_list.insert(signer_id, vec![ft_token]);
+        }
+    }
+
     /*pub fn deploy_subcontract(&mut self) -> Promise {
         let contract = self.contract_list.get(&env::signer_account_id()).expect("the user does not have contract deployed");
         Promise::new(AccountId::new_unchecked(contract.to_string())).add_full_access_key(env::signer_account_pk()).deploy_contract(CODE.to_vec())

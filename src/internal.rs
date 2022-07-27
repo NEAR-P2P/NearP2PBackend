@@ -30,6 +30,8 @@ trait IntSubContract {
         ft_token: String,
         balance_general: U128,
     ) -> Promise;
+
+    fn on_listar_token_activo(&mut self, signer_id: AccountId, ft_token: String);
 }
 
 
