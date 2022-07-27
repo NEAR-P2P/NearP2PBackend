@@ -58,7 +58,8 @@ impl NearP2P {
 
             let verificar_token = self.activate_token_list.get(&env::signer_account_id());
 
-            if verificar_token.is_none() || verificar_token.unwrap().get(verificar_token.unwrap().iter().position(|x| *x == "USDC".to_string()).unwrap() as usize).is_none() {
+            //if verificar_token.is_none() || verificar_token.unwrap().get(verificar_token.unwrap().iter().position(|x| *x == "USDC".to_string()).unwrap() as usize).is_none() {
+            if verificar_token.is_none() {
                 ext_usdc::storage_deposit(
                     true,
                     subaccount_id,
@@ -103,8 +104,8 @@ impl NearP2P {
         
         let verificar_token = self.activate_token_list.get(&env::signer_account_id());
 
-        if verificar_token.is_none() || verificar_token.unwrap().get(verificar_token.unwrap().iter().position(|x| *x == "USDC".to_string()).unwrap() as usize).is_none() {
-        
+        //if verificar_token.is_none() || verificar_token.unwrap().get(verificar_token.unwrap().iter().position(|x| *x == "USDC".to_string()).unwrap() as usize).is_none() {
+        if verificar_token.is_none() {
             ext_usdc::storage_deposit(
                 true,
                 subaccount_id,
@@ -140,6 +141,19 @@ impl NearP2P {
         } else {
             self.activate_token_list.insert(signer_id, vec![ft_token]);
         }
+    }
+
+    pub fn get_token_activo(self, user_id: AccountId) -> bool {
+        let tokens = self.activate_token_list.get(&user_id);
+        if tokens.is_none() {
+            false
+        } else {
+            if tokens.unwrap().len() > 0 {
+                true
+            } else {
+                false
+            }
+        }  
     }
 
     /*pub fn deploy_subcontract(&mut self) -> Promise {
