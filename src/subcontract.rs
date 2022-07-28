@@ -82,7 +82,7 @@ impl NearP2P {
 
     #[payable]
     pub fn create_subcontract_user(&mut self) -> Promise {
-        require!(env::attached_deposit() >= 100000000000000000000000, "you have to deposit a minimum 0.1 NEAR");
+        require!(env::attached_deposit() >= 1, "you have to deposit a minimum 1 YoctoNear");
         let signer: AccountId = AccountId::new_unchecked(env::signer_account_id().as_str().split('.').collect::<Vec<&str>>()[0].to_string());
         let subaccount_id: AccountId = AccountId::new_unchecked(
         format!("{}.{}", signer, env::current_account_id())
@@ -197,12 +197,12 @@ impl NearP2P {
 
     #[private]
     pub fn on_delete_contract(&mut self, signer_id: AccountId, sub_contract: AccountId) {
-        /*let result = promise_result_as_success();
+        let result = promise_result_as_success();
         if result.is_none() {
             env::panic_str("Error check balance blocked".as_ref());
         }
-        let balance_block = near_sdk::serde_json::from_slice::<u128>(&result.unwrap()).expect("u128");*/
-        //require!(balance_block <= 0, "You still have operations in progress, finish all the operations to be able to delete the contract");
+        let balance_block = near_sdk::serde_json::from_slice::<u128>(&result.unwrap()).expect("u128");
+        require!(balance_block <= 0, "You still have operations in progress, finish all the operations to be able to delete the contract");
         
         ext_subcontract::delete_contract(
             sub_contract.clone(),
