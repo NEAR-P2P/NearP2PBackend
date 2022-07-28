@@ -45,14 +45,14 @@ impl NearP2P {
     pub fn transferir(&mut self, sub_contract: AccountId) -> Promise {
         ext_subcontract::transfer(
             env::signer_account_id(),
-            U128(48982376179746617400000006 - 1412439322253799699999999),                            
+            U128(1000000000000000000),                            
             U128(0),
             None,
             true,
             "NEAR".to_string(),
             sub_contract,
             1,
-            Gas(30_000_000_000_000),
+            Gas(3_000_000_000_000),
         )
     }
 
