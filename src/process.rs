@@ -294,7 +294,7 @@ impl NearP2P {
                     data_contract.contract,
                     env::current_account_id(),
                     0,
-                    Gas(9_000_000_000_000),
+                    Gas(20_000_000_000_000),
                 ));
             } 
 
