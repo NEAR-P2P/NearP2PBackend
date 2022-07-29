@@ -47,6 +47,8 @@ impl NearP2P {
         let index = self.merchant.iter().position(|x| x.user_id == env::signer_account_id()).expect("the user is not in the list of users");
         #[warn(unused_assignments)]
         let contract_name = self.contract_list.get(&env::signer_account_id()).expect("the user does not have a sub contract deployed");
+        
+        require!(contract_name.type_contract != 2, "must have a contract as a deployed merchant");
 
         if asset == "NEAR".to_string() {
             ext_subcontract::block_balance_near(
@@ -327,7 +329,8 @@ impl NearP2P {
         let offer = self.offers_buy.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id()).expect("Offer not found");
         #[warn(unused_assignments)]
         let contract_name = self.contract_list.get(&self.offers_buy[offer].owner_id.clone()).expect("the user does not have a sub contract deployed");
-        
+        require!(contract_name.type_contract != 2, "must have a contract as a deployed merchant");
+
         let contract_ft: Option<AccountId>;
         let ft_token: String;
         
