@@ -44,6 +44,7 @@ impl NearP2P {
         , time: i64
         , terms_conditions: String
     ) -> Promise {
+        require!(env::attached_deposit() >= 100000000000000000000000, "you have to deposit a minimum 0.1 Near");
         let index = self.merchant.iter().position(|x| x.user_id == env::signer_account_id()).expect("the user is not in the list of users");
         #[warn(unused_assignments)]
         let contract_name = self.contract_list.get(&env::signer_account_id()).expect("the user does not have a sub contract deployed");

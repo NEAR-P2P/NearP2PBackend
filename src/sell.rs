@@ -44,6 +44,7 @@ impl NearP2P {
         , time: i64
         , terms_conditions: String
     ) -> i128 {
+        require!(env::attached_deposit() >= 100000000000000000000000, "you have to deposit a minimum 0.1 Near");
         self.offer_sell_id += 1;
         let index = self.merchant.iter().position(|x| x.user_id == owner_id).expect("the user is not in the list of users");
         
