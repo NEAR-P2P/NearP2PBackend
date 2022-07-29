@@ -23,8 +23,6 @@ impl NearP2P {
                     self.orders_sell[i].status = 2;
                 }
 
-                self.orders_sell_completed(i);
-
                 let index_offer = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer sell not found");
 
                 #[warn(unused_assignments)]
@@ -57,6 +55,8 @@ impl NearP2P {
                     1,
                     ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
                     self.orders_sell[i].signer_id.clone(),
+                    i,
+                    true,
                     env::current_account_id(),
                     0,
                     GAS_ON_CONFIRMATION,
@@ -112,6 +112,8 @@ impl NearP2P {
                     2,
                     ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
                     self.orders_buy[i].owner_id.clone(),
+                    i,
+                    true,
                     env::current_account_id(),
                     0,
                     BASE_GAS,
@@ -170,6 +172,8 @@ impl NearP2P {
                     1,
                     ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
                     self.orders_sell[i].signer_id.clone(),
+                    i,
+                    false,
                     env::current_account_id(),
                     0,
                     GAS_ON_CONFIRMATION,
@@ -230,6 +234,8 @@ impl NearP2P {
                     2,
                     ContractList{contract: contract.contract.clone(), type_contract: contract.type_contract.clone()},
                     self.orders_buy[i].owner_id.clone(),
+                    i,
+                    false,
                     env::current_account_id(),
                     0,
                     BASE_GAS,
@@ -245,7 +251,7 @@ impl NearP2P {
 
 
     #[private]
-    pub fn on_confirmation(&mut self, order_id: i128, status: i8, order_type: i8, data_contract: ContractList, signer_id: AccountId) {
+    pub fn on_confirmation(&mut self, order_id: i128, status: i8, order_type: i8, data_contract: ContractList, signer_id: AccountId, index_order: usize, confirmacion: bool) {
         let result = promise_result_as_success();
         if result.is_none() {
             env::panic_str("balance is None".as_ref());
@@ -283,6 +289,9 @@ impl NearP2P {
             status: status,
         };
         if order_type == 1 {
+            if confirmacion {
+                self.orders_sell_completed(index_order);
+            }
             self.order_history_sell.push(data);
             if data_contract.type_contract == 2 {
                 ext_subcontract::get_balance_block_total(
@@ -308,6 +317,9 @@ impl NearP2P {
             }
             self.orders_sell.remove(index);
         } else if order_type == 2 {
+            if confirmacion {
+                self.orders_buy_completed(index_order);
+            }
             self.order_history_buy.push(data);
             if status == 4 {
                 let j = self.offers_buy.iter().position(|x| x.offer_id == arreglo[index].offer_id).expect("Offer Sell not found");
@@ -359,20 +371,20 @@ impl NearP2P {
     #[private]
     pub fn orders_sell_completed(&mut self, index_order: usize) {
         let mut index = self.merchant.iter().position(|x| x.user_id == self.orders_sell[index_order].owner_id.clone()).expect("owner not merchant");
-        self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
-        self.merchant[index].percentaje_completion = (self.merchant[index].total_orders as f64 / self.merchant[index].orders_completed as f64) * 100.0;
+        self.merchant[index].orders_completed += 1;
+        self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
         index = self.merchant.iter().position(|x| x.user_id == self.orders_sell[index_order].signer_id.clone()).expect("owner not merchant");
-        self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
-        self.merchant[index].percentaje_completion = (self.merchant[index].total_orders as f64 / self.merchant[index].orders_completed as f64) * 100.0;
+        self.merchant[index].orders_completed += 1;
+        self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
     }
 
     #[private]
     pub fn orders_buy_completed(&mut self, index_order: usize) {
         let mut index = self.merchant.iter().position(|x| x.user_id == self.orders_buy[index_order].owner_id.clone()).expect("owner not merchant");
-        self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
-        self.merchant[index].percentaje_completion = (self.merchant[index].total_orders as f64 / self.merchant[index].orders_completed as f64) * 100.0;
+        self.merchant[index].orders_completed += 1;
+        self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
         index = self.merchant.iter().position(|x| x.user_id == self.orders_buy[index_order].signer_id.clone()).expect("owner not merchant");
-        self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
-        self.merchant[index].percentaje_completion = (self.merchant[index].total_orders as f64 / self.merchant[index].orders_completed as f64) * 100.0;
+        self.merchant[index].orders_completed += 1;
+        self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
     }
 }
