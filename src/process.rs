@@ -360,19 +360,19 @@ impl NearP2P {
     pub fn orders_sell_completed(&mut self, index_order: usize) {
         let mut index = self.merchant.iter().position(|x| x.user_id == self.orders_sell[index_order].owner_id.clone()).expect("owner not merchant");
         self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
-        self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+        self.merchant[index].percentaje_completion = (self.merchant[index].total_orders as f64 / self.merchant[index].orders_completed as f64) * 100.0;
         index = self.merchant.iter().position(|x| x.user_id == self.orders_sell[index_order].signer_id.clone()).expect("owner not merchant");
         self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
-        self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+        self.merchant[index].percentaje_completion = (self.merchant[index].total_orders as f64 / self.merchant[index].orders_completed as f64) * 100.0;
     }
 
     #[private]
     pub fn orders_buy_completed(&mut self, index_order: usize) {
         let mut index = self.merchant.iter().position(|x| x.user_id == self.orders_buy[index_order].owner_id.clone()).expect("owner not merchant");
         self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
-        self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+        self.merchant[index].percentaje_completion = (self.merchant[index].total_orders as f64 / self.merchant[index].orders_completed as f64) * 100.0;
         index = self.merchant.iter().position(|x| x.user_id == self.orders_buy[index_order].signer_id.clone()).expect("owner not merchant");
         self.merchant[index].orders_completed = self.merchant[index].orders_completed + 1;
-        self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+        self.merchant[index].percentaje_completion = (self.merchant[index].total_orders as f64 / self.merchant[index].orders_completed as f64) * 100.0;
     }
 }
