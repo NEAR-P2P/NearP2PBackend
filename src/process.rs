@@ -56,7 +56,7 @@ impl NearP2P {
                     2,
                     1,
                     ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
-                    env::signer_account_id(),
+                    self.orders_sell[i].signer_id.clone(),
                     env::current_account_id(),
                     0,
                     GAS_ON_CONFIRMATION,
@@ -111,7 +111,7 @@ impl NearP2P {
                     2,
                     2,
                     ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
-                    env::signer_account_id(),
+                    self.orders_buy[i].owner_id.clone(),
                     env::current_account_id(),
                     0,
                     BASE_GAS,
@@ -141,7 +141,7 @@ impl NearP2P {
                 }
 
                 #[warn(unused_assignments)]
-                let contract_name = self.contract_list.get(&self.orders_sell[i].owner_id).expect("the user does not have a sub contract deployed");
+                let contract_name = self.contract_list.get(&self.orders_sell[i].signer_id).expect("the user does not have a sub contract deployed");
 
                 match self.offers_sell[j].asset.as_str(){
                     "NEAR" => {
@@ -169,7 +169,7 @@ impl NearP2P {
                     4,
                     1,
                     ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
-                    env::signer_account_id(),
+                    self.orders_sell[i].signer_id.clone(),
                     env::current_account_id(),
                     0,
                     GAS_ON_CONFIRMATION,
@@ -229,7 +229,7 @@ impl NearP2P {
                     4,
                     2,
                     ContractList{contract: contract.contract.clone(), type_contract: contract.type_contract.clone()},
-                    env::signer_account_id(),
+                    self.orders_buy[i].owner_id.clone(),
                     env::current_account_id(),
                     0,
                     BASE_GAS,
