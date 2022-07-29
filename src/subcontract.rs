@@ -172,6 +172,17 @@ impl NearP2P {
         }
     }
 
+    pub fn get_subcontract_type(self, user_id: AccountId) -> i8 {
+        let contract = self.contract_list.get(&user_id);
+        if contract.is_some() {
+            contract.unwrap().type_contract
+        } else if contract.is_none() {
+            0
+        } else {
+            0
+        }
+    }
+
 
     #[payable]
     pub fn delete_contract(&mut self) {
