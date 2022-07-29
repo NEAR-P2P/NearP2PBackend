@@ -48,7 +48,7 @@ impl NearP2P {
         #[warn(unused_assignments)]
         let contract_name = self.contract_list.get(&env::signer_account_id()).expect("the user does not have a sub contract deployed");
         
-        require!(contract_name.type_contract != 2, "must have a contract as a deployed merchant");
+        require!(contract_name.type_contract != 2, "must have a deployed a merchant contract");
 
         if asset == "NEAR".to_string() {
             ext_subcontract::block_balance_near(
