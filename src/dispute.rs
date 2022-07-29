@@ -128,7 +128,7 @@ impl NearP2P {
                             ft_token,
                             contract_name.contract.clone(),
                             2,
-                            BASE_GAS,
+                            GAS_FOR_TRANSFER,
                         ).then(int_process::on_confirmation(
                             self.orders_sell[i].order_id,
                             2,
@@ -176,7 +176,7 @@ impl NearP2P {
                             ft_token,
                             contract_name.contract.clone(),
                             2,
-                            BASE_GAS,
+                            GAS_FOR_TRANSFER,
                         ).then(int_process::on_confirmation(
                             self.orders_buy[i].order_id,
                             2,
@@ -225,7 +225,7 @@ impl NearP2P {
                             ft_token,
                             contract_name.contract.clone(),
                             1,
-                            BASE_GAS,
+                            GAS_FOR_TRANSFER,
                         ).then(int_process::on_confirmation(
                             self.orders_sell[i].order_id,
                             4,
@@ -269,7 +269,7 @@ impl NearP2P {
                             ft_token,
                             contract_name.contract.clone(),
                             1,
-                            BASE_GAS,
+                            GAS_FOR_TRANSFER,
                         ).then(int_process::on_confirmation(
                             self.orders_buy[i].order_id,
                             4,
