@@ -206,6 +206,24 @@ impl NearP2P {
         ));
     }
 
+    
+    pub fn delete_contract_admin(&mut self, user_id: AccountId) {
+        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
+
+        let contract = self.contract_list.get(&user_id).expect("the user does not have contract deployed");
+        ext_subcontract::get_balance_block_total(
+            contract.contract.clone(),
+            0,
+            BASE_GAS,
+        ).then(int_sub_contract::on_delete_contract(
+            env::signer_account_id(),
+            contract.contract.clone(),
+            env::current_account_id(),
+            0,
+            Gas(30_000_000_000_000),
+        ));
+    }
+
     #[private]
     pub fn on_delete_contract(&mut self, signer_id: AccountId, sub_contract: AccountId) {
         let result = promise_result_as_success();
