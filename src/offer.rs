@@ -3,16 +3,7 @@ use crate::*;
 
 #[near_bindgen]
 impl NearP2P {
-    pub fn desplegar(&mut self) {
-        //let contract_name: AccountId = AccountId::new_unchecked(self.contract_list.get(&env::signer_account_id()).expect("the user does not have a sub contract deployed").to_string());
-        /*ext_subcontract::block_balance_token(
-            AccountId::new_unchecked(CONTRACT_USDC.to_string()),
-            "USDC".to_string(),
-            U128(1000000),
-            contract_name,
-            0,
-            Gas(30_000_000_000_000),
-        )*/
+    /*pub fn desplegar(&mut self) {
         let signer: AccountId = AccountId::new_unchecked(env::signer_account_id().as_str().split('.').collect::<Vec<&str>>()[0].to_string());
         let subaccount_id: AccountId = AccountId::new_unchecked(
         format!("2{}.{}", signer, env::current_account_id())
@@ -66,18 +57,7 @@ impl NearP2P {
             1,
             BASE_GAS,
         )
-        /*ext_subcontract::transfer(
-            env::signer_account_id(),
-            U128(1000000000000000000000000u128),
-            U128(1000000000000),
-            Some(AccountId::new_unchecked(CONTRACT_USDC.to_string())),
-            false,
-            "USDC".to_string(),
-            sub_contract,
-            2,
-            Gas(8_000_000_000_000),
-        )*/
-    }
+    }*/
 
     
     /// accept offer into the contract
