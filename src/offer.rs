@@ -122,10 +122,6 @@ impl NearP2P {
                     ));
                 }, 
                 "USDC" => {
-                    let result = promise_result_as_success();
-                    if result.is_none() {
-                        env::panic_str("Failed to activate token".as_ref());
-                    }
                     ext_subcontract::block_balance_token(
                         AccountId::new_unchecked(CONTRACT_USDC.to_string()),
                         "USDC".to_string(),

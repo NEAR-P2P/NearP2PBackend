@@ -197,13 +197,13 @@ impl NearP2P {
 
     #[private]
     pub fn on_delete_contract(&mut self, signer_id: AccountId, sub_contract: AccountId) {
-        let result = promise_result_as_success();
+        /*let result = promise_result_as_success();
         if result.is_none() {
             env::panic_str("Error check balance blocked".as_ref());
         }
         let balance_block = near_sdk::serde_json::from_slice::<u128>(&result.unwrap()).expect("u128");
         require!(balance_block <= 0, "You still have operations in progress, finish all the operations to be able to delete the contract");
-        
+        */
         ext_subcontract::delete_contract(
             sub_contract.clone(),
             0,
