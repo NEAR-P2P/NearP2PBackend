@@ -141,7 +141,7 @@ impl NearP2P {
                 }
 
                 #[warn(unused_assignments)]
-                let contract_name = self.contract_list.get(&self.orders_sell[i].signer_id).expect("the user does not have a sub contract deployed");
+                let contract_name = self.contract_list.get(&self.orders_sell[i].owner_id).expect("the user does not have a sub contract deployed");
 
                 match self.offers_sell[j].asset.as_str(){
                     "NEAR" => {
@@ -284,7 +284,7 @@ impl NearP2P {
         };
         if order_type == 1 {
             self.order_history_sell.push(data);
-                if data_contract.type_contract == 2 {
+            if data_contract.type_contract == 2 {
                 ext_subcontract::get_balance_block_total(
                     data_contract.contract.clone(),
                     0,
