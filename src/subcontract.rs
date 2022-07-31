@@ -216,7 +216,7 @@ impl NearP2P {
             0,
             BASE_GAS,
         ).then(int_sub_contract::on_delete_contract(
-            env::signer_account_id(),
+            user_id,
             contract.contract.clone(),
             env::current_account_id(),
             0,
