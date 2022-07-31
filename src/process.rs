@@ -78,8 +78,6 @@ impl NearP2P {
                     self.orders_buy[i].status = 2;
                 }
 
-                self.orders_buy_completed(i);
-
                 let index_offer = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer buy not found");
 
                 #[warn(unused_assignments)]
@@ -289,7 +287,7 @@ impl NearP2P {
             status: status,
         };
         if order_type == 1 {
-            if confirmacion {
+            if confirmacion == true {
                 self.orders_sell_completed(index_order);
             }
             self.order_history_sell.push(data);
@@ -317,7 +315,7 @@ impl NearP2P {
             }
             self.orders_sell.remove(index);
         } else if order_type == 2 {
-            if confirmacion {
+            if confirmacion  == true {
                 self.orders_buy_completed(index_order);
             }
             self.order_history_buy.push(data);

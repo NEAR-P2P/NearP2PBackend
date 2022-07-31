@@ -101,8 +101,6 @@ impl NearP2P {
                             self.orders_sell[i].status = 2;
                         }
                         
-                        self.orders_sell_completed(i);
-                        
                         let index_offer = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer sell not found");
         
                         #[warn(unused_assignments)]
@@ -150,8 +148,6 @@ impl NearP2P {
                         if self.orders_buy[i].status == 1 {
                             self.orders_buy[i].status = 2;
                         }
-        
-                        self.orders_buy_completed(i);
         
                         let index_offer = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer buy not found");
         
