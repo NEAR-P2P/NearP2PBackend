@@ -1008,7 +1008,9 @@ fn search_offer(data: Vec<OfferObject>,
     }
 
     if amount.is_some() {
-        if asset.is_some() {
+        result = result.iter().filter(|x| x.amount >= amount.unwrap().0)
+                .map(|r| r.clone()).collect();
+        /*if asset.is_some() {
             if asset.as_ref().unwrap().to_string() == "NEAR" {
                 let monto: u128 = (amount.unwrap().0 * 1000000000000000000000000) as u128;
                 result = result.iter().filter(|x| x.amount >= monto)
@@ -1017,7 +1019,7 @@ fn search_offer(data: Vec<OfferObject>,
                 result = result.iter().filter(|x| x.amount >= amount.unwrap().0)
                         .map(|r| r.clone()).collect();
             }
-        }
+        }*/
     }
 
     SearchOfferObject {
