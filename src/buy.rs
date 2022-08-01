@@ -5,7 +5,7 @@ use crate::*;
 impl NearP2P {
     /// Returns the order object loaded in contract
     /// Params: campo: String, valor: String
-    pub fn get_offers_buy(self, amount: Option<U128>,
+    pub fn get_offers_buy(self, amount: Option<u128>,
         fiat_method: Option<i128>,
         payment_method: Option<i128>,
         is_merchant: Option<bool>,

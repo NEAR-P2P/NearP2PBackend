@@ -950,7 +950,7 @@ impl NearP2P {
 
 
 fn search_offer(data: Vec<OfferObject>,
-    amount: Option<U128>,
+    amount: Option<u128>,
     fiat_method: Option<i128>,
     payment_method: Option<i128>,
     is_merchant: Option<bool>,
@@ -976,10 +976,6 @@ fn search_offer(data: Vec<OfferObject>,
 
     if signer_id.is_some() {
         result = result.iter().filter(|x| x.owner_id != AccountId::new_unchecked(signer_id.as_ref().unwrap().to_string()))
-                    .map(|r| r.clone()).collect();
-    }
-    if amount.is_some() {
-        result = result.iter().filter(|x| x.amount >= amount.unwrap().0)
                     .map(|r| r.clone()).collect();
     }
     if fiat_method.is_some() {
@@ -1008,6 +1004,11 @@ fn search_offer(data: Vec<OfferObject>,
     }
     if asset.is_some() {
         result = result.iter().filter(|x| x.asset == asset.as_ref().unwrap().to_string())
+                    .map(|r| r.clone()).collect();
+    }
+
+    if amount.is_some() {
+        result = result.iter().filter(|x| x.amount >= amount.unwrap())
                     .map(|r| r.clone()).collect();
     }
 
@@ -1101,6 +1102,11 @@ fn search_order_history(data: Vec<OrderObject>,
     let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
     assert_ne!(limit, 0, "Cannot provide limit of 0.");
 
+    if status.is_some() {
+        result = data.iter().filter(|s| s.status == status.unwrap())
+                .map(|s| s.clone()).collect();
+    }
+
     if user_id.is_some() {
         let user = user_id.unwrap().clone();
         result = data.iter().filter(|s| s.owner_id == AccountId::new_unchecked(user.to_string()) || s.signer_id == AccountId::new_unchecked(user.to_string()))
@@ -1110,12 +1116,7 @@ fn search_order_history(data: Vec<OrderObject>,
     if order_id.is_some() {
         result = data.iter().filter(|s| s.order_id == order_id.unwrap())
                 .map(|s| s.clone()).collect();
-    }
-
-    if status.is_some() {
-        result = data.iter().filter(|s| s.status == status.unwrap())
-                .map(|s| s.clone()).collect();
-    }
+    } 
 
     if asset.is_some() {
         result = data.iter().filter(|s| s.asset == asset.as_ref().unwrap().clone())
