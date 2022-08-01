@@ -950,7 +950,7 @@ impl NearP2P {
 
 
 fn search_offer(data: Vec<OfferObject>,
-    amount: Option<u128>,
+    amount: Option<U128>,
     fiat_method: Option<i128>,
     payment_method: Option<i128>,
     is_merchant: Option<bool>,
@@ -1008,8 +1008,16 @@ fn search_offer(data: Vec<OfferObject>,
     }
 
     if amount.is_some() {
-        result = result.iter().filter(|x| x.amount >= amount.unwrap())
-                    .map(|r| r.clone()).collect();
+        if asset.is_some() {
+            if asset.as_ref().unwrap().to_string() == "NEAR" {
+                let monto = amount.unwrap().0 * 1000000000000000000000000;
+                result = result.iter().filter(|x| x.amount >= monto)
+                        .map(|r| r.clone()).collect();
+            } else {
+                result = result.iter().filter(|x| x.amount >= amount.unwrap().0)
+                        .map(|r| r.clone()).collect();
+            }
+        }
     }
 
     SearchOfferObject {
