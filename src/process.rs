@@ -250,6 +250,7 @@ impl NearP2P {
 
     #[private]
     pub fn on_confirmation(&mut self, order_id: i128, status: i8, order_type: i8, data_contract: ContractList, signer_id: AccountId, index_order: usize, confirmacion: bool) {
+        require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         let result = promise_result_as_success();
         if result.is_none() {
             env::panic_str("balance is None".as_ref());
@@ -333,6 +334,7 @@ impl NearP2P {
 
     #[private]
     pub fn on_delete_contract_user(&mut self, signer_id: AccountId, sub_contract: AccountId) {
+        require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         let result = promise_result_as_success();
         if result.is_none() {
             env::panic_str("Error check balance blocked".as_ref());
@@ -359,6 +361,7 @@ impl NearP2P {
 
     #[private]
     pub fn on_delete_contract_list_user(&mut self, signer_id: AccountId) {
+        require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         let result = promise_result_as_success();
         if result.is_none() {
             env::panic_str("Error al eliminar la cuenta".as_ref());
@@ -367,7 +370,7 @@ impl NearP2P {
     }
 
     #[private]
-    pub fn orders_sell_completed(&mut self, index_order: usize) {
+    fn orders_sell_completed(&mut self, index_order: usize) {
         let mut index = self.merchant.iter().position(|x| x.user_id == self.orders_sell[index_order].owner_id.clone()).expect("owner not merchant");
         self.merchant[index].orders_completed += 1;
         self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
@@ -377,7 +380,7 @@ impl NearP2P {
     }
 
     #[private]
-    pub fn orders_buy_completed(&mut self, index_order: usize) {
+    fn orders_buy_completed(&mut self, index_order: usize) {
         let mut index = self.merchant.iter().position(|x| x.user_id == self.orders_buy[index_order].owner_id.clone()).expect("owner not merchant");
         self.merchant[index].orders_completed += 1;
         self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;

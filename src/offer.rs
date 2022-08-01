@@ -194,7 +194,7 @@ impl NearP2P {
         , payment_method: i128
         , datetime: String
         , rate: f64
-    ) { 
+    ) {
         require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         let result = promise_result_as_success();
        

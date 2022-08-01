@@ -112,6 +112,7 @@ impl NearP2P {
         , time: i64
         , terms_conditions: String
     ) -> i128 {
+        require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         let result = promise_result_as_success();
         if result.is_none() {
             env::panic_str("Error bloquear balance token".as_ref());

@@ -128,6 +128,7 @@ impl NearP2P {
     
     #[private]
     pub fn on_listar_token_activo(&mut self, signer_id: AccountId, ft_token: String) {
+        require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         let result = promise_result_as_success();
         if result.is_none() {
             env::panic_str("Error activate ft_token".as_ref());
@@ -226,6 +227,7 @@ impl NearP2P {
 
     #[private]
     pub fn on_delete_contract(&mut self, signer_id: AccountId, sub_contract: AccountId) {
+        require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         /*let result = promise_result_as_success();
         if result.is_none() {
             env::panic_str("Error check balance blocked".as_ref());
@@ -249,6 +251,7 @@ impl NearP2P {
 
     #[private]
     pub fn on_delete_contract_list(&mut self, signer_id: AccountId) {
+        require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         let result = promise_result_as_success();
         if result.is_none() {
             env::panic_str("Error al eliminar la cuenta".as_ref());
