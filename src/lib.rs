@@ -1114,23 +1114,23 @@ fn search_order_history(data: Vec<OrderObject>,
     assert_ne!(limit, 0, "Cannot provide limit of 0.");
 
     if status.is_some() {
-        result = data.iter().filter(|s| s.status == status.unwrap())
+        result = result.iter().filter(|s| s.status == status.unwrap())
                 .map(|s| s.clone()).collect();
     }
 
     if user_id.is_some() {
         let user = user_id.unwrap().clone();
-        result = data.iter().filter(|s| s.owner_id == AccountId::new_unchecked(user.to_string()) || s.signer_id == AccountId::new_unchecked(user.to_string()))
+        result = result.iter().filter(|s| s.owner_id == AccountId::new_unchecked(user.to_string()) || s.signer_id == AccountId::new_unchecked(user.to_string()))
                 .map(|s| s.clone()).collect();
     }
 
     if order_id.is_some() {
-        result = data.iter().filter(|s| s.order_id == order_id.unwrap())
+        result = result.iter().filter(|s| s.order_id == order_id.unwrap())
                 .map(|s| s.clone()).collect();
     } 
 
     if asset.is_some() {
-        result = data.iter().filter(|s| s.asset == asset.as_ref().unwrap().clone())
+        result = result.iter().filter(|s| s.asset == asset.as_ref().unwrap().clone())
                 .map(|s| s.clone()).collect();
     }
 
