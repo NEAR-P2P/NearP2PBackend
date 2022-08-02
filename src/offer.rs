@@ -98,7 +98,7 @@ impl NearP2P {
                             , rate
                             , env::current_account_id()
                             , 0
-                            , BASE_GAS
+                            , GAS_ON_ACCEPT_OFFER_SELL
                     ));
                 }, 
                 "USDC" => {
@@ -118,7 +118,7 @@ impl NearP2P {
                             , rate
                             , env::current_account_id()
                             , 0
-                            , BASE_GAS
+                            , GAS_ON_ACCEPT_OFFER_SELL
                     ));
                 },
                 _=> env::panic_str("The requested asset does not exist")
