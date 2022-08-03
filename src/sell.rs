@@ -162,7 +162,7 @@ impl NearP2P {
             &json!({
                 "type": "delete_offers_sell",
                 "params": {
-                    "offer_id": offer_id,
+                    "offer_id": offer_id.to_string(),
                 }
             }).to_string(),
         );
