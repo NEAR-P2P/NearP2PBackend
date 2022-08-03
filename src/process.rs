@@ -101,7 +101,7 @@ impl NearP2P {
                 if self.orders_buy[i].status == 1 {
                     status = 2;
                 }
-
+                
                 let index_offer = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer buy not found");
 
                 #[warn(unused_assignments)]

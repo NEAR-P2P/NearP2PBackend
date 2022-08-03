@@ -19,11 +19,31 @@ impl NearP2P {
                 if self.orders_sell[i].owner_id == env::signer_account_id() {
                     self.orders_sell[i].status = 3;
                     self.orders_sell[i].confirmation_owner_id = 2;
-                    env::log_str("Order sell in dispute");
+                    env::log_str(
+                        &json!({
+                            "type": "order_dispute_owner",
+                            "params": {
+                                "offer_type": offer_type,
+                                "order_id": order_id,
+                                "confirmation_owner_id": 2,
+                                "status": self.orders_sell[i].status,
+                            }
+                        }).to_string(),
+                    );
                 } else if self.orders_sell[i].signer_id == env::signer_account_id() {
                     self.orders_sell[i].status = 3;
                     self.orders_sell[i].confirmation_signer_id = 2;
-                    env::log_str("Order sell in dispute");
+                    env::log_str(
+                        &json!({
+                            "type": "order_dispute_signer",
+                            "params": {
+                                "offer_type": offer_type,
+                                "order_id": order_id,
+                                "confirmation_signer_id": 2,
+                                "status": self.orders_sell[i].status,
+                            }
+                        }).to_string(),
+                    );
                 } else {
                     env::panic_str("Server internar error, signer not found");  
                 }
@@ -36,11 +56,31 @@ impl NearP2P {
                 if self.orders_buy[i].owner_id == env::signer_account_id() {
                     self.orders_buy[i].status = 3;
                     self.orders_buy[i].confirmation_owner_id = 2;
-                    env::log_str("Order buy in dispute");
+                    env::log_str(
+                        &json!({
+                            "type": "order_dispute_owner",
+                            "params": {
+                                "offer_type": offer_type,
+                                "order_id": order_id,
+                                "confirmation_owner_id": 2,
+                                "status": self.orders_buy[i].status,
+                            }
+                        }).to_string(),
+                    );
                 } else if self.orders_buy[i].signer_id == env::signer_account_id() {
                     self.orders_buy[i].status = 3;
                     self.orders_buy[i].confirmation_signer_id = 2;
-                    env::log_str("Order buy in dispute");
+                    env::log_str(
+                        &json!({
+                            "type": "order_dispute_signer",
+                            "params": {
+                                "offer_type": offer_type,
+                                "order_id": order_id,
+                                "confirmation_signer_id": 2,
+                                "status": self.orders_buy[i].status,
+                            }
+                        }).to_string(),
+                    );
                 } else {
                     env::panic_str("Server internar error, signer not found");  
                 }
