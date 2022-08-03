@@ -2,7 +2,7 @@ use crate::*;
 
 #[ext_contract(int_sub_contract)]
 trait IntSubContract {
-    fn on_ft_balance_of(&mut self);
+    //fn on_ft_balance_of(&mut self);
 
     fn on_delete_contract(&mut self,
         signer_id: AccountId,

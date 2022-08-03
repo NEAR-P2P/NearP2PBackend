@@ -23,7 +23,8 @@ Develop by GlobalDv @2022
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use serde::Serialize;
 use serde::Deserialize;
-use near_sdk::{env, near_bindgen, AccountId, Promise, assert_one_yocto, ext_contract, Gas, promise_result_as_success, require}; // json_types::U128, 
+use near_sdk::{env, near_bindgen, AccountId, Promise, assert_one_yocto, ext_contract, Gas, promise_result_as_success, require,
+                serde_json::json}; // json_types::U128, 
 use near_sdk::json_types::U128;
 use std::collections::HashMap;
 //near_sdk::setup_alloc!();
@@ -332,7 +333,7 @@ impl Default for NearP2P {
 /// Implementing Struct
 #[near_bindgen]
 impl NearP2P {
-    pub fn prueba_balance(&mut self, account_id: String) -> Promise {
+    /*pub fn prueba_balance(&mut self, account_id: String) -> Promise {
         let nft_contract: AccountId = CONTRACT_USDC.parse().unwrap();
         let gas_internal: Gas = Gas(1_000_000_000_000);
         ext_usdc::ft_balance_of(
@@ -356,7 +357,7 @@ impl NearP2P {
         }
         let ret = near_sdk::serde_json::from_slice::<String>(&result.unwrap()).expect("balance is None");
         return ret;
-    }
+    }*/
 
     
    
@@ -466,7 +467,23 @@ impl NearP2P {
         };
         self.merchant.push(data2);
        // set_merchant(user_id: user_id.to_string(), total_orders: 0, orders_completed: 0 , badge: "".to_string());
-        env::log_str("User Created");
+        env::log_str(
+            &json!({
+                "type": "set_user",
+                "params": {
+                    "user_id": env::signer_account_id().to_string(),
+                    "name": name.to_string(),
+                    "last_name": last_name.to_string(),
+                    "phone": phone.to_string(),
+                    "email": email.to_string(),
+                    "country": country.to_string(),
+                    "mediator": false,
+                    "is_active": true,
+                    "badge": "".to_string(),
+                    "is_merchant": false,
+                }
+            }).to_string(),
+        );
         env::signer_account_id().to_string().to_string()
     }
     
@@ -478,18 +495,31 @@ impl NearP2P {
         , phone: String
         , email: String
         , country: String) {
-        for i in 0..self.users.len() {
-            if self.users[i].user_id == env::signer_account_id().to_string() {
-                self.users[i].name = name.to_string();
-                self.users[i].last_name = last_name.to_string();
-                self.users[i].phone = phone.to_string();
-                self.users[i].email = email.to_string();
-                self.users[i].country = country.to_string();
-                self.users[i].mediator = self.users[i].mediator;
-                self.users[i].is_active = self.users[i].is_active;
-            }
-        }
-        env::log_str("User Updated");
+        
+        let i = self.users.iter().position(|x| x.user_id == env::signer_account_id().to_string()).expect("user does not exist");
+        self.users[i].name = name.to_string();
+        self.users[i].last_name = last_name.to_string();
+        self.users[i].phone = phone.to_string();
+        self.users[i].email = email.to_string();
+        self.users[i].country = country.to_string();
+        self.users[i].mediator = self.users[i].mediator;
+        self.users[i].is_active = self.users[i].is_active;
+            
+        env::log_str(
+            &json!({
+                "type": "put_user",
+                "params": {
+                    "user_id": env::signer_account_id().to_string(),
+                    "name": name.to_string(),
+                    "last_name": last_name.to_string(),
+                    "phone": phone.to_string(),
+                    "email": email.to_string(),
+                    "country": country.to_string(),
+                    "mediator": self.users[i].mediator,
+                    "is_active": self.users[i].is_active,
+                }
+            }).to_string(),
+        );
     }
 
     pub fn put_users(&mut self, user_id: AccountId
@@ -502,7 +532,7 @@ impl NearP2P {
         , is_active: bool
     ) {
         self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
-        let i = self.users.iter().position(|x| x.user_id == user_id.to_string()).expect("the user is not in the list of users");
+        let i = self.users.iter().position(|x| x.user_id == user_id.to_string()).expect("user does not exist");
         self.users[i].name = name.to_string();
         self.users[i].last_name = last_name.to_string();
         self.users[i].phone = phone.to_string();
@@ -511,7 +541,21 @@ impl NearP2P {
         self.users[i].mediator = mediator;
         self.users[i].is_active = is_active;
                             
-        env::log_str("User Updated");
+        env::log_str(
+            &json!({
+                "type": "put_users",
+                "params": {
+                    "user_id": user_id.to_string(),
+                    "name": name.to_string(),
+                    "last_name": last_name.to_string(),
+                    "phone": phone.to_string(),
+                    "email": email.to_string(),
+                    "country": country.to_string(),
+                    "mediator": mediator,
+                    "is_active": is_active,
+                }
+            }).to_string(),
+        );
     }
 
     /// Returns the merchant object loaded in contract
@@ -564,7 +608,19 @@ impl NearP2P {
         self.merchant[i].badge = badge.to_string();
         self.merchant[i].is_merchant = is_merchant;
 
-        env::log_str("Merchant Updated");
+        env::log_str(
+            &json!({
+                "type": "put_merchant",
+                "params": {
+                    "user_id": user_id.to_string(),
+                    "total_orders": total_orders,
+                    "orders_completed": orders_completed,
+                    "percentaje_completion": self.merchant[i].percentaje_completion,
+                    "badge": badge.to_string(),
+                    "is_merchant": is_merchant,
+                }
+            }).to_string(),
+        );
     }
 
 
@@ -608,15 +664,28 @@ impl NearP2P {
         self.payment_method_id += 1;
         let data = PaymentMethodsObject {
             id: self.payment_method_id,
-            payment_method: payment_method,
-            input1: input1,
-            input2: input2,
-            input3: input3,
-            input4: input4,
-            input5: input5,
+            payment_method: payment_method.clone(),
+            input1: input1.clone(),
+            input2: input2.clone(),
+            input3: input3.clone(),
+            input4: input4.clone(),
+            input5: input5.clone(),
         };
+        env::log_str(
+            &json!({
+                "type": "set_payment_method",
+                "params": {
+                    "id": self.payment_method_id,
+                    "payment_method": payment_method.clone(),
+                    "input1": input1.clone(),
+                    "input2": input2.clone(),
+                    "input3": input3.clone(),
+                    "input4": input4.clone(),
+                    "input5": input5.clone(),
+                }
+            }).to_string(),
+        );
         self.payment_method.push(data);
-        env::log_str("Payment Method Created");
         self.payment_method_id
     }
 
@@ -654,7 +723,20 @@ impl NearP2P {
                 self.payment_method_user[i].desc5 = input5.to_string();
             }
         }
-        env::log_str("Payment Method Update");
+        env::log_str(
+            &json!({
+                "type": "put_payment_method",
+                "params": {
+                    "id": id,
+                    "payment_method": payment_method.to_string(),
+                    "input1": input1.to_string(),
+                    "input2": input2.to_string(),
+                    "input3": input3.to_string(),
+                    "input4": input4.to_string(),
+                    "input5": input5.to_string(),
+                }
+            }).to_string(),
+        );
         //self.merchant.get(0).unwrap().user_id.clone()
         //self.payment_method
     }
@@ -663,19 +745,20 @@ impl NearP2P {
     /// Params: id: i128
     pub fn delete_payment_method(&mut self, id: i128) {
         self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
-        for i in 0..self.payment_method.len() {
-            if self.payment_method.get(i).unwrap().id == id {
-                self.payment_method.remove(i);
-                break;
-            }
-        }
-        for i in 0..self.payment_method_user.len() {
-            if self.payment_method_user.get(i).unwrap().payment_method_id == id {
-                self.payment_method_user.remove(i);
-                break;
-            }
-        }
-        env::log_str("Payment Method Delete");
+        let mut index = self.payment_method.iter().position(|x| x.id == id).expect("Payment method does not exist");
+        self.payment_method.remove(index);
+            
+        index = self.payment_method_user.iter().position(|x| x.payment_method_id == id).expect("Payment method does not exist");
+        self.payment_method_user.remove(index);
+            
+        env::log_str(
+            &json!({
+                "type": "delete_payment_method",
+                "params": {
+                    "id": id,
+                }
+            }).to_string(),
+        );
         //self.merchant.get(0).unwrap().user_id.clone()
         //self.payment_method
     }
@@ -711,11 +794,20 @@ impl NearP2P {
         self.fiat_method_id += 1;
         let data = FiatMethodsObject {
             id: self.fiat_method_id,
-            fiat_method: fiat_method,
-            flagcdn: flagcdn,
+            fiat_method: fiat_method.clone(),
+            flagcdn: flagcdn.clone(),
         };
+        env::log_str(
+            &json!({
+                "type": "set_fiat_method",
+                "params": {
+                    "id": self.fiat_method_id,
+                    "fiat_method": fiat_method.clone(),
+                    "flagcdn": flagcdn.clone(),
+                }
+            }).to_string(),
+        );
         self.fiat_method.push(data);
-        env::log_str("Fiat Method Created");
         self.fiat_method_id
     }
 
@@ -725,26 +817,37 @@ impl NearP2P {
         , fiat_method: String, flagcdn: String
     ) {
         self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
-        for i in 0..self.fiat_method.len() {
-            if self.fiat_method.get(i).unwrap().id == id {
-                self.fiat_method[i].fiat_method = fiat_method.to_string();
-                self.fiat_method[i].flagcdn = flagcdn.to_string();
-            }
-        }
-        env::log_str("Fiat Method Update");
+        let i = self.fiat_method.iter().position(|x| x.id == id).expect("Fiat method does not exist");
+        self.fiat_method[i].fiat_method = fiat_method.to_string();
+        self.fiat_method[i].flagcdn = flagcdn.to_string();
+        
+        env::log_str(
+            &json!({
+                "type": "put_fiat_method",
+                "params": {
+                    "id": id,
+                    "fiat_method": fiat_method.clone(),
+                    "flagcdn": flagcdn.clone(),
+                }
+            }).to_string(),
+        );
     }
 
     /// Delete the Fiat Method object into the contract
     /// Params: id: i128
     pub fn delete_fiat_method(&mut self, id: i128) {
         self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
-        for i in 0..self.fiat_method.len() {
-            if self.fiat_method.get(i).unwrap().id == id {
-                self.fiat_method.remove(i);
-                break;
-            }
-        }
-        env::log_str("Fiat Method Delete");
+        let i = self.fiat_method.iter().position(|x| x.id == id).expect("Fiat method does not exist");
+        self.fiat_method.remove(i);
+        
+        env::log_str(
+            &json!({
+                "type": "delete_fiat_method",
+                "params": {
+                    "id": id,
+                }
+            }).to_string(),
+        );
     }
 
 
@@ -807,35 +910,52 @@ impl NearP2P {
         , input2: String
         , input3: String
         , input4: String
-        , input5: String) -> String {
-        for i in 0..self.payment_method_user.len() {
-            if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id() {
-                env::panic_str("Repeated payment methods are not allowed");
-            }
-        }
-        for i in 0..self.payment_method.len() {
-            if self.payment_method[i].id == payment_method_id {
-                let data = PaymentMethodUserObject {
-                    user_id: env::signer_account_id(),
-                    payment_method_id: payment_method_id,
-                    payment_method: self.payment_method[i].payment_method.to_string(),
-                    desc1: self.payment_method[i].input1.to_string(),
-                    input1: input1,
-                    desc2: self.payment_method[i].input2.to_string(),
-                    input2: input2,
-                    desc3: self.payment_method[i].input3.to_string(),
-                    input3: input3,
-                    desc4: self.payment_method[i].input4.to_string(),
-                    input4: input4,
-                    desc5: self.payment_method[i].input5.to_string(),
-                    input5: input5,
-                };
-                self.payment_method_user.push(data);
-                env::log_str("Payment Method User Created");
-                return "".to_string();
-            }
-        }
-        env::panic_str("the payment method provided does not exist");
+        , input5: String
+    ) -> String {
+        self.payment_method_user.iter().position(|x| x.payment_method_id == payment_method_id && x.user_id == env::signer_account_id()).expect("Repeated payment methods are not allowed");
+            
+        let index2 = self.payment_method.iter().position(|x| x.id == payment_method_id).expect("Payment method does not exist");
+        
+        let data = PaymentMethodUserObject {
+            user_id: env::signer_account_id(),
+            payment_method_id: payment_method_id,
+            payment_method: self.payment_method[index2].payment_method.to_string(),
+            desc1: self.payment_method[index2].input1.to_string(),
+            input1: input1.clone(),
+            desc2: self.payment_method[index2].input2.to_string(),
+            input2: input2.clone(),
+            desc3: self.payment_method[index2].input3.to_string(),
+            input3: input3.clone(),
+            desc4: self.payment_method[index2].input4.to_string(),
+            input4: input4.clone(),
+            desc5: self.payment_method[index2].input5.to_string(),
+            input5: input5.clone(),
+        };
+
+        env::log_str(
+            &json!({
+                "type": "set_payment_method_user",
+                "params": {
+                    "user_id": env::signer_account_id(),
+                    "payment_method_id": payment_method_id,
+                    "payment_method": self.payment_method[index2].payment_method.to_string(),
+                    "desc1": self.payment_method[index2].input1.to_string(),
+                    "input1": input1.clone(),
+                    "desc2": self.payment_method[index2].input2.to_string(),
+                    "input2": input2.clone(),
+                    "desc3": self.payment_method[index2].input3.to_string(),
+                    "input3": input3.clone(),
+                    "desc4": self.payment_method[index2].input4.to_string(),
+                    "input4": input4.clone(),
+                    "desc5": self.payment_method[index2].input5.to_string(),
+                    "input5": input5.clone(),
+                }
+            }).to_string(),
+        );
+
+        self.payment_method_user.push(data);
+        
+        payment_method_id.to_string()
     }
 
     /// put the Payment Method object into the contract
@@ -844,29 +964,46 @@ impl NearP2P {
         , input2: String
         , input3: String
         , input4: String
-        , input5: String) {
-        for i in 0..self.payment_method_user.len() {
-            if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id() {
-                self.payment_method_user[i].input1 = input1.to_string();
-                self.payment_method_user[i].input2 = input2.to_string();
-                self.payment_method_user[i].input3 = input3.to_string();
-                self.payment_method_user[i].input4 = input4.to_string();
-                self.payment_method_user[i].input5 = input5.to_string();
-                break;
-            }
-        }
-        env::log_str("Payment Method User Update");
+        , input5: String
+    ) {
+        let i = self.payment_method_user.iter().position(|x| x.payment_method_id == payment_method_id && x.user_id == env::signer_account_id()).expect("payment method user does not exist");
+            
+        self.payment_method_user[i].input1 = input1.to_string();
+        self.payment_method_user[i].input2 = input2.to_string();
+        self.payment_method_user[i].input3 = input3.to_string();
+        self.payment_method_user[i].input4 = input4.to_string();
+        self.payment_method_user[i].input5 = input5.to_string();
+            
+        env::log_str(
+            &json!({
+                "type": "put_payment_method_user",
+                "params": {
+                    "user_id": env::signer_account_id(),
+                    "payment_method_id": payment_method_id,
+                    "input1": input1.to_string(),
+                    "input2": input2.to_string(),
+                    "input3": input3.to_string(),
+                    "input4": input4.to_string(),
+                    "input5": input5.to_string(),
+                }
+            }).to_string(),
+        );
     }
 
     /// delete the Payment Method user object into the contract
     pub fn delete_payment_method_user(&mut self, payment_method_id: i128) {
-        for i in 0..self.payment_method_user.len() {
-            if self.payment_method_user.get(i).unwrap().payment_method_id == payment_method_id && self.payment_method_user.get(i).unwrap().user_id == env::signer_account_id() {
-                self.payment_method_user.remove(i);
-                break;
-            }
-        }
-        env::log_str("Payment Method User Delete");
+        let i = self.payment_method_user.iter().position(|x| x.payment_method_id == payment_method_id && x.user_id == env::signer_account_id()).expect("payment method user does not exist");    
+        self.payment_method_user.remove(i);
+            
+        env::log_str(
+            &json!({
+                "type": "delete_payment_method_user",
+                "params": {
+                    "user_id": env::signer_account_id(),
+                    "payment_method_id": payment_method_id,
+                }
+            }).to_string(),
+        );
     }
 
 

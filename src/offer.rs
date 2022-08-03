@@ -160,17 +160,44 @@ impl NearP2P {
                 operation_amount: amount.0,
                 amount_delivered: amount.0 - fee,
                 fee_deducted: fee,
-                payment_method: payment_method,
+                payment_method: payment_method.clone(),
                 fiat_method: self.offers_buy[offer].fiat_method,
                 confirmation_owner_id: 0,
                 confirmation_signer_id: 0,
                 confirmation_current: 0,
                 time: self.offers_buy[offer].time,
-                datetime: datetime,
-                terms_conditions: self.offers_buy[offer].terms_conditions.to_string(),
+                datetime: datetime.clone(),
+                terms_conditions: self.offers_buy[offer].terms_conditions.clone(),
                 status: 1,
             };
             self.orders_buy.push(data);
+
+            env::log_str(
+                &json!({
+                    "type": "accept_offer_buy",
+                    "params": {
+                        "offer_id": offer_id,
+                        "order_id": self.order_buy_id,
+                        "owner_id": self.offers_buy[offer].owner_id.clone(),
+                        "asset": self.offers_buy[offer].asset.clone(),
+                        "signer_id": env::signer_account_id(),
+                        "exchange_rate": rate.to_string(),
+                        "operation_amount": amount.0,
+                        "amount_delivered": amount.0 - fee,
+                        "fee_deducted": fee,
+                        "payment_method": payment_method.clone(),
+                        "fiat_method": self.offers_buy[offer].fiat_method,
+                        "confirmation_owner_id": 0,
+                        "confirmation_signer_id": 0,
+                        "confirmation_current": 0,
+                        "time": self.offers_buy[offer].time,
+                        "datetime": datetime.clone(),
+                        "terms_conditions": self.offers_buy[offer].terms_conditions.clone(),
+                        "status": 1,
+                    }
+                }).to_string(),
+            );
+            
             //actualizar total ordenes owner_id
             let mut index = self.merchant.iter().position(|x| x.user_id == self.offers_buy[offer].owner_id.clone()).expect("owner not merchant");
             self.merchant[index].total_orders += 1;
@@ -179,8 +206,6 @@ impl NearP2P {
             self.merchant[index].total_orders += 1;
             self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
 
-            env::log_str("Offer buy accepted");
-        
         }   else {
             require!(attached_deposit >= 1, "you have to deposit a minimum of one YoctoNear");
             env::panic_str("Invalid offer type");
@@ -237,11 +262,37 @@ impl NearP2P {
             confirmation_signer_id: 0,
             confirmation_current: 0,
             time: self.offers_sell[offer].time,
-            datetime: datetime,
+            datetime: datetime.clone(),
             terms_conditions: self.offers_sell[offer].terms_conditions.to_string(),
             status: 1,
         };
         self.orders_sell.push(data);
+
+        env::log_str(
+            &json!({
+                "type": "accept_offer_sell",
+                "params": {
+                    "offer_id": self.offers_sell[offer].offer_id,
+                    "order_id": self.offers_sell,
+                    "owner_id": self.offers_sell[offer].owner_id.clone(),
+                    "asset": self.offers_sell[offer].asset.clone(),
+                    "signer_id": env::signer_account_id(),
+                    "exchange_rate": rate.to_string(),
+                    "operation_amount": amount.0,
+                    "amount_delivered": amount.0 - fee,
+                    "fee_deducted": fee,
+                    "payment_method": payment_method.clone(),
+                    "fiat_method": self.offers_sell[offer].fiat_method,
+                    "confirmation_owner_id": 0,
+                    "confirmation_signer_id": 0,
+                    "confirmation_current": 0,
+                    "time": self.offers_sell[offer].time,
+                    "datetime": datetime.clone(),
+                    "terms_conditions": self.offers_sell[offer].terms_conditions.clone(),
+                    "status": 1,
+                }
+            }).to_string(),
+        );
         //actualizar total ordenes owner_id
         let mut index = self.merchant.iter().position(|x| x.user_id == self.offers_sell[offer].owner_id.clone()).expect("owner not merchant");
         self.merchant[index].total_orders += 1;
@@ -250,7 +301,5 @@ impl NearP2P {
         self.merchant[index].total_orders += 1;
         self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
         
-            
-        env::log_str("Offer sell accepted");
     }
 }

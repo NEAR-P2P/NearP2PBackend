@@ -33,7 +33,7 @@ impl NearP2P {
     /// min_limit: String, max_limit: String, payment_method_id: String, status: i8
     /// This is a list of offers for buying operations, will be called by the user
     #[payable]
-    pub fn set_offers_buy(&mut self, owner_id: AccountId
+    pub fn set_offers_buy(&mut self
         , asset: String
         , exchange_rate: String
         , amount: U128
@@ -59,7 +59,7 @@ impl NearP2P {
                 GAS_FOR_BLOCK,
             ).then(
                 int_buy::on_set_offers_buy(index
-                , owner_id
+                , env::signer_account_id()
                 , asset
                 , exchange_rate
                 , amount
@@ -83,7 +83,7 @@ impl NearP2P {
                 GAS_FOR_BLOCK,
             ).then(
                 int_buy::on_set_offers_buy(index
-                , owner_id
+                , env::signer_account_id()
                 , asset
                 , exchange_rate
                 , amount
@@ -122,26 +122,51 @@ impl NearP2P {
             self.offer_buy_id += 1;
             let data = OfferObject {
                 offer_id: self.offer_buy_id,
-                owner_id: owner_id,
-                asset: String::from(asset),
-                exchange_rate: String::from(exchange_rate),
+                owner_id: owner_id.clone(),
+                asset: asset.clone(),
+                exchange_rate: exchange_rate.clone(),
                 amount: amount.0,
                 remaining_amount: amount.0,
                 min_limit: min_limit.0,
                 max_limit: max_limit.0,
-                payment_method: payment_method,
+                payment_method: payment_method.clone(),
                 fiat_method: fiat_method,
                 is_merchant: self.merchant[index].is_merchant,
                 time: time,
-                terms_conditions: terms_conditions,
+                terms_conditions: terms_conditions.clone(),
                 status: 1,
             };
+
             self.offers_buy.push(data);
-            env::log_str("Offer Created");
+
+            env::log_str(
+                &json!({
+                    "type": "set_offers_buy",
+                    "params": {
+                        "offer_id": self.offer_buy_id,
+                        "owner_id": owner_id.clone(),
+                        "asset": asset.clone(),
+                        "exchange_rate": exchange_rate.clone(),
+                        "amount": amount.0,
+                        "remaining_amount": amount.0,
+                        "min_limit": min_limit.0,
+                        "max_limit": max_limit.0,
+                        "payment_method": payment_method.clone(),
+                        "fiat_method": fiat_method,
+                        "is_merchant": self.merchant[index].is_merchant,
+                        "time": time,
+                        "terms_conditions": terms_conditions.clone(),
+                        "status": 1,
+                    }
+                }).to_string(),
+            );
+            
             self.offer_buy_id
+
         } else {
             env::panic_str("el balance en la subcuenta es menor al amount suministrado")
         }
+        
     }
 
     /*#[warn(dead_code)]
@@ -369,8 +394,17 @@ impl NearP2P {
         if result.is_none() {
             env::panic_str("Error al eliminar".as_ref());
         }
+        
         self.offers_buy.remove(offer);
-        env::log_str("Offer Buy Delete");
+        
+        env::log_str(
+            &json!({
+                "type": "delete_offers_buy",
+                "params": {
+                    "offer_id": self.offer_buy_id,
+                }
+            }).to_string(),
+        );
     }
 
 }
