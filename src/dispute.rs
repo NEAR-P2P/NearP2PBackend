@@ -23,10 +23,10 @@ impl NearP2P {
                         &json!({
                             "type": "order_dispute_owner",
                             "params": {
-                                "offer_type": offer_type,
-                                "order_id": order_id,
-                                "confirmation_owner_id": 2,
-                                "status": self.orders_sell[i].status,
+                                "offer_type": offer_type.to_string(),
+                                "order_id": order_id.to_string(),
+                                "confirmation_owner_id": "2".to_string(),
+                                "status": self.orders_sell[i].status.to_string(),
                             }
                         }).to_string(),
                     );
@@ -37,10 +37,10 @@ impl NearP2P {
                         &json!({
                             "type": "order_dispute_signer",
                             "params": {
-                                "offer_type": offer_type,
-                                "order_id": order_id,
-                                "confirmation_signer_id": 2,
-                                "status": self.orders_sell[i].status,
+                                "offer_type": offer_type.to_string(),
+                                "order_id": order_id.to_string(),
+                                "confirmation_signer_id": "2".to_string(),
+                                "status": self.orders_sell[i].status.to_string(),
                             }
                         }).to_string(),
                     );
@@ -60,10 +60,10 @@ impl NearP2P {
                         &json!({
                             "type": "order_dispute_owner",
                             "params": {
-                                "offer_type": offer_type,
-                                "order_id": order_id,
-                                "confirmation_owner_id": 2,
-                                "status": self.orders_buy[i].status,
+                                "offer_type": offer_type.to_string(),
+                                "order_id": order_id.to_string(),
+                                "confirmation_owner_id": "2".to_string(),
+                                "status": self.orders_buy[i].status.to_string(),
                             }
                         }).to_string(),
                     );
@@ -74,10 +74,10 @@ impl NearP2P {
                         &json!({
                             "type": "order_dispute_signer",
                             "params": {
-                                "offer_type": offer_type,
-                                "order_id": order_id,
-                                "confirmation_signer_id": 2,
-                                "status": self.orders_buy[i].status,
+                                "offer_type": offer_type.to_string(),
+                                "order_id": order_id.to_string(),
+                                "confirmation_signer_id": "2".to_string(),
+                                "status": self.orders_buy[i].status.to_string(),
                             }
                         }).to_string(),
                     );

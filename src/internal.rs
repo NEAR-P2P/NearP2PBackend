@@ -63,7 +63,7 @@ trait IntBuy {
         , terms_conditions: Option<String>
     );*/
 
-    fn on_delete_offers_buy(&mut self, offer: usize);
+    fn on_delete_offers_buy(&mut self, offer: usize, offer_buy_id: i128);
 }
 
 #[ext_contract(int_offer)]

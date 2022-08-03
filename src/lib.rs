@@ -613,9 +613,9 @@ impl NearP2P {
                 "type": "put_merchant",
                 "params": {
                     "user_id": user_id.to_string(),
-                    "total_orders": total_orders,
-                    "orders_completed": orders_completed,
-                    "percentaje_completion": self.merchant[i].percentaje_completion,
+                    "total_orders": total_orders.to_string(),
+                    "orders_completed": orders_completed.to_string(),
+                    "percentaje_completion": self.merchant[i].percentaje_completion.to_string(),
                     "badge": badge.to_string(),
                     "is_merchant": is_merchant,
                 }
@@ -675,7 +675,7 @@ impl NearP2P {
             &json!({
                 "type": "set_payment_method",
                 "params": {
-                    "id": self.payment_method_id,
+                    "id": self.payment_method_id.to_string(),
                     "payment_method": payment_method.clone(),
                     "input1": input1.clone(),
                     "input2": input2.clone(),
@@ -727,7 +727,7 @@ impl NearP2P {
             &json!({
                 "type": "put_payment_method",
                 "params": {
-                    "id": id,
+                    "id": id.to_string(),
                     "payment_method": payment_method.to_string(),
                     "input1": input1.to_string(),
                     "input2": input2.to_string(),
@@ -755,7 +755,7 @@ impl NearP2P {
             &json!({
                 "type": "delete_payment_method",
                 "params": {
-                    "id": id,
+                    "id": id.to_string(),
                 }
             }).to_string(),
         );
@@ -801,7 +801,7 @@ impl NearP2P {
             &json!({
                 "type": "set_fiat_method",
                 "params": {
-                    "id": self.fiat_method_id,
+                    "id": self.fiat_method_id.to_string(),
                     "fiat_method": fiat_method.clone(),
                     "flagcdn": flagcdn.clone(),
                 }
@@ -825,7 +825,7 @@ impl NearP2P {
             &json!({
                 "type": "put_fiat_method",
                 "params": {
-                    "id": id,
+                    "id": id.to_string(),
                     "fiat_method": fiat_method.clone(),
                     "flagcdn": flagcdn.clone(),
                 }
@@ -844,7 +844,7 @@ impl NearP2P {
             &json!({
                 "type": "delete_fiat_method",
                 "params": {
-                    "id": id,
+                    "id": id.to_string(),
                 }
             }).to_string(),
         );
@@ -937,7 +937,7 @@ impl NearP2P {
                 "type": "set_payment_method_user",
                 "params": {
                     "user_id": env::signer_account_id(),
-                    "payment_method_id": payment_method_id,
+                    "payment_method_id": payment_method_id.to_string(),
                     "payment_method": self.payment_method[index2].payment_method.to_string(),
                     "desc1": self.payment_method[index2].input1.to_string(),
                     "input1": input1.clone(),
@@ -979,7 +979,7 @@ impl NearP2P {
                 "type": "put_payment_method_user",
                 "params": {
                     "user_id": env::signer_account_id(),
-                    "payment_method_id": payment_method_id,
+                    "payment_method_id": payment_method_id.to_string(),
                     "input1": input1.to_string(),
                     "input2": input2.to_string(),
                     "input3": input3.to_string(),
@@ -1000,7 +1000,7 @@ impl NearP2P {
                 "type": "delete_payment_method_user",
                 "params": {
                     "user_id": env::signer_account_id(),
-                    "payment_method_id": payment_method_id,
+                    "payment_method_id": payment_method_id.to_string(),
                 }
             }).to_string(),
         );

@@ -71,7 +71,7 @@ impl NearP2P {
             &json!({
                 "type": "set_offers_sell",
                 "params": {
-                    "offer_id": self.offer_sell_id,
+                    "offer_id": self.offer_sell_id.to_string(),
                     "owner_id": env::signer_account_id(),
                     "asset": asset.clone(),
                     "exchange_rate": exchange_rate.clone(),

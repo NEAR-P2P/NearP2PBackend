@@ -143,7 +143,7 @@ impl NearP2P {
                 &json!({
                     "type": "set_offers_buy",
                     "params": {
-                        "offer_id": self.offer_buy_id,
+                        "offer_id": self.offer_buy_id.to_string(),
                         "owner_id": owner_id.clone(),
                         "asset": asset.clone(),
                         "exchange_rate": exchange_rate.clone(),
@@ -381,6 +381,7 @@ impl NearP2P {
             GAS_FOR_TRANSFER,
         ).then(int_buy::on_delete_offers_buy(
             offer,
+            offer_id,
             env::current_account_id(),
             0,
             BASE_GAS,
@@ -388,7 +389,7 @@ impl NearP2P {
     }
 
     #[private]
-    pub fn on_delete_offers_buy(&mut self, offer: usize) {
+    pub fn on_delete_offers_buy(&mut self, offer: usize, offer_buy_id: i128) {
         require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         let result = promise_result_as_success();
         if result.is_none() {
@@ -401,7 +402,7 @@ impl NearP2P {
             &json!({
                 "type": "delete_offers_buy",
                 "params": {
-                    "offer_id": self.offer_buy_id,
+                    "offer_id": offer_buy_id.to_string(),
                 }
             }).to_string(),
         );

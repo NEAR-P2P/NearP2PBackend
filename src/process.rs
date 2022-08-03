@@ -21,10 +21,10 @@ impl NearP2P {
                     &json!({
                         "type": "order_confirmation_owner",
                         "params": {
-                            "offer_type": offer_type,
-                            "order_id": order_id,
-                            "confirmation_owner_id": 1,
-                            "status": self.orders_sell[i].status,
+                            "offer_type": offer_type.to_string(),
+                            "order_id": order_id.to_string(),
+                            "confirmation_owner_id": "1".to_string(),
+                            "status": self.orders_sell[i].status.to_string(),
                         }
                     }).to_string(),
                 );
@@ -89,10 +89,10 @@ impl NearP2P {
                     &json!({
                         "type": "order_confirmation_signer",
                         "params": {
-                            "offer_type": offer_type,
-                            "order_id": order_id,
-                            "confirmation_signer_id": 1,
-                            "status": self.orders_buy[i].status,
+                            "offer_type": offer_type.to_string(),
+                            "order_id": order_id.to_string(),
+                            "confirmation_signer_id": "1".to_string(),
+                            "status": self.orders_buy[i].status.to_string(),
                         }
                     }).to_string(),
                 );
@@ -101,7 +101,7 @@ impl NearP2P {
                 if self.orders_buy[i].status == 1 {
                     status = 2;
                 }
-                
+
                 let index_offer = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer buy not found");
 
                 #[warn(unused_assignments)]
@@ -218,10 +218,10 @@ impl NearP2P {
                     &json!({
                         "type": "cancel_order_signer",
                         "params": {
-                            "offer_type": offer_type,
-                            "order_id": order_id,
-                            "confirmation_signer_id": 3,
-                            "status": self.orders_sell[i].status,
+                            "offer_type": offer_type.to_string(),
+                            "order_id": order_id.to_string(),
+                            "confirmation_signer_id": "3".to_string(),
+                            "status": self.orders_sell[i].status.to_string(),
                         }
                     }).to_string(),
                 );
@@ -240,10 +240,10 @@ impl NearP2P {
                     &json!({
                         "type": "cancel_order_owner",
                         "params": {
-                            "offer_type": offer_type,
-                            "order_id": order_id,
-                            "confirmation_owner_id": 3,
-                            "status": self.orders_buy[i].status,
+                            "offer_type": offer_type.to_string(),
+                            "order_id": order_id.to_string(),
+                            "confirmation_owner_id": "3".to_string(),
+                            "status": self.orders_buy[i].status.to_string(),
                         }
                     }).to_string(),
                 );
@@ -372,8 +372,8 @@ impl NearP2P {
                 &json!({
                     "type": "on_confirmation_sell",
                     "params": {
-                        "offer_id": arreglo[index].offer_id,
-                        "order_id": arreglo[index].order_id,
+                        "offer_id": arreglo[index].offer_id.to_string(),
+                        "order_id": arreglo[index].order_id.to_string(),
                         "owner_id": arreglo[index].owner_id.clone(),
                         "asset": arreglo[index].asset.clone(),
                         "signer_id": arreglo[index].signer_id.clone(),
@@ -381,15 +381,15 @@ impl NearP2P {
                         "operation_amount": arreglo[index].operation_amount,
                         "amount_delivered": arreglo[index].amount_delivered,
                         "fee_deducted": arreglo[index].fee_deducted,
-                        "payment_method": arreglo[index].payment_method,
-                        "fiat_method": arreglo[index].fiat_method,
-                        "confirmation_owner_id": arreglo[index].confirmation_owner_id,
-                        "confirmation_signer_id": arreglo[index].confirmation_signer_id,
-                        "confirmation_current": arreglo[index].confirmation_current,
-                        "time": arreglo[index].time,
+                        "payment_method": arreglo[index].payment_method.to_string(),
+                        "fiat_method": arreglo[index].fiat_method.to_string(),
+                        "confirmation_owner_id": arreglo[index].confirmation_owner_id.to_string(),
+                        "confirmation_signer_id": arreglo[index].confirmation_signer_id.to_string(),
+                        "confirmation_current": arreglo[index].confirmation_current.to_string(),
+                        "time": arreglo[index].time.to_string(),
                         "datetime": arreglo[index].datetime.clone(),
                         "terms_conditions": arreglo[index].terms_conditions.clone(),
-                        "status": status,
+                        "status": status.to_string(),
                         "confirmacion": confirmacion,
                     }
                 }).to_string(),

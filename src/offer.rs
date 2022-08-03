@@ -176,7 +176,7 @@ impl NearP2P {
                 &json!({
                     "type": "accept_offer_buy",
                     "params": {
-                        "offer_id": offer_id,
+                        "offer_id": offer_id.to_string(),
                         "order_id": self.order_buy_id,
                         "owner_id": self.offers_buy[offer].owner_id.clone(),
                         "asset": self.offers_buy[offer].asset.clone(),
@@ -190,10 +190,10 @@ impl NearP2P {
                         "confirmation_owner_id": 0,
                         "confirmation_signer_id": 0,
                         "confirmation_current": 0,
-                        "time": self.offers_buy[offer].time,
+                        "time": self.offers_buy[offer].time.to_string(),
                         "datetime": datetime.clone(),
                         "terms_conditions": self.offers_buy[offer].terms_conditions.clone(),
-                        "status": 1,
+                        "status": "1".to_string(),
                     }
                 }).to_string(),
             );
@@ -272,7 +272,7 @@ impl NearP2P {
             &json!({
                 "type": "accept_offer_sell",
                 "params": {
-                    "offer_id": self.offers_sell[offer].offer_id,
+                    "offer_id": self.offers_sell[offer].offer_id.to_string(),
                     "order_id": self.offers_sell,
                     "owner_id": self.offers_sell[offer].owner_id.clone(),
                     "asset": self.offers_sell[offer].asset.clone(),
@@ -286,10 +286,10 @@ impl NearP2P {
                     "confirmation_owner_id": 0,
                     "confirmation_signer_id": 0,
                     "confirmation_current": 0,
-                    "time": self.offers_sell[offer].time,
+                    "time": self.offers_sell[offer].time.to_string(),
                     "datetime": datetime.clone(),
                     "terms_conditions": self.offers_sell[offer].terms_conditions.clone(),
-                    "status": 1,
+                    "status": "1".to_string(),
                 }
             }).to_string(),
         );
