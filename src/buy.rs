@@ -137,8 +137,6 @@ impl NearP2P {
                 status: 1,
             };
 
-            self.offers_buy.push(data);
-
             env::log_str(
                 &json!({
                     "type": "set_offers_buy",
@@ -147,20 +145,22 @@ impl NearP2P {
                         "owner_id": owner_id.clone(),
                         "asset": asset.clone(),
                         "exchange_rate": exchange_rate.clone(),
-                        "amount": amount.0,
-                        "remaining_amount": amount.0,
-                        "min_limit": min_limit.0,
-                        "max_limit": max_limit.0,
+                        "amount": amount,
+                        "remaining_amount": amount,
+                        "min_limit": min_limit,
+                        "max_limit": max_limit,
                         "payment_method": payment_method.clone(),
                         "fiat_method": fiat_method,
                         "is_merchant": self.merchant[index].is_merchant,
-                        "time": time,
+                        "time": time.to_string(),
                         "terms_conditions": terms_conditions.clone(),
-                        "status": 1,
+                        "status": "1".to_string(),
                     }
                 }).to_string(),
             );
             
+            self.offers_buy.push(data);
+
             self.offer_buy_id
 
         } else {

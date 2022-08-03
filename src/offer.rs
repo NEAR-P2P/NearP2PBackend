@@ -266,8 +266,8 @@ impl NearP2P {
             terms_conditions: self.offers_sell[offer].terms_conditions.to_string(),
             status: 1,
         };
-        self.orders_sell.push(data);
-
+        
+        let amount_delivered = U128(amount.0 - fee);
         env::log_str(
             &json!({
                 "type": "accept_offer_sell",
@@ -278,14 +278,14 @@ impl NearP2P {
                     "asset": self.offers_sell[offer].asset.clone(),
                     "signer_id": env::signer_account_id(),
                     "exchange_rate": rate.to_string(),
-                    "operation_amount": amount.0,
-                    "amount_delivered": amount.0 - fee,
+                    "operation_amount": amount,
+                    "amount_delivered": amount_delivered,
                     "fee_deducted": fee,
                     "payment_method": payment_method.clone(),
                     "fiat_method": self.offers_sell[offer].fiat_method,
-                    "confirmation_owner_id": 0,
-                    "confirmation_signer_id": 0,
-                    "confirmation_current": 0,
+                    "confirmation_owner_id": "0".to_string(),
+                    "confirmation_signer_id": "0".to_string(),
+                    "confirmation_current": "0".to_string(),
                     "time": self.offers_sell[offer].time.to_string(),
                     "datetime": datetime.clone(),
                     "terms_conditions": self.offers_sell[offer].terms_conditions.clone(),
@@ -293,6 +293,8 @@ impl NearP2P {
                 }
             }).to_string(),
         );
+        self.orders_sell.push(data);
+
         //actualizar total ordenes owner_id
         let mut index = self.merchant.iter().position(|x| x.user_id == self.offers_sell[offer].owner_id.clone()).expect("owner not merchant");
         self.merchant[index].total_orders += 1;
