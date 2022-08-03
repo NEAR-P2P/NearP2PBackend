@@ -90,15 +90,16 @@ impl NearP2P {
         require!(self.disputer == env::signer_account_id(), "Only disputer");
         let contract_ft: Option<AccountId>;
         let ft_token: String;
+        let mut status: i8;
         match confirmation {
             true => {
                 match offer_type {
                     1 => {
                         let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
-                    
-                        self.orders_sell[i].confirmation_current = 1;
+                        
+                        status = self.orders_sell[i].status;
                         if self.orders_sell[i].status == 1 {
-                            self.orders_sell[i].status = 2;
+                            status = 2;
                         }
                         
                         let index_offer = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer sell not found");
@@ -129,12 +130,15 @@ impl NearP2P {
                             GAS_FOR_TRANSFER,
                         ).then(int_process::on_confirmation(
                             self.orders_sell[i].order_id,
-                            2,
+                            status,
                             1,
                             ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
                             self.orders_sell[i].signer_id.clone(),
                             i,
                             false,
+                            self.orders_sell[i].confirmation_owner_id,
+                            self.orders_sell[i].confirmation_signer_id,
+                            1,
                             env::current_account_id(),
                             0,
                             BASE_GAS,
@@ -144,9 +148,9 @@ impl NearP2P {
                     2 => {
                         let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order buy not found");
                         
-                        self.orders_buy[i].confirmation_current = 1;
+                        status = self.orders_buy[i].status;
                         if self.orders_buy[i].status == 1 {
-                            self.orders_buy[i].status = 2;
+                            status = 2;
                         }
         
                         let index_offer = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer buy not found");
@@ -177,12 +181,15 @@ impl NearP2P {
                             GAS_FOR_TRANSFER,
                         ).then(int_process::on_confirmation(
                             self.orders_buy[i].order_id,
-                            2,
+                            status,
                             2,
                             ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
                             self.orders_buy[i].owner_id.clone(),
                             i,
                             false,
+                            self.orders_buy[i].confirmation_owner_id,
+                            self.orders_buy[i].confirmation_signer_id,
+                            1,
                             env::current_account_id(),
                             0,
                             BASE_GAS,
@@ -197,9 +204,9 @@ impl NearP2P {
                         let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
                         
                         let j = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer Sell not found");
-                        self.orders_sell[i].confirmation_current = 3;
+                        status = self.orders_sell[i].status;
                         if self.orders_sell[i].status == 1 || self.orders_sell[i].status == 2 {
-                            self.orders_sell[i].status = 4;
+                            status = 4;
                         }
 
                         #[warn(unused_assignments)]
@@ -228,12 +235,15 @@ impl NearP2P {
                             GAS_FOR_TRANSFER,
                         ).then(int_process::on_confirmation(
                             self.orders_sell[i].order_id,
-                            4,
+                            status,
                             1,
                             ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
                             self.orders_sell[i].signer_id.clone(),
                             i,
                             false,
+                            self.orders_sell[i].confirmation_owner_id,
+                            self.orders_sell[i].confirmation_signer_id,
+                            3,
                             env::current_account_id(),
                             0,
                             GAS_ON_CONFIRMATION,
@@ -243,9 +253,9 @@ impl NearP2P {
                         let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order buy not found");
 
                         let j = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer buy not found");
-                        self.orders_buy[i].confirmation_current = 3;
+                        status = self.orders_buy[i].status;
                         if self.orders_buy[i].status == 1 || self.orders_buy[i].status == 2 {
-                            self.orders_buy[i].status = 4;
+                            status = 4;
                         }
 
                         #[warn(unused_assignments)]
@@ -274,12 +284,15 @@ impl NearP2P {
                             GAS_FOR_TRANSFER,
                         ).then(int_process::on_confirmation(
                             self.orders_buy[i].order_id,
-                            4,
+                            status,
                             2,
                             ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
                             self.orders_buy[i].owner_id.clone(),
                             i,
                             false,
+                            self.orders_buy[i].confirmation_owner_id,
+                            self.orders_buy[i].confirmation_signer_id,
+                            3,
                             env::current_account_id(),
                             0,
                             BASE_GAS,

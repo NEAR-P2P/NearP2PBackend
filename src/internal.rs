@@ -88,6 +88,9 @@ trait IntProcess {
         data_contract: ContractList, 
         signer_id: AccountId,
         index_order: usize,
-        confirmacion: bool
+        confirmacion: bool,
+        confirmation_owner_id: i8,
+        confirmation_signer_id: i8,
+        confirmation_current: i8,
     );
 }
