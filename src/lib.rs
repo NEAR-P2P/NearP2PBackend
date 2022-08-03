@@ -912,50 +912,54 @@ impl NearP2P {
         , input4: String
         , input5: String
     ) -> String {
-        self.payment_method_user.iter().position(|x| x.payment_method_id == payment_method_id && x.user_id == env::signer_account_id()).expect("Repeated payment methods are not allowed");
+        let duplicado  = self.payment_method_user.iter().find(|x| x.payment_method_id == payment_method_id && x.user_id == env::signer_account_id());
+        
+        if duplicado.is_none() {
+            let index2 = self.payment_method.iter().position(|x| x.id == payment_method_id).expect("Payment method does not exist");
             
-        let index2 = self.payment_method.iter().position(|x| x.id == payment_method_id).expect("Payment method does not exist");
-        
-        let data = PaymentMethodUserObject {
-            user_id: env::signer_account_id(),
-            payment_method_id: payment_method_id,
-            payment_method: self.payment_method[index2].payment_method.to_string(),
-            desc1: self.payment_method[index2].input1.to_string(),
-            input1: input1.clone(),
-            desc2: self.payment_method[index2].input2.to_string(),
-            input2: input2.clone(),
-            desc3: self.payment_method[index2].input3.to_string(),
-            input3: input3.clone(),
-            desc4: self.payment_method[index2].input4.to_string(),
-            input4: input4.clone(),
-            desc5: self.payment_method[index2].input5.to_string(),
-            input5: input5.clone(),
-        };
+            let data = PaymentMethodUserObject {
+                user_id: env::signer_account_id(),
+                payment_method_id: payment_method_id,
+                payment_method: self.payment_method[index2].payment_method.to_string(),
+                desc1: self.payment_method[index2].input1.to_string(),
+                input1: input1.clone(),
+                desc2: self.payment_method[index2].input2.to_string(),
+                input2: input2.clone(),
+                desc3: self.payment_method[index2].input3.to_string(),
+                input3: input3.clone(),
+                desc4: self.payment_method[index2].input4.to_string(),
+                input4: input4.clone(),
+                desc5: self.payment_method[index2].input5.to_string(),
+                input5: input5.clone(),
+            };
 
-        env::log_str(
-            &json!({
-                "type": "set_payment_method_user",
-                "params": {
-                    "user_id": env::signer_account_id(),
-                    "payment_method_id": payment_method_id.to_string(),
-                    "payment_method": self.payment_method[index2].payment_method.to_string(),
-                    "desc1": self.payment_method[index2].input1.to_string(),
-                    "input1": input1.clone(),
-                    "desc2": self.payment_method[index2].input2.to_string(),
-                    "input2": input2.clone(),
-                    "desc3": self.payment_method[index2].input3.to_string(),
-                    "input3": input3.clone(),
-                    "desc4": self.payment_method[index2].input4.to_string(),
-                    "input4": input4.clone(),
-                    "desc5": self.payment_method[index2].input5.to_string(),
-                    "input5": input5.clone(),
-                }
-            }).to_string(),
-        );
+            env::log_str(
+                &json!({
+                    "type": "set_payment_method_user",
+                    "params": {
+                        "user_id": env::signer_account_id(),
+                        "payment_method_id": payment_method_id.to_string(),
+                        "payment_method": self.payment_method[index2].payment_method.to_string(),
+                        "desc1": self.payment_method[index2].input1.to_string(),
+                        "input1": input1.clone(),
+                        "desc2": self.payment_method[index2].input2.to_string(),
+                        "input2": input2.clone(),
+                        "desc3": self.payment_method[index2].input3.to_string(),
+                        "input3": input3.clone(),
+                        "desc4": self.payment_method[index2].input4.to_string(),
+                        "input4": input4.clone(),
+                        "desc5": self.payment_method[index2].input5.to_string(),
+                        "input5": input5.clone(),
+                    }
+                }).to_string(),
+            );
 
-        self.payment_method_user.push(data);
-        
-        payment_method_id.to_string()
+            self.payment_method_user.push(data);
+            
+            payment_method_id.to_string()
+        } else {
+            env::panic_str("Repeated payment methods are not allowed");
+        }
     }
 
     /// put the Payment Method object into the contract
