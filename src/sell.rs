@@ -45,11 +45,14 @@ impl NearP2P {
         , terms_conditions: String
     ) -> i128 {
         require!(env::attached_deposit() >= 100000000000000000000000, "you have to deposit a minimum 0.1 Near");
-        self.offer_sell_id += 1;
         let index = self.merchant.iter().position(|x| x.user_id == env::signer_account_id()).expect("the user is not in the list of users");
         
+        self.offer_sell_id += 1;
+        
+        let offer_sell_id: String = self.offer_sell_id.to_string();
+
         let data = OfferObject {
-            offer_id: self.offer_sell_id,
+            offer_id: offer_sell_id.parse::<i128>().unwrap(),
             owner_id: env::signer_account_id(),
             asset: asset.clone(),
             exchange_rate: exchange_rate.clone(),
@@ -65,11 +68,13 @@ impl NearP2P {
             status: 1,
         };
 
+        let fiat_method_string: String = fiat_method.to_string();
+
         env::log_str(
             &json!({
                 "type": "set_offers_sell",
                 "params": {
-                    "offer_id": self.offer_sell_id.to_string(),
+                    "offer_id": offer_sell_id,
                     "owner_id": env::signer_account_id(),
                     "asset": asset.clone(),
                     "exchange_rate": exchange_rate.clone(),
@@ -78,7 +83,7 @@ impl NearP2P {
                     "min_limit": min_limit,
                     "max_limit": max_limit,
                     "payment_method": payment_method.clone(),
-                    "fiat_method": fiat_method.to_string(),
+                    "fiat_method": fiat_method_string,
                     "is_merchant": self.merchant[index].is_merchant,
                     "time": time.to_string(),
                     "terms_conditions": terms_conditions.clone(),
