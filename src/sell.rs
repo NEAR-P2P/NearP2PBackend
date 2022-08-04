@@ -68,6 +68,8 @@ impl NearP2P {
             status: 1,
         };
 
+        self.offers_sell.push(data);
+
         let fiat_method_string: String = fiat_method.to_string();
 
         env::log_str(
@@ -91,7 +93,7 @@ impl NearP2P {
                 }
             }).to_string(),
         );
-        self.offers_sell.push(data);
+       
         self.offer_sell_id
     }
 
