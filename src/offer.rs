@@ -267,7 +267,7 @@ impl NearP2P {
             status: 1,
         };
         
-        let amount_delivered = U128(amount.0 - fee);
+        let amount_delivered: U128 = U128(amount.0 - fee);
         env::log_str(
             &json!({
                 "type": "accept_offer_sell",
@@ -280,7 +280,7 @@ impl NearP2P {
                     "exchange_rate": rate.to_string(),
                     "operation_amount": amount,
                     "amount_delivered": amount_delivered,
-                    "fee_deducted": fee,
+                    "fee_deducted": U128(fee),
                     "payment_method": payment_method.clone(),
                     "fiat_method": self.offers_sell[offer].fiat_method.to_string(),
                     "confirmation_owner_id": "0".to_string(),
