@@ -79,6 +79,9 @@ pub struct UserObject {
     country: String,
     mediator: bool,
     is_active: bool,
+    campo1: String,
+    campo2: String,
+    campo3: String,
 }
 
 
@@ -294,6 +297,9 @@ impl Default for NearP2P {
                 country: "Venezuela".to_string(),
                 mediator: true,
                 is_active: true,
+                campo1: "".to_string(),
+                campo2: "".to_string(),
+                campo3: "".to_string(),
             }],
             offers_sell: Vec::new(),
             offer_sell_id: 0,
@@ -402,30 +408,12 @@ impl NearP2P {
                 self.users.iter().filter(|x| x.user_id == user.to_string())
                 .skip(start_index as usize)
                 .take(limit)
-                .map(|x| UserObject {
-                    user_id: x.user_id.to_string(),
-                    name: x.name.to_string(),
-                    last_name: x.last_name.to_string(),
-                    phone: x.phone.to_string(),
-                    email: x.email.to_string(),
-                    country: x.country.to_string(),
-                    mediator: x.mediator,
-                    is_active: x.is_active,
-                }).collect()
+                .map(|x| x.clone()).collect()
             } else {
                 self.users.iter()
                 .skip(start_index as usize)
                 .take(limit)
-                .map(|x| UserObject {
-                    user_id: x.user_id.to_string(),
-                    name: x.name.to_string(),
-                    last_name: x.last_name.to_string(),
-                    phone: x.phone.to_string(),
-                    email: x.email.to_string(),
-                    country: x.country.to_string(),
-                    mediator: x.mediator,
-                    is_active: x.is_active,
-                }).collect()
+                .map(|x| x.clone()).collect()
             }
         } else {
             [].to_vec()
@@ -441,7 +429,11 @@ impl NearP2P {
         last_name: String,
         phone: String,
         email: String,
-        country: String) -> String {
+        country: String,
+        campo1: String,
+        campo2: String,
+        campo3: String,
+    ) -> String {
         let user = self.users.iter().find(|x| x.user_id == env::signer_account_id().to_string());
         if user.is_some() {
             env::panic_str("profile already exists");
@@ -455,6 +447,9 @@ impl NearP2P {
             country: country.to_string(),
             mediator: false,
             is_active: true,
+            campo1: campo1.to_string(),
+            campo2: campo2.to_string(),
+            campo3: campo3.to_string(),
         };
         self.users.push(data);
         let data2 = MerchantObject {
@@ -481,6 +476,9 @@ impl NearP2P {
                     "is_active": true,
                     "badge": "".to_string(),
                     "is_merchant": false,
+                    "campo1": campo1.to_string(),
+                    "campo2": campo2.to_string(),
+                    "campo3": campo3.to_string(),
                 }
             }).to_string(),
         );
