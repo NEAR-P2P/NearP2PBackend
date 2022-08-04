@@ -273,7 +273,7 @@ impl NearP2P {
                 "type": "accept_offer_sell",
                 "params": {
                     "offer_id": self.offers_sell[offer].offer_id.to_string(),
-                    "order_id": self.offers_sell,
+                    "order_id": self.order_sell_id.to_string(),
                     "owner_id": self.offers_sell[offer].owner_id.clone(),
                     "asset": self.offers_sell[offer].asset.clone(),
                     "signer_id": env::signer_account_id(),
@@ -282,7 +282,7 @@ impl NearP2P {
                     "amount_delivered": amount_delivered,
                     "fee_deducted": fee,
                     "payment_method": payment_method.clone(),
-                    "fiat_method": self.offers_sell[offer].fiat_method,
+                    "fiat_method": self.offers_sell[offer].fiat_method.to_string(),
                     "confirmation_owner_id": "0".to_string(),
                     "confirmation_signer_id": "0".to_string(),
                     "confirmation_current": "0".to_string(),
