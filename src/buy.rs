@@ -154,7 +154,7 @@ impl NearP2P {
                         "min_limit": min_limit,
                         "max_limit": max_limit,
                         "payment_method": payment_method.clone(),
-                        "fiat_method": fiat_method,
+                        "fiat_method": fiat_method.to_string(),
                         "is_merchant": self.merchant[index].is_merchant,
                         "time": time.to_string(),
                         "terms_conditions": terms_conditions.clone(),
