@@ -70,7 +70,7 @@ impl NearP2P {
 
         self.offers_sell.push(data);
 
-        let fiat_method_string: String = fiat_method.to_string();
+        //let fiat_method_string: String = fiat_method.to_string();
 
         env::log_str(
             &json!({
@@ -78,17 +78,17 @@ impl NearP2P {
                 "params": {
                     "offer_id": offer_sell_id,
                     "owner_id": env::signer_account_id(),
-                    "asset": asset.clone(),
-                    "exchange_rate": exchange_rate.clone(),
+                    "asset": asset.to_string(),
+                    "exchange_rate": exchange_rate.to_string(),
                     "amount": amount,
                     "remaining_amount": amount,
                     "min_limit": min_limit,
                     "max_limit": max_limit,
-                    "payment_method": payment_method.clone(),
-                    "fiat_method": fiat_method_string,
+                    "payment_method": payment_method.iter().map(|x| PaymentMethodsOfferObjectString {id: x.id.to_string(), payment_method: x.payment_method.clone() }).collect::<Vec<PaymentMethodsOfferObjectString>>(),
+                    "fiat_method": fiat_method.to_string(),
                     "is_merchant": self.merchant[index].is_merchant,
                     "time": time.to_string(),
-                    "terms_conditions": terms_conditions.clone(),
+                    "terms_conditions": terms_conditions.to_string(),
                     "status": "1".to_string(),
                 }
             }).to_string(),

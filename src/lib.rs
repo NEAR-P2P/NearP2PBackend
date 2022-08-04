@@ -89,6 +89,13 @@ pub struct PaymentMethodsOfferObject {
     payment_method: String,
 }
 
+#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub struct PaymentMethodsOfferObjectString {
+    id: String,
+    payment_method: String,
+}
+
 
 /*
 User OfferObject: Struct for offer that will be listed.
