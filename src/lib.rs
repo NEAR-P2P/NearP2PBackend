@@ -85,13 +85,6 @@ pub struct UserObject {
 #[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct PaymentMethodsOfferObject {
-    id: i128,
-    payment_method: String,
-}
-
-#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
-pub struct PaymentMethodsOfferObjectString {
     id: String,
     payment_method: String,
 }
@@ -1132,7 +1125,7 @@ fn search_offer(data: Vec<OfferObject>,
                     .map(|r| r.clone()).collect();
     }
     if payment_method.is_some() {
-        result = result.iter().filter(|x| x.payment_method.iter().filter(|z| z.id == payment_method.unwrap()).count() > 0 )
+        result = result.iter().filter(|x| x.payment_method.iter().filter(|z| z.id.parse::<i128>().unwrap() == payment_method.unwrap()).count() > 0 )
                     .map(|r| r.clone()).collect();
     }
     if is_merchant.is_some() {

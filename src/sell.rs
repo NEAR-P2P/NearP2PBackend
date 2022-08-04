@@ -84,7 +84,7 @@ impl NearP2P {
                     "remaining_amount": amount,
                     "min_limit": min_limit,
                     "max_limit": max_limit,
-                    "payment_method": payment_method.iter().map(|x| PaymentMethodsOfferObjectString {id: x.id.to_string(), payment_method: x.payment_method.clone() }).collect::<Vec<PaymentMethodsOfferObjectString>>(),
+                    "payment_method": payment_method.clone(),
                     "fiat_method": fiat_method.to_string(),
                     "is_merchant": self.merchant[index].is_merchant,
                     "time": time.to_string(),
