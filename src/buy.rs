@@ -118,10 +118,14 @@ impl NearP2P {
             env::panic_str("Error bloquear balance token".as_ref());
         }
 
+        
+        
         if near_sdk::serde_json::from_slice::<bool>(&result.unwrap()).expect("bool") { 
             self.offer_buy_id += 1;
+            let offer_buy_id: String = self.offer_buy_id.to_string();
+
             let data = OfferObject {
-                offer_id: self.offer_buy_id,
+                offer_id: offer_buy_id.parse::<i128>().unwrap(),
                 owner_id: owner_id.clone(),
                 asset: asset.clone(),
                 exchange_rate: exchange_rate.clone(),
@@ -141,7 +145,7 @@ impl NearP2P {
                 &json!({
                     "type": "set_offers_buy",
                     "params": {
-                        "offer_id": self.offer_buy_id.to_string(),
+                        "offer_id": offer_buy_id,
                         "owner_id": owner_id.clone(),
                         "asset": asset.clone(),
                         "exchange_rate": exchange_rate.clone(),
