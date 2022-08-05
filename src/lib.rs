@@ -423,9 +423,17 @@ impl NearP2P {
     pub fn delete_user_admin(&mut self, user_id: String) {
         self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
         
-        let index = self.users.iter().position(|x| x.user_id == user_id.to_string()).expect("usuario no exite");
+        let index = self.users.iter().position(|x| x.user_id == user_id.to_string());
 
-        self.users.remove(index);
+        if index.is_some() {
+            self.users.remove(index.unwrap());
+        }
+
+        let index2 = self.merchant.iter().position(|x| x.user_id == AccountId::new_unchecked(user_id.clone()));
+        
+        if index2.is_some() {
+            self.merchant.remove(index2.unwrap());
+        }
     }
 
     /// Set the users object into the contract
