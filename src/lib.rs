@@ -482,7 +482,70 @@ impl NearP2P {
                 }
             }).to_string(),
         );
-        env::signer_account_id().to_string().to_string()
+        env::signer_account_id().to_string()
+    }
+
+    pub fn set_user_admin(&mut self,
+        user_id: String,
+        name: String,
+        last_name: String,
+        phone: String,
+        email: String,
+        country: String,
+        campo1: String,
+        campo2: String,
+        campo3: String,
+    ) -> String {
+        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
+        let user = self.users.iter().find(|x| x.user_id == user_id.to_string());
+        if user.is_some() {
+            env::panic_str("profile already exists");
+        }
+        let data = UserObject {
+            user_id: user_id.clone(),
+            name: name.to_string(),
+            last_name: last_name.to_string(),
+            phone: phone.to_string(),
+            email: email.to_string(),
+            country: country.to_string(),
+            mediator: false,
+            is_active: true,
+            campo1: campo1.to_string(),
+            campo2: campo2.to_string(),
+            campo3: campo3.to_string(),
+        };
+        self.users.push(data);
+        let data2 = MerchantObject {
+            user_id: AccountId::new_unchecked(user_id.clone()),
+            total_orders: 0,
+            orders_completed: 0,
+            percentaje_completion: 0.0,
+            badge: "".to_string(),
+            is_merchant: false,
+        };
+        self.merchant.push(data2);
+       // set_merchant(user_id: user_id.to_string(), total_orders: 0, orders_completed: 0 , badge: "".to_string());
+        env::log_str(
+            &json!({
+                "type": "set_user",
+                "params": {
+                    "user_id": user_id.to_string(),
+                    "name": name.to_string(),
+                    "last_name": last_name.to_string(),
+                    "phone": phone.to_string(),
+                    "email": email.to_string(),
+                    "country": country.to_string(),
+                    "mediator": false,
+                    "is_active": true,
+                    "badge": "".to_string(),
+                    "is_merchant": false,
+                    "campo1": campo1.to_string(),
+                    "campo2": campo2.to_string(),
+                    "campo3": campo3.to_string(),
+                }
+            }).to_string(),
+        );
+        user_id.to_string()
     }
     
     /// Set the users object into the contract
@@ -936,6 +999,66 @@ impl NearP2P {
                     "type": "set_payment_method_user",
                     "params": {
                         "user_id": env::signer_account_id(),
+                        "payment_method_id": payment_method_id.to_string(),
+                        "payment_method": self.payment_method[index2].payment_method.to_string(),
+                        "desc1": self.payment_method[index2].input1.to_string(),
+                        "input1": input1.clone(),
+                        "desc2": self.payment_method[index2].input2.to_string(),
+                        "input2": input2.clone(),
+                        "desc3": self.payment_method[index2].input3.to_string(),
+                        "input3": input3.clone(),
+                        "desc4": self.payment_method[index2].input4.to_string(),
+                        "input4": input4.clone(),
+                        "desc5": self.payment_method[index2].input5.to_string(),
+                        "input5": input5.clone(),
+                    }
+                }).to_string(),
+            );
+
+            self.payment_method_user.push(data);
+            
+            payment_method_id.to_string()
+        } else {
+            env::panic_str("Repeated payment methods are not allowed");
+        }
+    }
+
+    //Set the Payment Method User object into the contract
+    pub fn set_payment_method_user_admin(&mut self, user_id: AccountId
+        , payment_method_id: i128
+        , input1: String
+        , input2: String
+        , input3: String
+        , input4: String
+        , input5: String
+    ) -> String {
+        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
+        let duplicado  = self.payment_method_user.iter().find(|x| x.payment_method_id == payment_method_id && x.user_id == user_id.clone());
+        
+        if duplicado.is_none() {
+            let index2 = self.payment_method.iter().position(|x| x.id == payment_method_id).expect("Payment method does not exist");
+            
+            let data = PaymentMethodUserObject {
+                user_id: user_id.clone(),
+                payment_method_id: payment_method_id,
+                payment_method: self.payment_method[index2].payment_method.to_string(),
+                desc1: self.payment_method[index2].input1.to_string(),
+                input1: input1.clone(),
+                desc2: self.payment_method[index2].input2.to_string(),
+                input2: input2.clone(),
+                desc3: self.payment_method[index2].input3.to_string(),
+                input3: input3.clone(),
+                desc4: self.payment_method[index2].input4.to_string(),
+                input4: input4.clone(),
+                desc5: self.payment_method[index2].input5.to_string(),
+                input5: input5.clone(),
+            };
+
+            env::log_str(
+                &json!({
+                    "type": "set_payment_method_user",
+                    "params": {
+                        "user_id": user_id,
                         "payment_method_id": payment_method_id.to_string(),
                         "payment_method": self.payment_method[index2].payment_method.to_string(),
                         "desc1": self.payment_method[index2].input1.to_string(),
