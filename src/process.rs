@@ -333,7 +333,7 @@ impl NearP2P {
             self.orders_buy[index_order].status = status;
             self.orders_buy[index_order].confirmation_owner_id = confirmation_owner_id;
             self.orders_buy[index_order].confirmation_signer_id = confirmation_signer_id;
-            self.orders_sell[index_order].confirmation_current = confirmation_current;
+            self.orders_buy[index_order].confirmation_current = confirmation_current;
             arreglo = self.orders_buy.clone();
         } else {
             env::panic_str("order type incorret");
