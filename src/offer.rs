@@ -160,7 +160,7 @@ impl NearP2P {
                 operation_amount: amount.0,
                 amount_delivered: amount.0 - fee,
                 fee_deducted: fee,
-                payment_method: payment_method.clone(),
+                payment_method: payment_method,
                 fiat_method: self.offers_buy[offer].fiat_method,
                 confirmation_owner_id: 0,
                 confirmation_signer_id: 0,
@@ -172,24 +172,26 @@ impl NearP2P {
             };
             self.orders_buy.push(data);
 
+            let amount_delivered: U128 = U128(amount.0 - fee);
+
             env::log_str(
                 &json!({
                     "type": "accept_offer_buy",
                     "params": {
                         "offer_id": offer_id.to_string(),
-                        "order_id": self.order_buy_id,
+                        "order_id": self.order_buy_id.to_string(),
                         "owner_id": self.offers_buy[offer].owner_id.clone(),
                         "asset": self.offers_buy[offer].asset.clone(),
                         "signer_id": env::signer_account_id(),
                         "exchange_rate": rate.to_string(),
-                        "operation_amount": amount.0,
-                        "amount_delivered": amount.0 - fee,
-                        "fee_deducted": fee,
-                        "payment_method": payment_method.clone(),
-                        "fiat_method": self.offers_buy[offer].fiat_method,
-                        "confirmation_owner_id": 0,
-                        "confirmation_signer_id": 0,
-                        "confirmation_current": 0,
+                        "operation_amount": amount,
+                        "amount_delivered": amount_delivered,
+                        "fee_deducted": U128(fee),
+                        "payment_method": payment_method.to_string(),
+                        "fiat_method": self.offers_buy[offer].fiat_method.to_string(),
+                        "confirmation_owner_id": "0".to_string(),
+                        "confirmation_signer_id": "0".to_string(),
+                        "confirmation_current": "0".to_string(),
                         "time": self.offers_buy[offer].time.to_string(),
                         "datetime": datetime.clone(),
                         "terms_conditions": self.offers_buy[offer].terms_conditions.clone(),
@@ -281,7 +283,7 @@ impl NearP2P {
                     "operation_amount": amount,
                     "amount_delivered": amount_delivered,
                     "fee_deducted": U128(fee),
-                    "payment_method": payment_method.clone(),
+                    "payment_method": payment_method.to_string(),
                     "fiat_method": self.offers_sell[offer].fiat_method.to_string(),
                     "confirmation_owner_id": "0".to_string(),
                     "confirmation_signer_id": "0".to_string(),
