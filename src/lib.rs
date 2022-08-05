@@ -420,6 +420,13 @@ impl NearP2P {
         }
     }
 
+    pub fn delete_user_admin(&mut self, user_id: String) {
+        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
+        
+        let index = self.users.iter().position(|x| x.user_id == user_id.to_string()).expect("usuario no exite");
+
+        self.users.remove(index);
+    }
 
     /// Set the users object into the contract
     /// Params: user_id: String, name: String
