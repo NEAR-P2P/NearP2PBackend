@@ -527,7 +527,7 @@ impl NearP2P {
        // set_merchant(user_id: user_id.to_string(), total_orders: 0, orders_completed: 0 , badge: "".to_string());
         env::log_str(
             &json!({
-                "type": "set_user",
+                "type": "set_user_admin",
                 "params": {
                     "user_id": user_id.to_string(),
                     "name": name.to_string(),
@@ -1056,7 +1056,7 @@ impl NearP2P {
 
             env::log_str(
                 &json!({
-                    "type": "set_payment_method_user",
+                    "type": "set_payment_method_user_admin",
                     "params": {
                         "user_id": user_id,
                         "payment_method_id": payment_method_id.to_string(),
