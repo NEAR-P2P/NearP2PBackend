@@ -55,7 +55,7 @@ impl NearP2P {
                     U128(self.orders_sell[i].operation_amount),
                     U128(self.orders_sell[i].fee_deducted),
                     contract_ft,
-                    false,
+                    true,
                     ft_token,
                     contract_name.contract.clone(),
                     2,
