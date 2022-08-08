@@ -55,7 +55,7 @@ impl NearP2P {
                     U128(self.orders_sell[i].operation_amount),
                     U128(self.orders_sell[i].fee_deducted),
                     contract_ft,
-                    false,
+                    true,
                     ft_token,
                     contract_name.contract.clone(),
                     2,
@@ -76,6 +76,7 @@ impl NearP2P {
                 ));
             } else {
                 env::panic_str("Server internar error, signer not found");
+                // sad
             }
         } else if offer_type == 2 {
             let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order buy not found");
