@@ -80,6 +80,11 @@ impl NearP2P {
         result
     }
 
+    pub fn delete_user_contract_list(&mut self, user_id: AccountId) {
+        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
+        self.contract_list.remove(&user_id);
+    }
+
     #[payable]
     pub fn create_subcontract_user(&mut self) -> Promise {
         require!(env::attached_deposit() >= 1, "you have to deposit a minimum 1 YoctoNear");
