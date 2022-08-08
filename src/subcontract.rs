@@ -71,7 +71,7 @@ impl NearP2P {
                     "USDC".to_string(),
                     env::current_account_id(),
                     0,
-                    Gas(50_000_000_000_000),
+                    Gas(5_000_000_000_000),
                 ));
             } else {
                 Promise::new(env::signer_account_id()).transfer(100000000000000000000000);
@@ -122,7 +122,7 @@ impl NearP2P {
                 "USDC".to_string(),
                 env::current_account_id(),
                 0,
-                Gas(50_000_000_000_000)
+                Gas(5_000_000_000_000)
             ));
         } else {
             Promise::new(env::signer_account_id()).transfer(100000000000000000000000);
@@ -138,15 +138,15 @@ impl NearP2P {
         if result.is_none() {
             env::panic_str("Error activate ft_token".as_ref());
         }
-        let listar_token_activo = self.activate_token_list.get(&signer_id);
+        //let listar_token_activo = self.activate_token_list.get(&signer_id);
 
-        if listar_token_activo.is_some() {
+        /*if listar_token_activo.is_some() {
             let mut tokens: Vec<String> = listar_token_activo.unwrap().iter().map(|x| x.clone()).collect::<Vec<String>>();
             tokens.push(ft_token);
             self.activate_token_list.insert(signer_id, tokens);
-        } else {
+        } else {*/
             self.activate_token_list.insert(signer_id, vec![ft_token]);
-        }
+        //}
     }
 
     pub fn get_token_activo(self, user_id: AccountId) -> bool {
