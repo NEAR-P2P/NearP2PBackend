@@ -310,7 +310,7 @@ impl NearP2P {
         order_type: i8,
         data_contract: ContractList,
         signer_id: AccountId,
-        index_order: usize,
+        index: usize,
         confirmacion: bool,
         confirmation_owner_id: i8,
         confirmation_signer_id: i8,
@@ -324,22 +324,22 @@ impl NearP2P {
 
         let arreglo;
         if order_type == 1 {
-            self.orders_sell[index_order].status = status;
-            self.orders_sell[index_order].confirmation_owner_id = confirmation_owner_id;
-            self.orders_sell[index_order].confirmation_signer_id = confirmation_signer_id;
-            self.orders_sell[index_order].confirmation_current = confirmation_current;
+            self.orders_sell[index].status = status;
+            self.orders_sell[index].confirmation_owner_id = confirmation_owner_id;
+            self.orders_sell[index].confirmation_signer_id = confirmation_signer_id;
+            self.orders_sell[index].confirmation_current = confirmation_current;
             arreglo = self.orders_sell.clone();
         } else if order_type == 2 {
-            self.orders_buy[index_order].status = status;
-            self.orders_buy[index_order].confirmation_owner_id = confirmation_owner_id;
-            self.orders_buy[index_order].confirmation_signer_id = confirmation_signer_id;
-            self.orders_buy[index_order].confirmation_current = confirmation_current;
+            self.orders_buy[index].status = status;
+            self.orders_buy[index].confirmation_owner_id = confirmation_owner_id;
+            self.orders_buy[index].confirmation_signer_id = confirmation_signer_id;
+            self.orders_buy[index].confirmation_current = confirmation_current;
             arreglo = self.orders_buy.clone();
         } else {
             env::panic_str("order type incorret");
         }
 
-        let index = arreglo.iter().position(|x| x.order_id == order_id).expect("Order not found");
+        //let index = arreglo.iter().position(|x| x.order_id == order_id).expect("Order not found");
 
         let data = OrderObject {
             offer_id: arreglo[index].offer_id,
@@ -362,9 +362,9 @@ impl NearP2P {
             status: status,
         };
         if order_type == 1 {
-            if confirmacion == true {
+            /*if confirmacion == true {
                 self.orders_sell_completed(index_order);
-            }
+            }*/
             self.order_history_sell.push(data);
             self.orders_sell.remove(index);
             
@@ -409,9 +409,9 @@ impl NearP2P {
                 ));
             } 
         } else if order_type == 2 {
-            if confirmacion  == true {
+            /*if confirmacion  == true {
                 self.orders_buy_completed(index_order);
-            }
+            }*/
             self.order_history_buy.push(data);
             self.orders_buy.remove(index);   
 
