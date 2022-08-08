@@ -61,7 +61,6 @@ impl NearP2P {
                     2,
                     GAS_FOR_TRANSFER,
                 ).then(int_process::on_confirmation(
-                    self.orders_sell[i].order_id,
                     status,
                     1,
                     ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
@@ -129,7 +128,6 @@ impl NearP2P {
                     2,
                     GAS_FOR_TRANSFER,
                 ).then(int_process::on_confirmation(
-                    self.orders_buy[i].order_id,
                     status,
                     2,
                     ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
@@ -194,7 +192,6 @@ impl NearP2P {
                     1,
                     GAS_FOR_TRANSFER,
                 ).then(int_process::on_confirmation(
-                    self.orders_sell[i].order_id,
                     status,
                     1,
                     ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
@@ -280,7 +277,6 @@ impl NearP2P {
                     1,
                     GAS_FOR_TRANSFER,
                 ).then(int_process::on_confirmation(
-                    self.orders_buy[i].order_id,
                     status,
                     2,
                     ContractList{contract: contract.contract.clone(), type_contract: contract.type_contract.clone()},
@@ -305,7 +301,7 @@ impl NearP2P {
 
 
     #[private]
-    pub fn on_confirmation(&mut self, order_id: i128,
+    pub fn on_confirmation(&mut self,
         status: i8,
         order_type: i8,
         data_contract: ContractList,
@@ -481,7 +477,7 @@ impl NearP2P {
         self.contract_list.remove(&signer_id);
     }
 
-    #[private]
+    /*#[private]
     fn orders_sell_completed(&mut self, index_order: usize) {
         let mut index = self.merchant.iter().position(|x| x.user_id == self.orders_sell[index_order].owner_id.clone()).expect("owner not merchant");
         self.merchant[index].orders_completed += 1;
@@ -499,5 +495,5 @@ impl NearP2P {
         index = self.merchant.iter().position(|x| x.user_id == self.orders_buy[index_order].signer_id.clone()).expect("owner not merchant");
         self.merchant[index].orders_completed += 1;
         self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
-    }
+    }*/
 }

@@ -169,7 +169,6 @@ impl NearP2P {
                             2,
                             GAS_FOR_TRANSFER,
                         ).then(int_process::on_confirmation(
-                            self.orders_sell[i].order_id,
                             status,
                             1,
                             ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
@@ -220,7 +219,6 @@ impl NearP2P {
                             2,
                             GAS_FOR_TRANSFER,
                         ).then(int_process::on_confirmation(
-                            self.orders_buy[i].order_id,
                             status,
                             2,
                             ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
@@ -274,7 +272,6 @@ impl NearP2P {
                             1,
                             GAS_FOR_TRANSFER,
                         ).then(int_process::on_confirmation(
-                            self.orders_sell[i].order_id,
                             status,
                             1,
                             ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
@@ -323,7 +320,6 @@ impl NearP2P {
                             1,
                             GAS_FOR_TRANSFER,
                         ).then(int_process::on_confirmation(
-                            self.orders_buy[i].order_id,
                             status,
                             2,
                             ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},

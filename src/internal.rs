@@ -82,7 +82,7 @@ trait IntOffer {
 
 #[ext_contract(int_process)]
 trait IntProcess {
-    fn on_confirmation(&mut self, order_id: i128,
+    fn on_confirmation(&mut self,
         status: i8,
         order_type: i8,
         data_contract: ContractList, 
