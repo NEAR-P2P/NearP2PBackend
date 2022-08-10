@@ -227,7 +227,7 @@ impl NearP2P {
             contract.contract.clone(),
             env::current_account_id(),
             0,
-            Gas(30_000_000_000_000),
+            Gas(60_000_000_000_000),
         ));
     }
 
@@ -252,7 +252,7 @@ impl NearP2P {
             signer_id,
             env::current_account_id(),
             0,
-            BASE_GAS,
+            Gas(30_000_000_000_000),
         ));
 
         
