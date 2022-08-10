@@ -16,6 +16,7 @@ impl NearP2P {
     }
 
     pub fn listar_subcuenta(&mut self, account_id: AccountId, subcuenta: AccountId, type_contract: i8) {
+        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
         self.contract_list.insert(account_id, ContractList{ contract: subcuenta, type_contract: type_contract});
     }
 
