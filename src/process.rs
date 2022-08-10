@@ -358,9 +358,9 @@ impl NearP2P {
             status: status,
         };
         if order_type == 1 {
-            if confirmacion == true {
+            /*if confirmacion == true {
                 self.orders_sell_completed(index);
-            }
+            }*/
             self.order_history_sell.push(data);
             self.orders_sell.remove(index);
             
@@ -405,9 +405,9 @@ impl NearP2P {
                 ));
             } 
         } else if order_type == 2 {
-            if confirmacion  == true {
+            /*if confirmacion  == true {
                 self.orders_buy_completed(index);
-            }
+            }*/
             self.order_history_buy.push(data);
             self.orders_buy.remove(index);   
 
@@ -477,7 +477,7 @@ impl NearP2P {
         self.contract_list.remove(&signer_id);
     }
 
-    #[private]
+    /*#[private]
     fn orders_sell_completed(&mut self, index_order: usize) {
         let mut index = self.merchant.iter().position(|x| x.user_id == self.orders_sell[index_order].owner_id.clone()).expect("owner not merchant");
         self.merchant[index].orders_completed += 1;
@@ -495,5 +495,5 @@ impl NearP2P {
         index = self.merchant.iter().position(|x| x.user_id == self.orders_buy[index_order].signer_id.clone()).expect("owner not merchant");
         self.merchant[index].orders_completed += 1;
         self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
-    }
+    }*/
 }
