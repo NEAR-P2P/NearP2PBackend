@@ -401,7 +401,7 @@ impl NearP2P {
                     data_contract.contract,
                     env::current_account_id(),
                     0,
-                    Gas(10_000_000_000_000),
+                    Gas(20_000_000_000_000),
                 ));
             } 
         } else if order_type == 2 {
@@ -454,12 +454,12 @@ impl NearP2P {
             ext_subcontract::delete_contract(
                 sub_contract.clone(),
                 0,
-                BASE_GAS,
+                Gas(5_000_000_000_000),
             ).then(int_offer::on_delete_contract_list_user(
                 signer_id,
                 env::current_account_id(),
                 0,
-                BASE_GAS,
+                Gas(5_000_000_000_000),
             ));
             env::log_str("delete")
         } else {
