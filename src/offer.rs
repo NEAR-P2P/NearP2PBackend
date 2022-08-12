@@ -70,7 +70,7 @@ impl NearP2P {
         , datetime: String
         , rate: f64
     ) {
-        let attached_deposit = env::attached_deposit();
+        //let attached_deposit = env::attached_deposit();
         if offer_type == 1 {
             //require!(attached_deposit >= 1, "you have to deposit a minimum one YoctoNEAR");
 
