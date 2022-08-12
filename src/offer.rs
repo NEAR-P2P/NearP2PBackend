@@ -72,7 +72,7 @@ impl NearP2P {
     ) {
         let attached_deposit = env::attached_deposit();
         if offer_type == 1 {
-            require!(attached_deposit >= 1, "you have to deposit a minimum one YoctoNEAR");
+            //require!(attached_deposit >= 1, "you have to deposit a minimum one YoctoNEAR");
 
             let offer: usize = self.offers_sell.iter().position(|x| x.offer_id == offer_id).expect("Offer sell not found");
             let signer_id = env::signer_account_id();
@@ -124,7 +124,7 @@ impl NearP2P {
                 _=> env::panic_str("The requested asset does not exist")
             };
         } else if offer_type == 2 {
-            require!(attached_deposit >= 1, "you have to deposit a minimum of one YoctoNear");
+            //require!(attached_deposit >= 1, "you have to deposit a minimum of one YoctoNear");
 
             let offer: usize = self.offers_buy.iter().position(|x| x.offer_id == offer_id).expect("Offer buy not found");
             
@@ -201,15 +201,15 @@ impl NearP2P {
             );
             
             //actualizar total ordenes owner_id
-            let mut index = self.merchant.iter().position(|x| x.user_id == self.offers_buy[offer].owner_id.clone()).expect("owner not merchant");
+            /*let mut index = self.merchant.iter().position(|x| x.user_id == self.offers_buy[offer].owner_id.clone()).expect("owner not merchant");
             self.merchant[index].total_orders += 1;
             self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
             index = self.merchant.iter().position(|x| x.user_id == env::signer_account_id().clone()).expect("owner not merchant");
             self.merchant[index].total_orders += 1;
-            self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+            self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;*/
 
         }   else {
-            require!(attached_deposit >= 1, "you have to deposit a minimum of one YoctoNear");
+            //require!(attached_deposit >= 1, "you have to deposit a minimum of one YoctoNear");
             env::panic_str("Invalid offer type");
         }
     }

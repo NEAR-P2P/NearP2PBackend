@@ -6,7 +6,7 @@ impl NearP2P {
     /// Params: offer_type: 1 = sell, 2 = buy
     #[payable]
     pub fn order_confirmation(&mut self, offer_type: i8, order_id: i128) {
-        //require!(env::attached_deposit() >= 1, "Requires attached deposit of at least 1 yoctoNEAR");
+        require!(env::attached_deposit() >= 1, "Requires attached deposit of at least 1 yoctoNEAR");
         let contract_ft: Option<AccountId>;
         let ft_token: String;
         let mut status: i8;
