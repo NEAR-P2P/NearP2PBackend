@@ -155,11 +155,7 @@ impl NearP2P {
         if tokens.is_none() {
             false
         } else {
-            if tokens.unwrap().len() > 0 {
-                true
-            } else {
-                false
-            }
+            true
         }  
     }
 
