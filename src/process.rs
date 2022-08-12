@@ -150,9 +150,9 @@ impl NearP2P {
     }
 
 
-    #[payable]
+    // #[payable]
     pub fn cancel_order(&mut self, offer_type: i8, order_id: i128) {
-        assert_one_yocto();
+        // assert_one_yocto();
         let contract_ft: Option<AccountId>;
         let ft_token: String;
         let mut status: i8;

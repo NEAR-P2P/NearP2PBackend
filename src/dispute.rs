@@ -10,9 +10,9 @@ impl NearP2P {
 
     /// dispute order into the contract
     /// Params: offer_type: 1 = sell, 2 = buy
-    #[payable]
+    // #[payable]
     pub fn order_dispute(&mut self, offer_type: i8, order_id: i128) {
-        assert_one_yocto();
+        // assert_one_yocto();
         if offer_type == 1 {
             let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
             if self.orders_sell[i].status != 3 {
