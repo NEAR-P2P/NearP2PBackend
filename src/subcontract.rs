@@ -205,7 +205,7 @@ impl NearP2P {
             contract.contract.clone(),
             env::current_account_id(),
             0,
-            Gas(30_000_000_000_000),
+            Gas(70_000_000_000_000),
         ));
     }
 
@@ -223,7 +223,7 @@ impl NearP2P {
             contract.contract.clone(),
             env::current_account_id(),
             0,
-            Gas(60_000_000_000_000),
+            Gas(70_000_000_000_000),
         ));
     }
 
@@ -239,7 +239,51 @@ impl NearP2P {
         if self.administrators.iter().find(|&x| x == &env::signer_account_id()).is_none(){
             require!(balance_block <= 0, "You still have operations in progress, finish all the operations to be able to delete the contract");
         }
+
+        ext_subcontract::get_balance_near(
+            "libre".to_string(),
+            sub_contract.clone(),
+            0,
+            BASE_GAS,
+        ).then(int_sub_contract::on_delte_withdraw_near(
+            sub_contract.clone(),
+            signer_id.clone(),
+            env::current_account_id(),
+            0,
+            GAS_ON_WITHDRAW_NEAR,
+        ));
+    }
+
+
+    #[private]
+    pub fn on_delte_withdraw_near(&mut self,
+        sub_contract: AccountId,
+        signer_id: AccountId
+    ) -> Promise {
+        require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
+        let result = promise_result_as_success();
+        if result.is_none() {
+            env::panic_str("Error Balance NEAR".as_ref());
+        }
         
+        let amount_withdraw: u128 = near_sdk::serde_json::from_slice::<u128>(&result.unwrap()).expect("u128");
+        //env::log_str(format!("{}",amount_withdraw).as_str());
+        //require!(amount_withdraw > 0, "No balance available to withdraw");
+        
+        if amount_withdraw > 0 {
+            ext_subcontract::transfer(
+                signer_id.clone(),
+                U128(amount_withdraw),
+                U128(0),
+                None,
+                true,
+                "NEAR".to_string(),
+                sub_contract.clone(),
+                1,
+                GAS_FOR_TRANSFER,
+            );
+        }
+
         ext_subcontract::delete_contract(
             sub_contract.clone(),
             0,
@@ -249,10 +293,9 @@ impl NearP2P {
             env::current_account_id(),
             0,
             BASE_GAS,
-        ));
-
-        
+        ))
     }
+
 
     #[private]
     pub fn on_delete_contract_list(&mut self, signer_id: AccountId) {
