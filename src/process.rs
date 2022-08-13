@@ -391,7 +391,7 @@ impl NearP2P {
                 }).to_string(),
             );
 
-            if data_contract.type_contract == 2 {
+            /*if data_contract.type_contract == 2 {
                 ext_subcontract::get_balance_block_total(
                     data_contract.contract.clone(),
                     0,
@@ -403,7 +403,7 @@ impl NearP2P {
                     0,
                     Gas(20_000_000_000_000),
                 ));
-            } 
+            }*/ 
         } else if order_type == 2 {
             /*if confirmacion  == true {
                 self.orders_buy_completed(index);
@@ -440,7 +440,7 @@ impl NearP2P {
         }   
     }
 
-    #[private]
+    /*#[private]
     pub fn on_delete_contract_user(&mut self, signer_id: AccountId, sub_contract: AccountId) {
         require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         let result = promise_result_as_success();
@@ -476,7 +476,7 @@ impl NearP2P {
             env::panic_str("Error al eliminar la cuenta".as_ref());
         }
         self.contract_list.remove(&signer_id);
-    }
+    }*/
 
     /*#[private]
     fn orders_sell_completed(&mut self, index_order: usize) {
