@@ -1,5 +1,7 @@
 use crate::*;
 
+#[near_bindgen]
+impl NearP2P {
     /// confirmation order into the contract
     /// Params: offer_type: 1 = sell, 2 = buy
     // #[payable]
