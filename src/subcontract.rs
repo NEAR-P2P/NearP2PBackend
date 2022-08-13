@@ -187,13 +187,13 @@ impl NearP2P {
     }
 
 
-    #[payable]
+    // #[payable]
     pub fn delete_contract(&mut self) {
-        let attached_deposit = env::attached_deposit();
-        assert!(
-            attached_deposit >= 1,
-            "you have to deposit a minimum of one yoctoNear"
-        );
+        // let attached_deposit = env::attached_deposit();
+        // assert!(
+           // attached_deposit >= 1,
+           // "you have to deposit a minimum of one yoctoNear"
+        // );
 
         let contract = self.contract_list.get(&env::signer_account_id()).expect("the user does not have contract deployed");
         ext_subcontract::get_balance_block_total(
