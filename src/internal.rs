@@ -13,6 +13,11 @@ trait IntSubContract {
         signer_id: AccountId
     );
 
+    fn on_delte_withdraw_near(&mut self,
+        sub_contract: AccountId,
+        signer_id: AccountId
+    ) -> Promise;
+    
     fn on_withdraw_near(&mut self,
         sub_contract: AccountId,
         signer_id: AccountId
@@ -85,8 +90,8 @@ trait IntProcess {
     fn on_confirmation(&mut self,
         status: i8,
         order_type: i8,
-        data_contract: ContractList, 
-        signer_id: AccountId,
+        /*data_contract: ContractList, 
+        signer_id: AccountId,*/
         index: usize,
         confirmacion: bool,
         confirmation_owner_id: i8,
