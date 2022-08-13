@@ -171,8 +171,8 @@ impl NearP2P {
                         ).then(int_process::on_confirmation(
                             status,
                             1,
-                            ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
-                            self.orders_sell[i].signer_id.clone(),
+                            /*ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
+                            self.orders_sell[i].signer_id.clone(),*/
                             i,
                             false,
                             self.orders_sell[i].confirmation_owner_id,
@@ -221,8 +221,8 @@ impl NearP2P {
                         ).then(int_process::on_confirmation(
                             status,
                             2,
-                            ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
-                            self.orders_buy[i].owner_id.clone(),
+                            /*ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
+                            self.orders_buy[i].owner_id.clone(),*/
                             i,
                             false,
                             self.orders_buy[i].confirmation_owner_id,
@@ -274,8 +274,8 @@ impl NearP2P {
                         ).then(int_process::on_confirmation(
                             status,
                             1,
-                            ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
-                            self.orders_sell[i].signer_id.clone(),
+                            /*ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
+                            self.orders_sell[i].signer_id.clone(),*/
                             i,
                             false,
                             self.orders_sell[i].confirmation_owner_id,
@@ -322,8 +322,8 @@ impl NearP2P {
                         ).then(int_process::on_confirmation(
                             status,
                             2,
-                            ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
-                            self.orders_buy[i].owner_id.clone(),
+                            /*ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
+                            self.orders_buy[i].owner_id.clone(),*/
                             i,
                             false,
                             self.orders_buy[i].confirmation_owner_id,
