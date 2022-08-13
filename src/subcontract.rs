@@ -250,7 +250,7 @@ impl NearP2P {
             signer_id.clone(),
             env::current_account_id(),
             0,
-            GAS_ON_WITHDRAW_NEAR,
+            Gas(70_000_000_000_000),
         ));
     }
 
@@ -336,7 +336,7 @@ impl NearP2P {
                     contract.contract.to_string(),
                     AccountId::new_unchecked(CONTRACT_USDC.to_string()),
                     0,
-                    BASE_GAS,
+                    Gas(30_000_000_000_000),
                 ).then(int_sub_contract::on_withdraw_token_block(
                     contract.contract.clone(),
                     env::signer_account_id(),
