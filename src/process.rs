@@ -2,6 +2,18 @@ use crate::*;
 
 #[near_bindgen]
 impl NearP2P {
+    pub fn delete_order(&mut self, offer_type: i8, order_id:i128) {
+        if offer_type == 1 {
+            let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
+            self.orders_sell.remove(i);
+        } else if offer_type == 2 {
+            let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order Buy not found");
+            self.orders_buy.remove(i);
+        } else {
+            env::panic_str("type orde no found");
+        }
+        
+    }
     /// confirmation order into the contract
     /// Params: offer_type: 1 = sell, 2 = buy
     // #[payable]
