@@ -158,7 +158,7 @@ impl NearP2P {
         }
     }*/
 
-    #[payable]
+
     pub fn delete_offers_sell(&mut self, offer_id: i128) {
         let offer = self.offers_sell.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id()).expect("Offer not found");
         self.offers_sell.remove(offer);
