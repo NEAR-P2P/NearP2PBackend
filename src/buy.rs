@@ -71,7 +71,7 @@ impl NearP2P {
                 , terms_conditions
                 , env::current_account_id()
                 , 0
-                , BASE_GAS
+                , Gas(40_000_000_000_000)
             ))
         } else {
             ext_subcontract::block_balance_token(
@@ -95,7 +95,7 @@ impl NearP2P {
                 , terms_conditions
                 , env::current_account_id()
                 , 0
-                , BASE_GAS
+                , Gas(40_000_000_000_000)
             ))
         }
     }
