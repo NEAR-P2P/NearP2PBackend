@@ -5,6 +5,21 @@ impl NearP2P {
     /// confirmation order into the contract
     /// Params: offer_type: 1 = sell, 2 = buy
     // #[payable]
+
+    pub fn delete_order(&mut self, offer_type: i8, order_id: i128) {
+        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
+        if offer_type == 1{
+            let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
+            self.orders_sell.remove(i);
+        } else if offer_type == 2 {
+            let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
+            self.orders_buy.remove(i);
+        } else {
+            env::panic_str("offer type no found");
+        }
+        
+    }
+
     pub fn order_confirmation(&mut self, offer_type: i8, order_id: i128) {
         // require!(env::attached_deposit() >= 1, "Requires attached deposit of at least 1 yoctoNEAR");
         let contract_ft: Option<AccountId>;
