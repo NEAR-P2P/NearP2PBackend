@@ -5,14 +5,14 @@ use crate::*;
 impl NearP2P {
     //send Near
     #[payable]
-    pub fn deposit(&mut self) -> Promise {
+    pub fn deposit(&mut self, sub_contract: AccountId) -> Promise {
         let attached_deposit = env::attached_deposit();
         assert!(
             attached_deposit >= 1,
             "Requires attached deposit of at least 1 yoctoNEAR",
         );
-        let sub_contract = self.contract_list.get(&env::signer_account_id()).expect("the user does not have contract deployed");
-        Promise::new(AccountId::new_unchecked(sub_contract.contract.to_string())).transfer(attached_deposit)
+        //let sub_contract = self.contract_list.get(&env::signer_account_id()).expect("the user does not have contract deployed");
+        Promise::new(sub_contract).transfer(attached_deposit)
     }
 
     pub fn listar_subcuenta(&mut self, account_id: AccountId, subcuenta: AccountId, type_contract: i8) {
