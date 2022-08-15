@@ -356,7 +356,6 @@ impl NearP2P {
     
     #[payable]
     pub fn delete_offers_buy(&mut self, offer_id: i128) {
-        assert_one_yocto();
         let offer = self.offers_buy.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id()).expect("Offer not found");
         #[warn(unused_assignments)]
         let contract_name = self.contract_list.get(&self.offers_buy[offer].owner_id.clone()).expect("the user does not have a sub contract deployed");
