@@ -388,7 +388,7 @@ impl NearP2P {
             offer_id,
             env::current_account_id(),
             0,
-            BASE_GAS,
+            Gas(40_000_000_000_000),
         ));
     }
 
