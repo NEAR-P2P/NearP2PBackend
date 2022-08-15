@@ -288,7 +288,7 @@ impl NearP2P {
                     self.orders_buy[i].confirmation_current,
                     env::current_account_id(),
                     0,
-                    BASE_GAS,
+                    GAS_ON_CONFIRMATION,
                 ));
 
             } else {
