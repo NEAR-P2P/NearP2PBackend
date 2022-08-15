@@ -13,7 +13,7 @@ trait IntSubContract {
         signer_id: AccountId
     );
 
-    fn on_delte_withdraw_near(&mut self,
+    fn on_delete_withdraw_near(&mut self,
         sub_contract: AccountId,
         signer_id: AccountId
     ) -> Promise;

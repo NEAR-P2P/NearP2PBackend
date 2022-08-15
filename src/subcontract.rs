@@ -245,18 +245,18 @@ impl NearP2P {
             sub_contract.clone(),
             0,
             BASE_GAS,
-        ).then(int_sub_contract::on_delte_withdraw_near(
+        ).then(int_sub_contract::on_delete_withdraw_near(
             sub_contract.clone(),
             signer_id.clone(),
             env::current_account_id(),
             0,
-            Gas(70_000_000_000_000),
+            Gas(100_000_000_000_000),
         ));
     }
 
 
     #[private]
-    pub fn on_delte_withdraw_near(&mut self,
+    pub fn on_delete_withdraw_near(&mut self,
         sub_contract: AccountId,
         signer_id: AccountId
     ) -> Promise {
