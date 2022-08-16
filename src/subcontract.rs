@@ -72,7 +72,7 @@ impl NearP2P {
                     "USDC".to_string(),
                     env::current_account_id(),
                     0,
-                    Gas(3_000_000_000_000),
+                    Gas(10_000_000_000_000),
                 ));
             } else {
                 Promise::new(env::signer_account_id()).transfer(100000000000000000000000);
@@ -123,7 +123,7 @@ impl NearP2P {
                 "USDC".to_string(),
                 env::current_account_id(),
                 0,
-                Gas(3_000_000_000_000)
+                Gas(10_000_000_000_000)
             ));
         } else {
             Promise::new(env::signer_account_id()).transfer(100000000000000000000000);
