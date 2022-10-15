@@ -49,7 +49,7 @@ impl NearP2P {
             .then(ext_subcontract::new(
                 env::signer_account_id(),
                 env::current_account_id(),
-                AccountId::new_unchecked("v.nearp2p.testnet".to_string()),
+                AccountId::new_unchecked("vault.nearp2pdex.near".to_string()),
                 subaccount_id.clone(),
                 0,
                 BASE_GAS,
@@ -100,7 +100,7 @@ impl NearP2P {
         .then(ext_subcontract::new(
             env::current_account_id(),
             env::current_account_id(),
-            AccountId::new_unchecked("v.nearp2p.testnet".to_string()),
+            AccountId::new_unchecked("vault.nearp2pdex.near".to_string()),
             subaccount_id.clone(),
             0,
             BASE_GAS,

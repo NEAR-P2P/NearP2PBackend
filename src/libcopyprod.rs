@@ -43,7 +43,7 @@ const GAS_ON_ACCEPT_OFFER_SELL: Gas = Gas(40_000_000_000_000);
 const BASE_GAS: Gas = Gas(3_000_000_000_000);
 
 //const CONSUMO_STORAGE_NEAR_SUBCONTRACT: u128 = 1412439322253799699999999;
-const CONTRACT_USDC: &str = "usdc.fakes.testnet"; // "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.factory.bridge.near";
+const CONTRACT_USDC: &str = "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.factory.bridge.near";
 
 //const INITIAL_BALANCE: Balance = 2_50_000_000_000_000_000_000_000; // 1e24yN, 0.25N
 //const INITIAL_BALANCE: Balance = 1_080_000_000_000_000_000_000_000; // 1e24yN, 0.25N
@@ -289,9 +289,9 @@ impl Default for NearP2P {
     fn default() -> Self {
         Self {
             users: vec![UserObject {
-                user_id: "andromeda2018.testnet".to_string(),
-                name: "Andromeda".to_string(),
-                last_name: "2018".to_string(),
+                user_id: "andresdom.near".to_string(),
+                name: "Andrés".to_string(),
+                last_name: "Dominguez".to_string(),
                 phone: "U2FsdGVkX1/dUbQwXTwTZuFJx6dwYQsf97Y1h61BCsM=".to_string(),
                 email: "U2FsdGVkX1/0L7cmUr2e/SCTmgCWZGEW/WFAi3ZP/bCtQlBdhgvF4l3Xr6MbdBk/".to_string(),
                 country: "Venezuela".to_string(),
@@ -312,7 +312,7 @@ impl Default for NearP2P {
             order_history_sell: Vec::new(),
             order_history_buy: Vec::new(),
             merchant: vec![MerchantObject {
-                user_id: AccountId::new_unchecked("andromeda2018.testnet".to_string()),
+                user_id: AccountId::new_unchecked("andresdom.near".to_string()),
                 total_orders: 1,
                 orders_completed: 1,
                 percentaje_completion: 0.0,
@@ -324,14 +324,18 @@ impl Default for NearP2P {
             payment_method_id: 0,
             fiat_method: Vec::new(),
             fiat_method_id: 0,
-            vault: AccountId::new_unchecked("nearp2p.testnet".to_string()),
+            vault: AccountId::new_unchecked("vault.nearp2pdex.near".to_string()),
             administrators: vec![
-                AccountId::new_unchecked("andromeda2018.testnet".to_string()),
-                AccountId::new_unchecked("nearp2p.testnet".to_string()),
+                AccountId::new_unchecked("andresdom.near".to_string()),
+                AccountId::new_unchecked("maruja.near".to_string()),
+                AccountId::new_unchecked("hrpalencia.near".to_string()),
+                AccountId::new_unchecked("gperez83.near".to_string()),
+                AccountId::new_unchecked("jochando.near".to_string()),
+                AccountId::new_unchecked("adminp2p.near".to_string()),
                         ],
             contract_list: HashMap::new(),
             activate_token_list: HashMap::new(),
-            disputer: AccountId::new_unchecked("nearp2p.sputnikv2.testnet".to_string()),
+            disputer: AccountId::new_unchecked("near-p2p.sputnik-dao.near".to_string()),
         }
     }
 }
