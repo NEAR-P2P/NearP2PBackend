@@ -123,7 +123,7 @@ impl NearP2P {
                 _=> env::panic_str("The requested asset does not exist")
             };
         } else if offer_type == 2 {
-            //require!(attached_deposit >= 1, "you have to deposit a minimum of one YoctoNear");
+            require!(attached_deposit >= 1, "you have to deposit a minimum of one YoctoNear");
 
             let offer: usize = self.offers_buy.iter().position(|x| x.offer_id == offer_id).expect("Offer buy not found");
             
