@@ -70,6 +70,12 @@ impl NearP2P {
         , rate: f64
     ) {
         //let attached_deposit = env::attached_deposit();
+        let result_referente = self.wallets.get(&env::signer_account_id());
+        let mut referente: Option<AccountId> = None;
+        if result_referente.is_some() {
+            referente = result_referente.expect("error").referente.clone();
+        }
+
         if offer_type == 1 {
             //require!(attached_deposit >= 1, "you have to deposit a minimum one YoctoNEAR");
 
@@ -95,6 +101,7 @@ impl NearP2P {
                             , payment_method
                             , datetime
                             , rate
+                            , referente.clone()
                             , env::current_account_id()
                             , 0
                             , GAS_ON_ACCEPT_OFFER_SELL
@@ -115,6 +122,7 @@ impl NearP2P {
                             , payment_method
                             , datetime
                             , rate
+                            , referente.clone()
                             , env::current_account_id()
                             , 0
                             , GAS_ON_ACCEPT_OFFER_SELL
@@ -164,6 +172,7 @@ impl NearP2P {
                 confirmation_owner_id: 0,
                 confirmation_signer_id: 0,
                 confirmation_current: 0,
+                referente: referente.clone(),
                 time: self.offers_buy[offer].time,
                 datetime: datetime.clone(),
                 terms_conditions: self.offers_buy[offer].terms_conditions.clone(),
@@ -191,6 +200,7 @@ impl NearP2P {
                         "confirmation_owner_id": "0".to_string(),
                         "confirmation_signer_id": "0".to_string(),
                         "confirmation_current": "0".to_string(),
+                        "referente": referente.clone(),
                         "time": self.offers_buy[offer].time.to_string(),
                         "datetime": datetime.clone(),
                         "terms_conditions": self.offers_buy[offer].terms_conditions.clone(),
@@ -220,6 +230,7 @@ impl NearP2P {
         , payment_method: i128
         , datetime: String
         , rate: f64
+        , referente: Option<AccountId>
     ) {
         require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         let result = promise_result_as_success();
@@ -262,6 +273,7 @@ impl NearP2P {
             confirmation_owner_id: 0,
             confirmation_signer_id: 0,
             confirmation_current: 0,
+            referente: referente.clone(),
             time: self.offers_sell[offer].time,
             datetime: datetime.clone(),
             terms_conditions: self.offers_sell[offer].terms_conditions.to_string(),
@@ -287,6 +299,7 @@ impl NearP2P {
                     "confirmation_owner_id": "0".to_string(),
                     "confirmation_signer_id": "0".to_string(),
                     "confirmation_current": "0".to_string(),
+                    "referente": referente.clone(),
                     "time": self.offers_sell[offer].time.to_string(),
                     "datetime": datetime.clone(),
                     "terms_conditions": self.offers_sell[offer].terms_conditions.clone(),

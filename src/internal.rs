@@ -78,6 +78,7 @@ trait IntOffer {
         , payment_method: i128
         , datetime: String
         , rate: f64
+        , referente: Option<AccountId>
     );
 
     /*fn on_delete_contract_user(&mut self, signer_id: AccountId, sub_contract: AccountId);
