@@ -15,7 +15,7 @@ impl NearP2P {
             .then(ext_subcontract::new(
                 env::current_account_id(),
                 env::current_account_id(),
-                AccountId::new_unchecked("v.nearp2p.testnet".to_string()),
+                AccountId::new_unchecked("vault.nearp2pdex.near".to_string()),
                 subaccount_id.clone(),
                 0,
                 BASE_GAS,
@@ -69,6 +69,7 @@ impl NearP2P {
         , datetime: String
         , rate: f64
     ) {
+<<<<<<< HEAD
         //let attached_deposit = env::attached_deposit();
         let result_referente = self.wallets.get(&env::signer_account_id());
         let mut referente: Option<AccountId> = None;
@@ -76,8 +77,11 @@ impl NearP2P {
             referente = result_referente.expect("error").referente.clone();
         }
 
+=======
+        let attached_deposit = env::attached_deposit();
+>>>>>>> c7d1ce4ad4bc4099f5103fa078d24545a7c6d680
         if offer_type == 1 {
-            //require!(attached_deposit >= 1, "you have to deposit a minimum one YoctoNEAR");
+            require!(attached_deposit >= 1, "you have to deposit a minimum one YoctoNEAR");
 
             let offer: usize = self.offers_sell.iter().position(|x| x.offer_id == offer_id).expect("Offer sell not found");
             let signer_id = env::signer_account_id();
@@ -131,7 +135,7 @@ impl NearP2P {
                 _=> env::panic_str("The requested asset does not exist")
             };
         } else if offer_type == 2 {
-            //require!(attached_deposit >= 1, "you have to deposit a minimum of one YoctoNear");
+            require!(attached_deposit >= 1, "you have to deposit a minimum of one YoctoNear");
 
             let offer: usize = self.offers_buy.iter().position(|x| x.offer_id == offer_id).expect("Offer buy not found");
             

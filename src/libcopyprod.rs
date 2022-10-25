@@ -43,7 +43,7 @@ const GAS_ON_ACCEPT_OFFER_SELL: Gas = Gas(40_000_000_000_000);
 const BASE_GAS: Gas = Gas(3_000_000_000_000);
 
 //const CONSUMO_STORAGE_NEAR_SUBCONTRACT: u128 = 1412439322253799699999999;
-const CONTRACT_USDC: &str = "usdc.fakes.testnet"; // "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.factory.bridge.near";
+const CONTRACT_USDC: &str = "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.factory.bridge.near";
 
 //const INITIAL_BALANCE: Balance = 2_50_000_000_000_000_000_000_000; // 1e24yN, 0.25N
 //const INITIAL_BALANCE: Balance = 1_080_000_000_000_000_000_000_000; // 1e24yN, 0.25N
@@ -84,13 +84,6 @@ pub struct UserObject {
     campo3: String,
 }
 
-#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
-pub struct ObjectWallet {
-    wallet: AccountId,
-    referente: Option<AccountId>,
-    referidos: Vec<AccountId>
-}
 
 #[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
@@ -141,7 +134,6 @@ pub struct OrderObject {
     confirmation_owner_id: i8,
     confirmation_signer_id: i8,
     confirmation_current: i8,
-    referente: Option<AccountId>,
     time: i64,
     datetime: String,
     terms_conditions: String,
@@ -289,12 +281,6 @@ pub struct NearP2P {
     pub activate_token_list: HashMap<AccountId, Vec<String>>,
 
     pub disputer: AccountId,
-
-    pub wallets: HashMap<AccountId, ObjectWallet>,
-    
-    pub porcentaje_referente: u128,
-    
-    pub porcentaje_referido: u128
 }
 
 /// Initializing deafult impl
@@ -303,9 +289,9 @@ impl Default for NearP2P {
     fn default() -> Self {
         Self {
             users: vec![UserObject {
-                user_id: "andromeda2018.testnet".to_string(),
-                name: "Andromeda".to_string(),
-                last_name: "2018".to_string(),
+                user_id: "andresdom.near".to_string(),
+                name: "Andrés".to_string(),
+                last_name: "Dominguez".to_string(),
                 phone: "U2FsdGVkX1/dUbQwXTwTZuFJx6dwYQsf97Y1h61BCsM=".to_string(),
                 email: "U2FsdGVkX1/0L7cmUr2e/SCTmgCWZGEW/WFAi3ZP/bCtQlBdhgvF4l3Xr6MbdBk/".to_string(),
                 country: "Venezuela".to_string(),
@@ -326,7 +312,7 @@ impl Default for NearP2P {
             order_history_sell: Vec::new(),
             order_history_buy: Vec::new(),
             merchant: vec![MerchantObject {
-                user_id: AccountId::new_unchecked("andromeda2018.testnet".to_string()),
+                user_id: AccountId::new_unchecked("andresdom.near".to_string()),
                 total_orders: 1,
                 orders_completed: 1,
                 percentaje_completion: 0.0,
@@ -338,17 +324,18 @@ impl Default for NearP2P {
             payment_method_id: 0,
             fiat_method: Vec::new(),
             fiat_method_id: 0,
-            vault: AccountId::new_unchecked("nearp2p.testnet".to_string()),
+            vault: AccountId::new_unchecked("vault.nearp2pdex.near".to_string()),
             administrators: vec![
-                AccountId::new_unchecked("andromeda2018.testnet".to_string()),
-                AccountId::new_unchecked("nearp2p.testnet".to_string()),
+                AccountId::new_unchecked("andresdom.near".to_string()),
+                AccountId::new_unchecked("maruja.near".to_string()),
+                AccountId::new_unchecked("hrpalencia.near".to_string()),
+                AccountId::new_unchecked("gperez83.near".to_string()),
+                AccountId::new_unchecked("jochando.near".to_string()),
+                AccountId::new_unchecked("adminp2p.near".to_string()),
                         ],
             contract_list: HashMap::new(),
             activate_token_list: HashMap::new(),
-            disputer: AccountId::new_unchecked("nearp2p.sputnikv2.testnet".to_string()),
-            wallets: HashMap::new(),
-            porcentaje_referente: 42000,
-            porcentaje_referido: 5000,
+            disputer: AccountId::new_unchecked("near-p2p.sputnik-dao.near".to_string()),
         }
     }
 }
@@ -382,47 +369,6 @@ impl NearP2P {
         return ret;
     }*/
 
-    pub fn add_referido(&mut self, referente: AccountId) {
-        let signer_id: AccountId = env::signer_account_id();
-        let valid = self.wallets.get(&signer_id.clone());
-        
-        require!(valid.is_none(), format!("La cuenta '{}' ya fue agregada", signer_id.clone()).to_string());
-        
-        self.wallets.insert(signer_id.clone(), ObjectWallet {
-            wallet: signer_id.clone(),
-            referente: Some(referente.clone()),
-            referidos: Vec::new(),
-        });
-
-        let referente_add = self.wallets.get(&referente.clone());
-
-        let mut referido: Vec<AccountId>;
-
-        if referente_add.is_none() {
-            referido = Vec::new();
-            referido.push(signer_id.clone());
-            
-            self.wallets.insert(referente.clone(), ObjectWallet {
-                wallet: referente.clone(),
-                referente: None,
-                referidos: referido,
-            });
-        } else {
-            let mut referido_add = self.wallets.get(&referente.clone()).expect("error").clone();
-            referido_add.referidos.push(signer_id.clone());
-            self.wallets.insert(referente.clone(), referido_add);
-        }
-
-        env::log_str(
-            &json!({
-                "type": "add_referido",
-                "params": {
-                    "referido": signer_id.clone(),
-                    "referente": referente.clone(),
-                }
-            }).to_string(),
-        );
-    }
     
    
     pub fn set_admin(&mut self, user_id: AccountId) {
@@ -447,7 +393,7 @@ impl NearP2P {
 
     /// Returns the users object loaded in contract
     /// Params: user_id: AccountId
-    /*pub fn get_user(self, 
+    pub fn get_user(self, 
         user_id: Option<AccountId>,
         from_index: Option<U128>,
         limit: Option<u64>,
@@ -476,7 +422,7 @@ impl NearP2P {
         } else {
             [].to_vec()
         }
-    }*/
+    }
 
     pub fn delete_user_admin(&mut self, user_id: String) {
         self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
@@ -693,7 +639,7 @@ impl NearP2P {
     }
 
     /// Returns the merchant object loaded in contract
-    /*pub fn get_merchant(self,
+    pub fn get_merchant(self,
         user_id: AccountId,
         from_index: Option<U128>,
         limit: Option<u64>,
@@ -721,7 +667,7 @@ impl NearP2P {
         } else {
             [].to_vec()
         }
-    }*/
+    }
 
 
     /// Set the merchant object into the contract
@@ -759,7 +705,7 @@ impl NearP2P {
 
 
     /// Returns the Payment Method object loaded in contract
-    /*pub fn get_payment_method(&self,
+    pub fn get_payment_method(&self,
         from_index: Option<U128>,
         limit: Option<u64>
     ) -> Vec<PaymentMethodsObject> {
@@ -779,7 +725,7 @@ impl NearP2P {
         } else {
             [].to_vec()
         }
-    }*/
+    }
 
 
     /// Set the Payment Method object into the contract
@@ -898,7 +844,7 @@ impl NearP2P {
     }
     
     /// Returns the Fiat Method object loaded in contract
-    /*pub fn get_fiat_method(&self,
+    pub fn get_fiat_method(&self,
         from_index: Option<U128>,
         limit: Option<u64>
     ) -> Vec<FiatMethodsObject> {
@@ -918,7 +864,7 @@ impl NearP2P {
         } else {
             [].to_vec()
         }
-    }*/
+    }
 
     /// Set the Fiat Method object into the contract
     /// Params: fiat_method_id: String, flagcdn: String
@@ -986,7 +932,7 @@ impl NearP2P {
 
 
      /// Returns the users object loaded in contract
-    /* pub fn get_payment_method_user(self, user_id: AccountId, method_id: Option<i128>) -> Vec<PaymentMethodUserObject> {
+     pub fn get_payment_method_user(self, user_id: AccountId, method_id: Option<i128>) -> Vec<PaymentMethodUserObject> {
         if self.payment_method_user.len() > 0 {
             let mut result: Vec<PaymentMethodUserObject> = Vec::new();
             if self.payment_method_user.len() > 0 {
@@ -1036,7 +982,7 @@ impl NearP2P {
         } else {
             [].to_vec()
         }
-    }*/
+    }
     
     //Set the Payment Method User object into the contract
     pub fn set_payment_method_user(&mut self, payment_method_id: i128
@@ -1205,7 +1151,7 @@ impl NearP2P {
     }
 
 
-    /*pub fn get_order_sell(self,
+    pub fn get_order_sell(self,
         order_id: Option<i128>,
         offer_id: Option<i128>,
         owner_id: Option<AccountId>,
@@ -1280,12 +1226,12 @@ impl NearP2P {
                 data: [].to_vec(),
             }
         }
-    }*/
+    }
 
 }
 
 
-/*fn search_offer(data: Vec<OfferObject>,
+fn search_offer(data: Vec<OfferObject>,
     amount: Option<U128>,
     fiat_method: Option<i128>,
     payment_method: Option<i128>,
@@ -1476,7 +1422,7 @@ fn search_order_history(data: Vec<OrderObject>,
         .take(limit)
         .map(|s| s.clone()).collect(),
     }
-}*/
+}
 
 // use the attribute below for unit tests
 #[cfg(test)]
