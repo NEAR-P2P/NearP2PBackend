@@ -69,7 +69,6 @@ impl NearP2P {
         , datetime: String
         , rate: f64
     ) {
-<<<<<<< HEAD
         //let attached_deposit = env::attached_deposit();
         let result_referente = self.wallets.get(&env::signer_account_id());
         let mut referente: Option<AccountId> = None;
@@ -77,9 +76,6 @@ impl NearP2P {
             referente = result_referente.expect("error").referente.clone();
         }
 
-=======
-        let attached_deposit = env::attached_deposit();
->>>>>>> c7d1ce4ad4bc4099f5103fa078d24545a7c6d680
         if offer_type == 1 {
             require!(attached_deposit >= 1, "you have to deposit a minimum one YoctoNEAR");
 
