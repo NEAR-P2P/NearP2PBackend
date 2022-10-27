@@ -70,7 +70,7 @@ impl NearP2P {
         , datetime: String
         , rate: f64
     ) {
-        //let attached_deposit = env::attached_deposit();
+        let attached_deposit = env::attached_deposit();
         let result_referente = self.wallets.get(&env::signer_account_id());
         let mut referente: Option<AccountId> = None;
         if result_referente.is_some() {
