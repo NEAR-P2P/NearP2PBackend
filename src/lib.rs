@@ -84,6 +84,13 @@ pub struct UserObject {
     campo3: String,
 }
 
+#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub struct ObjectWallet {
+    wallet: AccountId,
+    referente: Option<AccountId>,
+    referidos: Vec<AccountId>
+}
 
 #[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
@@ -134,6 +141,7 @@ pub struct OrderObject {
     confirmation_owner_id: i8,
     confirmation_signer_id: i8,
     confirmation_current: i8,
+    referente: Option<AccountId>,
     time: i64,
     datetime: String,
     terms_conditions: String,
@@ -281,6 +289,12 @@ pub struct NearP2P {
     pub activate_token_list: HashMap<AccountId, Vec<String>>,
 
     pub disputer: AccountId,
+
+    pub wallets: HashMap<AccountId, ObjectWallet>,
+    
+    pub porcentaje_referente: u128,
+    
+    pub porcentaje_referido: u128
 }
 
 /// Initializing deafult impl
@@ -332,6 +346,9 @@ impl Default for NearP2P {
             contract_list: HashMap::new(),
             activate_token_list: HashMap::new(),
             disputer: AccountId::new_unchecked("nearp2p.sputnikv2.testnet".to_string()),
+            wallets: HashMap::new(),
+            porcentaje_referente: 42000,
+            porcentaje_referido: 5000,
         }
     }
 }
@@ -365,6 +382,47 @@ impl NearP2P {
         return ret;
     }*/
 
+    pub fn add_referido(&mut self, referente: AccountId) {
+        let signer_id: AccountId = env::signer_account_id();
+        let valid = self.wallets.get(&signer_id.clone());
+        
+        require!(valid.is_none(), format!("La cuenta '{}' ya fue agregada", signer_id.clone()).to_string());
+        
+        self.wallets.insert(signer_id.clone(), ObjectWallet {
+            wallet: signer_id.clone(),
+            referente: Some(referente.clone()),
+            referidos: Vec::new(),
+        });
+
+        let referente_add = self.wallets.get(&referente.clone());
+
+        let mut referido: Vec<AccountId>;
+
+        if referente_add.is_none() {
+            referido = Vec::new();
+            referido.push(signer_id.clone());
+            
+            self.wallets.insert(referente.clone(), ObjectWallet {
+                wallet: referente.clone(),
+                referente: None,
+                referidos: referido,
+            });
+        } else {
+            let mut referido_add = self.wallets.get(&referente.clone()).expect("error").clone();
+            referido_add.referidos.push(signer_id.clone());
+            self.wallets.insert(referente.clone(), referido_add);
+        }
+
+        env::log_str(
+            &json!({
+                "type": "add_referido",
+                "params": {
+                    "referido": signer_id.clone(),
+                    "referente": referente.clone(),
+                }
+            }).to_string(),
+        );
+    }
     
    
     pub fn set_admin(&mut self, user_id: AccountId) {
@@ -389,7 +447,7 @@ impl NearP2P {
 
     /// Returns the users object loaded in contract
     /// Params: user_id: AccountId
-    pub fn get_user(self, 
+    /*pub fn get_user(self, 
         user_id: Option<AccountId>,
         from_index: Option<U128>,
         limit: Option<u64>,
@@ -418,7 +476,7 @@ impl NearP2P {
         } else {
             [].to_vec()
         }
-    }
+    }*/
 
     pub fn delete_user_admin(&mut self, user_id: String) {
         self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
@@ -635,7 +693,7 @@ impl NearP2P {
     }
 
     /// Returns the merchant object loaded in contract
-    pub fn get_merchant(self,
+    /*pub fn get_merchant(self,
         user_id: AccountId,
         from_index: Option<U128>,
         limit: Option<u64>,
@@ -663,7 +721,7 @@ impl NearP2P {
         } else {
             [].to_vec()
         }
-    }
+    }*/
 
 
     /// Set the merchant object into the contract
@@ -701,7 +759,7 @@ impl NearP2P {
 
 
     /// Returns the Payment Method object loaded in contract
-    pub fn get_payment_method(&self,
+    /*pub fn get_payment_method(&self,
         from_index: Option<U128>,
         limit: Option<u64>
     ) -> Vec<PaymentMethodsObject> {
@@ -721,7 +779,7 @@ impl NearP2P {
         } else {
             [].to_vec()
         }
-    }
+    }*/
 
 
     /// Set the Payment Method object into the contract
@@ -840,7 +898,7 @@ impl NearP2P {
     }
     
     /// Returns the Fiat Method object loaded in contract
-    pub fn get_fiat_method(&self,
+    /*pub fn get_fiat_method(&self,
         from_index: Option<U128>,
         limit: Option<u64>
     ) -> Vec<FiatMethodsObject> {
@@ -860,7 +918,7 @@ impl NearP2P {
         } else {
             [].to_vec()
         }
-    }
+    }*/
 
     /// Set the Fiat Method object into the contract
     /// Params: fiat_method_id: String, flagcdn: String
@@ -928,7 +986,7 @@ impl NearP2P {
 
 
      /// Returns the users object loaded in contract
-     pub fn get_payment_method_user(self, user_id: AccountId, method_id: Option<i128>) -> Vec<PaymentMethodUserObject> {
+    /* pub fn get_payment_method_user(self, user_id: AccountId, method_id: Option<i128>) -> Vec<PaymentMethodUserObject> {
         if self.payment_method_user.len() > 0 {
             let mut result: Vec<PaymentMethodUserObject> = Vec::new();
             if self.payment_method_user.len() > 0 {
@@ -978,7 +1036,7 @@ impl NearP2P {
         } else {
             [].to_vec()
         }
-    }
+    }*/
     
     //Set the Payment Method User object into the contract
     pub fn set_payment_method_user(&mut self, payment_method_id: i128
@@ -1147,7 +1205,7 @@ impl NearP2P {
     }
 
 
-    pub fn get_order_sell(self,
+    /*pub fn get_order_sell(self,
         order_id: Option<i128>,
         offer_id: Option<i128>,
         owner_id: Option<AccountId>,
@@ -1222,12 +1280,12 @@ impl NearP2P {
                 data: [].to_vec(),
             }
         }
-    }
+    }*/
 
 }
 
 
-fn search_offer(data: Vec<OfferObject>,
+/*fn search_offer(data: Vec<OfferObject>,
     amount: Option<U128>,
     fiat_method: Option<i128>,
     payment_method: Option<i128>,
@@ -1418,7 +1476,7 @@ fn search_order_history(data: Vec<OrderObject>,
         .take(limit)
         .map(|s| s.clone()).collect(),
     }
-}
+}*/
 
 // use the attribute below for unit tests
 #[cfg(test)]
