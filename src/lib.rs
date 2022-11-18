@@ -302,19 +302,7 @@ pub struct NearP2P {
 impl Default for NearP2P {
     fn default() -> Self {
         Self {
-            users: vec![UserObject {
-                user_id: "andromeda2018.testnet".to_string(),
-                name: "Andromeda".to_string(),
-                last_name: "2018".to_string(),
-                phone: "U2FsdGVkX1/dUbQwXTwTZuFJx6dwYQsf97Y1h61BCsM=".to_string(),
-                email: "U2FsdGVkX1/0L7cmUr2e/SCTmgCWZGEW/WFAi3ZP/bCtQlBdhgvF4l3Xr6MbdBk/".to_string(),
-                country: "Venezuela".to_string(),
-                mediator: true,
-                is_active: true,
-                campo1: "".to_string(),
-                campo2: "".to_string(),
-                campo3: "".to_string(),
-            }],
+            users: Vec::new(),
             offers_sell: Vec::new(),
             offer_sell_id: 0,
             offers_buy: Vec::new(),
@@ -325,14 +313,7 @@ impl Default for NearP2P {
             order_buy_id: 0,
             order_history_sell: Vec::new(),
             order_history_buy: Vec::new(),
-            merchant: vec![MerchantObject {
-                user_id: AccountId::new_unchecked("andromeda2018.testnet".to_string()),
-                total_orders: 1,
-                orders_completed: 1,
-                percentaje_completion: 0.0,
-                badge: "check-circle".to_string(),
-                is_merchant: true,
-            }],
+            merchant: Vec::new(),
             payment_method: Vec::new(),
             payment_method_user: Vec::new(),
             payment_method_id: 0,
