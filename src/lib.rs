@@ -1186,7 +1186,7 @@ impl NearP2P {
     }
 
 
-    /*pub fn get_order_sell(self,
+    pub fn get_order_sell(self,
         order_id: Option<i128>,
         offer_id: Option<i128>,
         owner_id: Option<AccountId>,
@@ -1227,7 +1227,7 @@ impl NearP2P {
         }
     }
     
-    pub fn get_order_history_sell(self,
+    /*pub fn get_order_history_sell(self,
         user_id: Option<AccountId>,
         order_id: Option<i128>,
         status: Option<i8>,
@@ -1346,7 +1346,7 @@ impl NearP2P {
         .take(limit)
         .map(|r| r.clone()).collect(),
     }
-}
+}*/
 
 
 fn search_order(data: Vec<OrderObject>,
@@ -1409,7 +1409,7 @@ fn search_order(data: Vec<OrderObject>,
         .map(|r| r.clone()).collect(),
     }
 }
-
+/*
 fn search_order_history(data: Vec<OrderObject>,
     user_id: Option<AccountId>,
     order_id: Option<i128>,
