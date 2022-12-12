@@ -141,6 +141,8 @@ impl NearP2P {
                 status: 1,
             };
 
+            self.offers_buy.push(data);
+
             env::log_str(
                 &json!({
                     "type": "set_offers_buy",
@@ -162,8 +164,6 @@ impl NearP2P {
                     }
                 }).to_string(),
             );
-            
-            self.offers_buy.push(data);
 
             self.offer_buy_id
 
