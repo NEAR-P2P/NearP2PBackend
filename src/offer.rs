@@ -282,6 +282,8 @@ impl NearP2P {
         };
         
         let amount_delivered: U128 = U128(amount.0 - fee);
+        self.orders_sell.push(data);
+
         env::log_str(
             &json!({
                 "type": "accept_offer_sell",
@@ -308,7 +310,6 @@ impl NearP2P {
                 }
             }).to_string(),
         );
-        self.orders_sell.push(data);
 
         //actualizar total ordenes owner_id
         /*let mut index = self.merchant.iter().position(|x| x.user_id == self.offers_sell[offer].owner_id.clone()).expect("owner not merchant");
