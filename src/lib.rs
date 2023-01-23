@@ -366,6 +366,8 @@ impl NearP2P {
     pub fn add_referido(&mut self, referente: AccountId) {
         let signer_id: AccountId = env::signer_account_id();
         let valid = self.wallets.get(&signer_id.clone());
+
+        require!(signer_id.clone() != referente.clone(), "El referente no se puede auto referir");
         
         require!(valid.is_none(), format!("La cuenta '{}' ya fue agregada", signer_id.clone()).to_string());
         
