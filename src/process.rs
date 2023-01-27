@@ -49,8 +49,6 @@ impl NearP2P {
                     status = 2;
                 }
 
-                self.orders_sell.insert(&order_id, &order);
-
                 let offer = self.offers_sell.get(&order.offer_id).expect("Offer sell not found");
 
                 #[warn(unused_assignments)]
@@ -62,8 +60,8 @@ impl NearP2P {
                         ft_token = "NEAR".to_string();
                     },
                     _=> {
-                        contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
-                        ft_token = "USDC".to_string();
+                        contract_ft = Some(self.ft_token_list.get(&offer.asset).expect("El asset subministrado en la oferta es incorrecto").contract); //Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
+                        ft_token = offer.asset;
                     },
                 };
                 
@@ -102,6 +100,9 @@ impl NearP2P {
                 if order.status == 1 {
                     order.status = 2;
                 }
+
+                self.orders_buy.insert(&order_id, &order);
+
                 env::log_str(
                     &json!({
                         "type": "order_confirmation_signer",
@@ -130,8 +131,8 @@ impl NearP2P {
                         ft_token = "NEAR".to_string();
                     },
                     _=> {
-                        contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
-                        ft_token = "USDC".to_string();
+                        contract_ft = Some(self.ft_token_list.get(&offer.asset).expect("El asset subministrado en la oferta es incorrecto").contract); //Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
+                        ft_token = offer.asset;
                     },
                 };
                 
@@ -194,8 +195,8 @@ impl NearP2P {
                         ft_token = "NEAR".to_string();
                     },
                     _=> {
-                        contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
-                        ft_token = "USDC".to_string();
+                        contract_ft = Some(self.ft_token_list.get(&offer.asset).expect("El asset subministrado en la oferta es incorrecto").contract); //Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
+                        ft_token = offer.asset;
                     },
                 };
                 
@@ -285,8 +286,8 @@ impl NearP2P {
                         ft_token = "NEAR".to_string();
                     },
                     _=> {
-                        contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
-                        ft_token = "USDC".to_string();
+                        contract_ft = Some(self.ft_token_list.get(&offer.asset).expect("El asset subministrado en la oferta es incorrecto").contract); //Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
+                        ft_token = offer.asset;
                     },
                 };
 

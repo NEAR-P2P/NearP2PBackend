@@ -20,7 +20,7 @@ impl NearP2P {
         self.contract_list.insert(&account_id, &ContractList{ contract: subcuenta, type_contract: type_contract});
     }
 
-    #[payable]
+    /*#[payable]
     pub fn activar_subcuenta_usdc(&mut self, subaccount_id: AccountId) -> Promise {
         ext_usdc::storage_deposit(
             true,
@@ -29,7 +29,36 @@ impl NearP2P {
             100000000000000000000000,
             BASE_GAS,
         )
+    }*/
+
+    #[payable]
+    pub fn activar_subcuenta_ft(&mut self, subaccount_id: AccountId, asset: String) -> Promise {
+        assert!(
+            env::attached_deposit() >= 100000000000000000000000,
+            "Requires attached deposit of at least 100000000000000000000000 yoctoNEAR",
+        );
+        
+        let contract_ft = self.ft_token_list.get(&asset).expect("El asset subministrado en la oferta es incorrecto");
+
+        let token_activos = self.activate_token_list.get(&env::signer_account_id()).or(Some([].to_vec())).unwrap();
+
+        assert!(token_activos.iter().find(|&x| x == &asset).is_none(), "El token ya esta activo");
+
+        ext_usdc::storage_deposit(
+            true,
+            subaccount_id,
+            contract_ft.contract,
+            100000000000000000000000,
+            BASE_GAS,
+        ).then(int_sub_contract::on_listar_token_activo(
+            env::signer_account_id(),
+            asset,
+            env::current_account_id(),
+            0,
+            Gas(10_000_000_000_000)
+        ))
     }
+
 
     #[payable]
     pub fn create_subcontract_merchant(&mut self) -> Promise {
@@ -57,10 +86,10 @@ impl NearP2P {
 
             self.contract_list.insert(&env::signer_account_id(), &ContractList{ contract: subaccount_id.clone(), type_contract: 1 });
 
-            let verificar_token = self.activate_token_list.get(&env::signer_account_id());
+            //let verificar_token = self.activate_token_list.get(&env::signer_account_id());
 
             //if verificar_token.is_none() || verificar_token.unwrap().get(verificar_token.unwrap().iter().position(|x| *x == "USDC".to_string()).unwrap() as usize).is_none() {
-            if verificar_token.is_none() {
+            /*if verificar_token.is_none() {
                 ext_usdc::storage_deposit(
                     true,
                     subaccount_id,
@@ -76,7 +105,7 @@ impl NearP2P {
                 ));
             } else {
                 Promise::new(env::signer_account_id()).transfer(100000000000000000000000);
-            }  
+            }*/  
 
         result
     }
@@ -108,7 +137,7 @@ impl NearP2P {
 
         self.contract_list.insert(&env::signer_account_id(), &ContractList{ contract: subaccount_id.clone(), type_contract: 2 });
         
-        let verificar_token = self.activate_token_list.get(&env::signer_account_id());
+        /*let verificar_token = self.activate_token_list.get(&env::signer_account_id());
 
         //if verificar_token.is_none() || verificar_token.unwrap().get(verificar_token.unwrap().iter().position(|x| *x == "USDC".to_string()).unwrap() as usize).is_none() {
         if verificar_token.is_none() {
@@ -127,7 +156,7 @@ impl NearP2P {
             ));
         } else {
             Promise::new(env::signer_account_id()).transfer(100000000000000000000000);
-        }
+        }*/
 
         result
     }
@@ -331,7 +360,9 @@ impl NearP2P {
                     GAS_ON_WITHDRAW_NEAR,
                 ))
             },
-            "USDC" => {
+            _=> {
+                self.ft_token_list.get(&ft_token).expect("El ft_token subministrado en la oferta es incorrecto");
+
                 ext_usdc::ft_balance_of(
                     contract.contract.to_string(),
                     AccountId::new_unchecked(CONTRACT_USDC.to_string()),
@@ -340,7 +371,7 @@ impl NearP2P {
                 ).then(int_sub_contract::on_withdraw_token_block(
                     contract.contract.clone(),
                     env::signer_account_id(),
-                    "USDC".to_string(),
+                    ft_token.clone(),
                     env::current_account_id(),
                     0,
                     GAS_ON_WITHDRAW_TOKEN_BLOCK,
@@ -386,13 +417,14 @@ impl NearP2P {
         ft_token: String,
     ) -> Promise {
         require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
+
         let result = promise_result_as_success();
         if result.is_none() {
             env::panic_str("Error balance token general".as_ref());
         }
         
         let balannce_general: U128 = near_sdk::serde_json::from_slice::<U128>(&result.unwrap()).expect("U128");
-        
+
         ext_subcontract::get_balance_block_token(
             ft_token.clone(),
             sub_contract.clone(),

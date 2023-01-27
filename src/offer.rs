@@ -72,6 +72,7 @@ impl NearP2P {
         let attached_deposit = env::attached_deposit();
         let result_referente = self.referidos.get(&env::signer_account_id());
         let mut referente: Option<AccountId> = None;
+        
         if result_referente.is_some() {
             referente = result_referente.expect("error").referente.clone();
         }
@@ -107,17 +108,19 @@ impl NearP2P {
                             , GAS_ON_ACCEPT_OFFER_SELL
                     ));
                 }, 
-                "USDC" => {
+                _=> {
+                    let contract_ft = self.ft_token_list.get(&offer.asset).expect("El ft_token subministrado en la oferta es incorrecto");
+                    
                     ext_subcontract::block_balance_token(
-                        AccountId::new_unchecked(CONTRACT_USDC.to_string()),
-                        "USDC".to_string(),
+                        contract_ft.contract,
+                        offer.asset.clone(),
                         amount,
                         contract_name.contract.clone(),
                         0,
                         GAS_FOR_BLOCK,
                     ).then(
                         int_offer::on_accept_offer_sell(
-                            offer
+                            offer.clone()
                             , amount
                             , payment_method
                             , datetime
@@ -137,6 +140,7 @@ impl NearP2P {
             
             require!(offer.owner_id != env::signer_account_id(), "you can not accept your own offer");
             require!(offer.remaining_amount >= amount.0, "the quantity is greater than the offer buy amount");
+            
                 
             let remaining: u128 = offer.remaining_amount - amount.0;
             if remaining <= 0 {
@@ -149,7 +153,10 @@ impl NearP2P {
             if offer.min_limit > remaining {
                 match offer.asset.as_str() {
                     "NEAR" => offer.min_limit = 1000000000000000000000000,
-                    _=> offer.min_limit = 1000000,
+                    _=> {
+                        let contract_ft = self.ft_token_list.get(&offer.asset).expect("El ft_token subministrado en la oferta es incorrecto");
+                        offer.min_limit = contract_ft.min_limit; //1000000
+                    }
                 };
             }
 

@@ -45,7 +45,7 @@ const GAS_ON_ACCEPT_OFFER_SELL: Gas = Gas(40_000_000_000_000);
 const BASE_GAS: Gas = Gas(3_000_000_000_000);
 
 //const CONSUMO_STORAGE_NEAR_SUBCONTRACT: u128 = 1412439322253799699999999;
-const CONTRACT_USDC: &str = "usdc.fakes.testnet"; // "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.factory.bridge.near";
+//const CONTRACT_USDC: &str = "usdc.fakes.testnet"; // "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.factory.bridge.near";
 
 //const INITIAL_BALANCE: Balance = 2_50_000_000_000_000_000_000_000; // 1e24yN, 0.25N
 //const INITIAL_BALANCE: Balance = 1_080_000_000_000_000_000_000_000; // 1e24yN, 0.25N
@@ -236,6 +236,12 @@ pub struct ContractList {
     type_contract: i8,
 }
 
+#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub struct FtData {
+    contract: AccountId,
+    min_limit: u128,
+}
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /// Objects Definition////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -286,6 +292,8 @@ pub struct NearP2P {
 
     pub contract_list: UnorderedMap<AccountId, ContractList>,
 
+    pub ft_token_list: UnorderedMap<String, FtData>,
+
     pub activate_token_list: UnorderedMap<AccountId, Vec<String>>,
 
     pub disputer: AccountId,
@@ -311,6 +319,7 @@ enum StorageKey {
     KeyFiatMethod,
     KeyAdministrators,
     KeyContractList,
+    KeyFtLlist,
     KeyActivateTokenList,
     KeyReferidos,
 }
@@ -375,6 +384,7 @@ impl NearP2P {
             vault: AccountId::new_unchecked("nearp2p.testnet".to_string()),
             administrators: UnorderedSet::new(StorageKey::KeyAdministrators),
             contract_list: UnorderedMap::new(StorageKey::KeyContractList),
+            ft_token_list: UnorderedMap::new(StorageKey::KeyFtLlist),
             activate_token_list: UnorderedMap::new(StorageKey::KeyActivateTokenList),
             disputer: AccountId::new_unchecked("nearp2p.sputnikv2.testnet".to_string()),
             referidos: UnorderedMap::new(StorageKey::KeyReferidos),
@@ -407,6 +417,23 @@ impl NearP2P {
         let ret = near_sdk::serde_json::from_slice::<String>(&result.unwrap()).expect("balance is None");
         return ret;
     }*/
+    pub fn set_ft_token(&mut self, asset: String, data: FtData) {
+        assert!(self.owner_id == env::signer_account_id() || self.administrators.contains(&env::signer_account_id()), "Only administrator");
+        
+        self.ft_token_list.insert(&asset, &data);
+
+        env::log_str(
+            &json!({
+                "type": "set_ft_token",
+                "params": {
+                    "asset": asset.clone(),
+                    "contract": data.contract.to_string(),
+                    "min_limit": data.min_limit.to_string(),
+                }
+            }).to_string(),
+        );
+    }
+
 
     pub fn add_referido(&mut self, referente: AccountId) {
         let signer_id: AccountId = env::signer_account_id();

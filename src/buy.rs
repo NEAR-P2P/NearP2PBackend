@@ -76,9 +76,11 @@ impl NearP2P {
                 , Gas(15_000_000_000_000)
             ))
         } else {
+            let contract_ft = self.ft_token_list.get(&asset).expect("El ft_token subministrado en la oferta es incorrecto");
+
             ext_subcontract::block_balance_token(
-                AccountId::new_unchecked(CONTRACT_USDC.to_string()),
-                "USDC".to_string(),
+                contract_ft.contract,
+                asset.clone(),
                 amount,
                 contract_name.contract.clone(),
                 0,
