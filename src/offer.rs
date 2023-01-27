@@ -62,7 +62,6 @@ impl NearP2P {
     
     /// accept offer into the contract
     /// Params: offer_type: 1 = sell, 2 = buy
-    #[payable]
     pub fn accept_offer(&mut self, offer_type: i8
         , offer_id: i128
         , amount: U128
@@ -71,7 +70,7 @@ impl NearP2P {
         , rate: f64
     ) {
         let attached_deposit = env::attached_deposit();
-        let result_referente = self.wallets.get(&env::signer_account_id());
+        let result_referente = self.referidos.get(&env::signer_account_id());
         let mut referente: Option<AccountId> = None;
         if result_referente.is_some() {
             referente = result_referente.expect("error").referente.clone();
@@ -80,15 +79,15 @@ impl NearP2P {
         if offer_type == 1 {
             require!(attached_deposit >= 1, "you have to deposit a minimum one YoctoNEAR");
 
-            let offer: usize = self.offers_sell.iter().position(|x| x.offer_id == offer_id).expect("Offer sell not found");
+            let offer = self.offers_sell.get(&offer_id).expect("Offer sell not found");
             let signer_id = env::signer_account_id();
-            require!(self.offers_sell[offer].owner_id != signer_id, "you can not accept your own offer");
+            require!(offer.owner_id != signer_id, "you can not accept your own offer");
 
 
             #[warn(unused_assignments)]
             let contract_name = self.contract_list.get(&signer_id).expect("the user does not have a sub contract deployed");
             
-            match self.offers_sell[offer].asset.as_str() {
+            match offer.asset.as_str() {
                 "NEAR" => {
                     ext_subcontract::block_balance_near(
                         amount,
@@ -134,52 +133,56 @@ impl NearP2P {
         } else if offer_type == 2 {
             require!(attached_deposit >= 1, "you have to deposit a minimum of one YoctoNear");
 
-            let offer: usize = self.offers_buy.iter().position(|x| x.offer_id == offer_id).expect("Offer buy not found");
+            let mut offer = self.offers_buy.get(&offer_id).expect("Offer buy not found");
             
-            require!(self.offers_buy[offer].owner_id != env::signer_account_id(), "you can not accept your own offer");
-            require!(self.offers_buy[offer].remaining_amount >= amount.0, "the quantity is greater than the offer buy amount");
+            require!(offer.owner_id != env::signer_account_id(), "you can not accept your own offer");
+            require!(offer.remaining_amount >= amount.0, "the quantity is greater than the offer buy amount");
                 
-            let remaining: u128 = self.offers_buy[offer].remaining_amount - amount.0;
+            let remaining: u128 = offer.remaining_amount - amount.0;
             if remaining <= 0 {
-                self.offers_buy[offer].status = 2;
+                offer.status = 2;
             }
 
-            if self.offers_buy[offer].max_limit > remaining {
-                self.offers_buy[offer].max_limit = remaining;
+            if offer.max_limit > remaining {
+                offer.max_limit = remaining;
             }
-            if self.offers_buy[offer].min_limit > remaining {
-                match self.offers_buy[offer].asset.as_str() {
-                    "NEAR" => self.offers_buy[offer].min_limit = 1000000000000000000000000,
-                    _=> self.offers_buy[offer].min_limit = 1000000,
+            if offer.min_limit > remaining {
+                match offer.asset.as_str() {
+                    "NEAR" => offer.min_limit = 1000000000000000000000000,
+                    _=> offer.min_limit = 1000000,
                 };
             }
 
             let fee: u128 = (amount.0 * FEE_TRANSACTION_NEAR) / 100000;
             //let fee_deducted = amount - fee;
-            self.offers_buy[offer].remaining_amount = remaining;
+            offer.remaining_amount = remaining;
+
+            self.offers_buy.insert(&offer_id, &offer.clone());
+
             self.order_buy_id += 1;
             let data = OrderObject {
                 offer_id: offer_id,
                 order_id: self.order_buy_id,
-                owner_id: self.offers_buy[offer].owner_id.clone(),
-                asset: self.offers_buy[offer].asset.clone(),
+                owner_id: offer.owner_id.clone(),
+                asset: offer.asset.clone(),
                 signer_id: env::signer_account_id(),
                 exchange_rate: rate.to_string(),
                 operation_amount: amount.0,
                 amount_delivered: amount.0 - fee,
                 fee_deducted: fee,
                 payment_method: payment_method,
-                fiat_method: self.offers_buy[offer].fiat_method,
+                fiat_method: offer.fiat_method,
                 confirmation_owner_id: 0,
                 confirmation_signer_id: 0,
                 confirmation_current: 0,
                 referente: referente.clone(),
-                time: self.offers_buy[offer].time,
+                time: offer.time,
                 datetime: datetime.clone(),
-                terms_conditions: self.offers_buy[offer].terms_conditions.clone(),
+                terms_conditions: offer.terms_conditions.clone(),
                 status: 1,
             };
-            self.orders_buy.push(data);
+
+            self.orders_buy.insert(&self.order_buy_id, &data);
 
             let amount_delivered: U128 = U128(amount.0 - fee);
 
@@ -189,22 +192,22 @@ impl NearP2P {
                     "params": {
                         "offer_id": offer_id.to_string(),
                         "order_id": self.order_buy_id.to_string(),
-                        "owner_id": self.offers_buy[offer].owner_id.clone(),
-                        "asset": self.offers_buy[offer].asset.clone(),
+                        "owner_id": offer.owner_id.clone(),
+                        "asset": offer.asset.clone(),
                         "signer_id": env::signer_account_id(),
                         "exchange_rate": rate.to_string(),
                         "operation_amount": amount,
                         "amount_delivered": amount_delivered,
                         "fee_deducted": U128(fee),
                         "payment_method": payment_method.to_string(),
-                        "fiat_method": self.offers_buy[offer].fiat_method.to_string(),
+                        "fiat_method": offer.fiat_method.to_string(),
                         "confirmation_owner_id": "0".to_string(),
                         "confirmation_signer_id": "0".to_string(),
                         "confirmation_current": "0".to_string(),
                         "referente": referente.clone(),
-                        "time": self.offers_buy[offer].time.to_string(),
+                        "time": offer.time.to_string(),
                         "datetime": datetime.clone(),
-                        "terms_conditions": self.offers_buy[offer].terms_conditions.clone(),
+                        "terms_conditions": offer.terms_conditions.clone(),
                         "status": "1".to_string(),
                     }
                 }).to_string(),
@@ -226,7 +229,7 @@ impl NearP2P {
 
 
     #[private]
-    pub fn on_accept_offer_sell(&mut self, offer: usize
+    pub fn on_accept_offer_sell(&mut self, mut offer: OfferObject
         , amount: U128
         , payment_method: i128
         , datetime: String
@@ -240,72 +243,77 @@ impl NearP2P {
         let valid: bool = near_sdk::serde_json::from_slice::<bool>(&result.unwrap()).expect("bool");
         require!(valid, "No balance");
 
-        let remaining: u128 = self.offers_sell[offer].remaining_amount - amount.0;
+        let remaining: u128 = offer.remaining_amount - amount.0;
         if remaining <= 0 {
-            self.offers_sell[offer].status = 2;
+            offer.status = 2;
         }
         
-        if self.offers_sell[offer].max_limit > remaining {
-            self.offers_sell[offer].max_limit = remaining;
+        if offer.max_limit > remaining {
+            offer.max_limit = remaining;
         }
-        if self.offers_sell[offer].min_limit > remaining {
-            match self.offers_sell[offer].asset.as_str() {
-                "NEAR" => self.offers_sell[offer].min_limit = 1000000000000000000000000,
-                _=> self.offers_sell[offer].min_limit = 1000000,
+        if offer.min_limit > remaining {
+            match offer.asset.as_str() {
+                "NEAR" => offer.min_limit = 1000000000000000000000000,
+                _=> offer.min_limit = 1000000,
             };
         }
         
         let fee: u128 = (amount.0 * FEE_TRANSACTION_NEAR) / 100000;
 
-        self.offers_sell[offer].remaining_amount = remaining;
+        offer.remaining_amount = remaining;
+
+        self.offers_sell.insert(&offer.offer_id, &offer);
+        
+        
         self.order_sell_id += 1;
         let data = OrderObject {
-            offer_id: self.offers_sell[offer].offer_id,
+            offer_id: offer.offer_id,
             order_id: self.order_sell_id,
-            owner_id: self.offers_sell[offer].owner_id.clone(),
-            asset: self.offers_sell[offer].asset.clone(),
+            owner_id: offer.owner_id.clone(),
+            asset: offer.asset.clone(),
             signer_id: env::signer_account_id(),
             exchange_rate: rate.to_string(),
             operation_amount: amount.0,
             amount_delivered: amount.0 - fee,
             fee_deducted: fee,
             payment_method: payment_method,
-            fiat_method: self.offers_sell[offer].fiat_method,
+            fiat_method: offer.fiat_method,
             confirmation_owner_id: 0,
             confirmation_signer_id: 0,
             confirmation_current: 0,
             referente: referente.clone(),
-            time: self.offers_sell[offer].time,
+            time: offer.time,
             datetime: datetime.clone(),
-            terms_conditions: self.offers_sell[offer].terms_conditions.to_string(),
+            terms_conditions: offer.terms_conditions.to_string(),
             status: 1,
         };
         
         let amount_delivered: U128 = U128(amount.0 - fee);
-        self.orders_sell.push(data);
-
+       
+        self.orders_sell.insert(&self.order_sell_id, &data);
+       
         env::log_str(
             &json!({
                 "type": "accept_offer_sell",
                 "params": {
-                    "offer_id": self.offers_sell[offer].offer_id.to_string(),
+                    "offer_id": offer.offer_id.to_string(),
                     "order_id": self.order_sell_id.to_string(),
-                    "owner_id": self.offers_sell[offer].owner_id.clone(),
-                    "asset": self.offers_sell[offer].asset.clone(),
+                    "owner_id": offer.owner_id.clone(),
+                    "asset": offer.asset.clone(),
                     "signer_id": env::signer_account_id(),
                     "exchange_rate": rate.to_string(),
                     "operation_amount": amount,
                     "amount_delivered": amount_delivered,
                     "fee_deducted": U128(fee),
                     "payment_method": payment_method.to_string(),
-                    "fiat_method": self.offers_sell[offer].fiat_method.to_string(),
+                    "fiat_method": offer.fiat_method.to_string(),
                     "confirmation_owner_id": "0".to_string(),
                     "confirmation_signer_id": "0".to_string(),
                     "confirmation_current": "0".to_string(),
                     "referente": referente.clone(),
-                    "time": self.offers_sell[offer].time.to_string(),
+                    "time": offer.time.to_string(),
                     "datetime": datetime.clone(),
-                    "terms_conditions": self.offers_sell[offer].terms_conditions.clone(),
+                    "terms_conditions": offer.terms_conditions.clone(),
                     "status": "1".to_string(),
                 }
             }).to_string(),

@@ -42,7 +42,7 @@ trait IntSubContract {
 
 #[ext_contract(int_buy)]
 trait IntBuy {
-    fn on_set_offers_buy(&mut self, index: usize
+    fn on_set_offers_buy(&mut self, merchant: bool
         , owner_id: AccountId
         , asset: String
         , exchange_rate: String
@@ -68,12 +68,12 @@ trait IntBuy {
         , terms_conditions: Option<String>
     );*/
 
-    fn on_delete_offers_buy(&mut self, offer: usize, offer_buy_id: i128);
+    fn on_delete_offers_buy(&mut self, offer_buy_id: i128);
 }
 
 #[ext_contract(int_offer)]
 trait IntOffer {
-    fn on_accept_offer_sell(&mut self, offer: usize
+    fn on_accept_offer_sell(&mut self, offer: OfferObject
         , amount: U128
         , payment_method: i128
         , datetime: String
@@ -93,7 +93,7 @@ trait IntProcess {
         order_type: i8,
         /*data_contract: ContractList, 
         signer_id: AccountId,*/
-        index: usize,
+        order: OrderObject,
         confirmacion: bool,
         confirmation_owner_id: i8,
         confirmation_signer_id: i8,

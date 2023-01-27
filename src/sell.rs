@@ -45,14 +45,14 @@ impl NearP2P {
         , terms_conditions: String
     ) -> i128 {
         require!(env::attached_deposit() >= 100000000000000000000000, "you have to deposit a minimum 0.1 Near");
-        let index = self.merchant.iter().position(|x| x.user_id == env::signer_account_id()).expect("the user is not in the list of users");
+        let merchant = self.merchant.get(&env::signer_account_id()).expect("the user is not in the list of users");
         
         self.offer_sell_id += 1;
         
-        let offer_sell_id: String = self.offer_sell_id.to_string();
+        let offer_sell_id = self.offer_sell_id;
 
         let data = OfferObject {
-            offer_id: offer_sell_id.parse::<i128>().unwrap(),
+            offer_id: offer_sell_id,
             owner_id: env::signer_account_id(),
             asset: asset.clone(),
             exchange_rate: exchange_rate.clone(),
@@ -62,13 +62,13 @@ impl NearP2P {
             max_limit: max_limit.0,
             payment_method: payment_method.clone(),
             fiat_method: fiat_method,
-            is_merchant: self.merchant[index].is_merchant,
+            is_merchant: merchant.is_merchant,
             time: time,
             terms_conditions: terms_conditions.clone(),
             status: 1,
         };
 
-        self.offers_sell.push(data);
+        self.offers_sell.insert(&offer_sell_id, &data);
 
         //let fiat_method_string: String = fiat_method.to_string();
 
@@ -76,7 +76,7 @@ impl NearP2P {
             &json!({
                 "type": "set_offers_sell",
                 "params": {
-                    "offer_id": offer_sell_id,
+                    "offer_id": offer_sell_id.to_string(),
                     "owner_id": env::signer_account_id(),
                     "asset": asset.to_string(),
                     "exchange_rate": exchange_rate.to_string(),
@@ -86,7 +86,7 @@ impl NearP2P {
                     "max_limit": max_limit,
                     "payment_method": payment_method.clone(),
                     "fiat_method": fiat_method.to_string(),
-                    "is_merchant": self.merchant[index].is_merchant,
+                    "is_merchant": merchant.is_merchant,
                     "time": time.to_string(),
                     "terms_conditions": terms_conditions.to_string(),
                     "status": "1".to_string(),
@@ -161,8 +161,12 @@ impl NearP2P {
     #[payable]
     pub fn delete_offers_sell(&mut self, offer_id: i128) {
         assert_one_yocto();
-        let offer = self.offers_sell.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id()).expect("Offer not found");
-        self.offers_sell.remove(offer);
+        let offer = self.offers_sell.get(&offer_id).expect("Offer not found");
+        
+        assert!(offer.owner_id == env::signer_account_id(), "the user is not the creator of this offer");
+
+        self.offers_sell.remove(&offer_id).expect("Offer not found");
+        
         env::log_str(
             &json!({
                 "type": "delete_offers_sell",

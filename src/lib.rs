@@ -23,11 +23,13 @@ Develop by GlobalDv @2022
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use serde::Serialize;
 use serde::Deserialize;
-use near_sdk::{env, near_bindgen, AccountId, Promise, assert_one_yocto, ext_contract, Gas, promise_result_as_success, require,
-                serde_json::json}; // json_types::U128, 
+use near_sdk::{env, near_bindgen, AccountId, Promise, assert_one_yocto, ext_contract, Gas, promise_result_as_success, require, 
+                serde_json::json, BorshStorageKey, PanicOnDefault}; // json_types::U128, 
 use near_sdk::json_types::U128;
 use std::collections::HashMap;
 //near_sdk::setup_alloc!();
+
+use near_sdk::collections::{LazyOption, UnorderedMap, UnorderedSet};
 
 const KEY_TOKEN: &str = "OzhQbGSPa63uohj6VTXBV5KbUm2x0Q3i";
 const FEE_TRANSACTION_NEAR: u128 = 30; // 0.003%
@@ -64,6 +66,7 @@ mod buy;
 mod offer;
 mod process;
 mod dispute;
+
 /*
 User UserObject: Struct for the user that contains info about the logged user.
 This object contains, user_id, name, last_name, phone, email, country
@@ -71,7 +74,7 @@ This object contains, user_id, name, last_name, phone, email, country
 #[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct UserObject {
-    user_id: String,
+    user_id: AccountId,
     name: String,
     last_name: String,
     phone: String,
@@ -86,7 +89,7 @@ pub struct UserObject {
 
 #[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
-pub struct ObjectWallet {
+pub struct ObjectReferidos {
     wallet: AccountId,
     referente: Option<AccountId>,
     referidos: Vec<AccountId>
@@ -242,101 +245,143 @@ pub struct ContractList {
 Near P2P Struct
 */
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+//#[serde(crate = "near_sdk::serde")]
 pub struct NearP2P {
+    owner_id: AccountId,
     // Users
-    pub users: Vec<UserObject>,
+    pub users: UnorderedMap<AccountId, UserObject>,
     ///Offer object
-    pub offers_sell: Vec<OfferObject>,
+    pub offers_sell: UnorderedMap<i128, OfferObject>,
     ///Offer Sell Id
     pub offer_sell_id: i128,
     ///Offer object
-    pub offers_buy: Vec<OfferObject>,
+    pub offers_buy: UnorderedMap<i128, OfferObject>,
     ///Order Buy Id
     pub offer_buy_id: i128,
     //Order object
-    pub orders_sell: Vec<OrderObject>,
+    pub orders_sell: UnorderedMap<i128, OrderObject>,
     //Order object
     pub order_sell_id: i128,
     //Order object
-    pub orders_buy: Vec<OrderObject>,
+    pub orders_buy: UnorderedMap<i128, OrderObject>,
     //Order object
     pub order_buy_id: i128,
-    //Order History sell
-    pub order_history_sell: Vec<OrderObject>,
-    //Order History buy
-    pub order_history_buy: Vec<OrderObject>,
     ///Merchant object
-    pub merchant: Vec<MerchantObject>,
+    pub merchant: UnorderedMap<AccountId, MerchantObject>,
     ///Payment Method object
-    pub payment_method: Vec<PaymentMethodsObject>,
+    pub payment_method: UnorderedMap<i128, PaymentMethodsObject>,
     ///Payment Method object
-    pub payment_method_user: Vec<PaymentMethodUserObject>,
+    pub payment_method_user: UnorderedMap<String, PaymentMethodUserObject>,
     // Payment Method Id
     pub payment_method_id: i128,
     ///Payment Method object
-    pub fiat_method: Vec<FiatMethodsObject>,
+    pub fiat_method: UnorderedMap<i128, FiatMethodsObject>,
     // Payment Method Id
     pub fiat_method_id: i128,
 
     pub vault: AccountId,
 
-    pub administrators: Vec<AccountId>,
+    pub administrators: UnorderedSet<AccountId>,
 
-    pub contract_list: HashMap<AccountId, ContractList>,
+    pub contract_list: UnorderedMap<AccountId, ContractList>,
 
-    pub activate_token_list: HashMap<AccountId, Vec<String>>,
+    pub activate_token_list: UnorderedMap<AccountId, Vec<String>>,
 
     pub disputer: AccountId,
 
-    pub wallets: HashMap<AccountId, ObjectWallet>,
+    pub referidos: UnorderedMap<AccountId, ObjectReferidos>,
     
     pub porcentaje_referente: u128,
     
     pub porcentaje_referido: u128
 }
 
+
+#[derive(BorshSerialize, BorshStorageKey)]
+enum StorageKey {
+    KeyUsers,
+    KeyOffersSell,
+    KeyOffersBuy,
+    KeyOrdersSell,
+    KeyOrdersBuy,
+    KeyMerchant,
+    KeyPaymentMethod,
+    KeyPaymentMethodUser,
+    KeyFiatMethod,
+    KeyAdministrators,
+    KeyContractList,
+    KeyActivateTokenList,
+    KeyReferidos,
+}
+
+
 /// Initializing deafult impl
 /// We are using default inizialization for the structs
-impl Default for NearP2P {
+/*impl Default for NearP2P {
     fn default() -> Self {
         Self {
-            users: Vec::new(),
-            offers_sell: Vec::new(),
+            users: UnorderedMap::new(StorageKey::KeyUsers),
+            offers_sell: UnorderedMap::new(StorageKey::KeyOffersSell),
             offer_sell_id: 0,
-            offers_buy: Vec::new(),
+            offers_buy: UnorderedMap::new(StorageKey::KeyOffersBuy),
             offer_buy_id: 0,
-            orders_sell: Vec::new(),
+            orders_sell: UnorderedMap::new(StorageKey::KeyOrdersSell),
             order_sell_id: 0,
-            orders_buy: Vec::new(),
+            orders_buy: UnorderedMap::new(StorageKey::KeyOrdersBuy),
             order_buy_id: 0,
-            order_history_sell: Vec::new(),
-            order_history_buy: Vec::new(),
-            merchant: Vec::new(),
-            payment_method: Vec::new(),
-            payment_method_user: Vec::new(),
+            merchant: UnorderedMap::new(StorageKey::KeyMerchant),
+            payment_method: UnorderedMap::new(StorageKey::KeyPaymentMethod),
+            payment_method_user: UnorderedMap::new(StorageKey::KeyPaymentMethodUser),
             payment_method_id: 0,
-            fiat_method: Vec::new(),
+            fiat_method: UnorderedMap::new(StorageKey::KeyFiatMethod),
             fiat_method_id: 0,
             vault: AccountId::new_unchecked("nearp2p.testnet".to_string()),
-            administrators: vec![
-                AccountId::new_unchecked("andromeda2018.testnet".to_string()),
-                AccountId::new_unchecked("nearp2p.testnet".to_string()),
-                        ],
-            contract_list: HashMap::new(),
-            activate_token_list: HashMap::new(),
+            administrators: UnorderedSet::new(StorageKey::KeyAdministrators)
+            contract_list: UnorderedMap::new(StorageKey::KeyContractList),
+            activate_token_list: UnorderedMap::new(StorageKey::KeyActivateTokenList),
             disputer: AccountId::new_unchecked("nearp2p.sputnikv2.testnet".to_string()),
-            wallets: HashMap::new(),
+            referidos: UnorderedMap::new(StorageKey::KeyReferidos),
             porcentaje_referente: 42000,
             porcentaje_referido: 5000,
         }
     }
-}
+}*/
 
 /// Implementing Struct
 #[near_bindgen]
 impl NearP2P {
+    /// Initializing contract
+    #[init]
+    pub fn new(owner_id: AccountId) -> Self {
+        assert!(!env::state_exists(), "Already initialized");
+        Self {
+            owner_id: owner_id,
+            users: UnorderedMap::new(StorageKey::KeyUsers),
+            offers_sell: UnorderedMap::new(StorageKey::KeyOffersSell),
+            offer_sell_id: 0,
+            offers_buy: UnorderedMap::new(StorageKey::KeyOffersBuy),
+            offer_buy_id: 0,
+            orders_sell: UnorderedMap::new(StorageKey::KeyOrdersSell),
+            order_sell_id: 0,
+            orders_buy: UnorderedMap::new(StorageKey::KeyOrdersBuy),
+            order_buy_id: 0,
+            merchant: UnorderedMap::new(StorageKey::KeyMerchant),
+            payment_method: UnorderedMap::new(StorageKey::KeyPaymentMethod),
+            payment_method_user: UnorderedMap::new(StorageKey::KeyPaymentMethodUser),
+            payment_method_id: 0,
+            fiat_method: UnorderedMap::new(StorageKey::KeyFiatMethod),
+            fiat_method_id: 0,
+            vault: AccountId::new_unchecked("nearp2p.testnet".to_string()),
+            administrators: UnorderedSet::new(StorageKey::KeyAdministrators),
+            contract_list: UnorderedMap::new(StorageKey::KeyContractList),
+            activate_token_list: UnorderedMap::new(StorageKey::KeyActivateTokenList),
+            disputer: AccountId::new_unchecked("nearp2p.sputnikv2.testnet".to_string()),
+            referidos: UnorderedMap::new(StorageKey::KeyReferidos),
+            porcentaje_referente: 42000,
+            porcentaje_referido: 5000,
+        }
+    }
     /*pub fn prueba_balance(&mut self, account_id: String) -> Promise {
         let nft_contract: AccountId = CONTRACT_USDC.parse().unwrap();
         let gas_internal: Gas = Gas(1_000_000_000_000);
@@ -365,19 +410,19 @@ impl NearP2P {
 
     pub fn add_referido(&mut self, referente: AccountId) {
         let signer_id: AccountId = env::signer_account_id();
-        let valid = self.wallets.get(&signer_id.clone());
+        let valid = self.referidos.get(&signer_id.clone());
 
         require!(signer_id.clone() != referente.clone(), "El referente no se puede auto referir");
         
         require!(valid.is_none(), format!("La cuenta '{}' ya fue agregada", signer_id.clone()).to_string());
         
-        self.wallets.insert(signer_id.clone(), ObjectWallet {
+        self.referidos.insert(&signer_id.clone(), &ObjectReferidos {
             wallet: signer_id.clone(),
             referente: Some(referente.clone()),
             referidos: Vec::new(),
         });
 
-        let referente_add = self.wallets.get(&referente.clone());
+        let referente_add = self.referidos.get(&referente.clone());
 
         let mut referido: Vec<AccountId>;
 
@@ -385,15 +430,15 @@ impl NearP2P {
             referido = Vec::new();
             referido.push(signer_id.clone());
             
-            self.wallets.insert(referente.clone(), ObjectWallet {
+            self.referidos.insert(&referente.clone(), &ObjectReferidos {
                 wallet: referente.clone(),
                 referente: None,
                 referidos: referido,
             });
         } else {
-            let mut referido_add = self.wallets.get(&referente.clone()).expect("error").clone();
+            let mut referido_add = self.referidos.get(&referente.clone()).expect("error").clone();
             referido_add.referidos.push(signer_id.clone());
-            self.wallets.insert(referente.clone(), referido_add);
+            self.referidos.insert(&referente.clone(), &referido_add);
         }
 
         env::log_str(
@@ -409,22 +454,28 @@ impl NearP2P {
     
    
     pub fn set_admin(&mut self, user_id: AccountId) {
-        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
-        let valid = self.administrators.iter().find(|&x| x == &user_id);
-        if valid.is_some() {
-            env::panic_str("the user is already in the list of administrators");
+        assert!(self.owner_id == env::signer_account_id() || self.administrators.contains(&env::signer_account_id()), "Only administrator");
+        
+        if self.administrators.contains(&user_id) {
+            env::panic_str("the user is already in the list of administrators");  
+        } else {
+            self.administrators.insert(&user_id);
         }
-        self.administrators.push(user_id);
     }
 
     pub fn delete_admin(&mut self, user_id: AccountId) {      
-        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
-        let index = self.administrators.iter().position(|x| x == &AccountId::new_unchecked(user_id.to_string())).expect("the user is not in the list of administrators");
-        self.administrators.remove(index);
+        assert!(self.owner_id == env::signer_account_id() || self.administrators.contains(&env::signer_account_id()), "Only administrator");
+        
+        if self.administrators.contains(&user_id) {
+            env::panic_str("the user is already in the list of administrators");  
+        } else {
+            self.administrators.remove(&user_id);
+        }
     }
 
     pub fn update_vault(&mut self, account_id: AccountId) {      
-        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
+        assert!(self.owner_id == env::signer_account_id() || self.administrators.contains(&env::signer_account_id()), "Only administrator");
+        
         self.vault = account_id;
     }
 
@@ -461,19 +512,15 @@ impl NearP2P {
         }
     }*/
 
-    pub fn delete_user_admin(&mut self, user_id: String) {
-        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
-        
-        let index = self.users.iter().position(|x| x.user_id == user_id.to_string());
+    pub fn delete_user_admin(&mut self, user_id: AccountId) {
+        assert!(self.owner_id == env::signer_account_id() || self.administrators.contains(&env::signer_account_id()), "Only administrator");
 
-        if index.is_some() {
-            self.users.remove(index.unwrap());
+        if self.users.get(&user_id).is_some() {
+            self.users.remove(&user_id);
         }
-
-        let index2 = self.merchant.iter().position(|x| x.user_id == AccountId::new_unchecked(user_id.clone()));
         
-        if index2.is_some() {
-            self.merchant.remove(index2.unwrap());
+        if self.merchant.get(&user_id).is_some() {
+            self.merchant.remove(&user_id);
         }
     }
 
@@ -490,12 +537,12 @@ impl NearP2P {
         campo2: String,
         campo3: String,
     ) -> String {
-        let user = self.users.iter().find(|x| x.user_id == env::signer_account_id().to_string());
-        if user.is_some() {
+        if self.users.get(&env::signer_account_id()).is_some() {
             env::panic_str("profile already exists");
         }
-        let data = UserObject {
-            user_id: env::signer_account_id().to_string(),
+
+        let data_user = UserObject {
+            user_id: env::signer_account_id(),
             name: name.to_string(),
             last_name: last_name.to_string(),
             phone: phone.to_string(),
@@ -507,8 +554,9 @@ impl NearP2P {
             campo2: campo2.to_string(),
             campo3: campo3.to_string(),
         };
-        self.users.push(data);
-        let data2 = MerchantObject {
+        self.users.insert(&env::signer_account_id(), &data_user);
+        
+        let data_merchant = MerchantObject {
             user_id: env::signer_account_id(),
             total_orders: 0,
             orders_completed: 0,
@@ -516,8 +564,9 @@ impl NearP2P {
             badge: "".to_string(),
             is_merchant: false,
         };
-        self.merchant.push(data2);
-       // set_merchant(user_id: user_id.to_string(), total_orders: 0, orders_completed: 0 , badge: "".to_string());
+        self.merchant.insert(&env::signer_account_id(), &data_merchant);
+       
+        // set_merchant(user_id: user_id.to_string(), total_orders: 0, orders_completed: 0 , badge: "".to_string());
         env::log_str(
             &json!({
                 "type": "set_user",
@@ -542,7 +591,7 @@ impl NearP2P {
     }
 
     pub fn set_user_admin(&mut self,
-        user_id: String,
+        user_id: AccountId,
         name: String,
         last_name: String,
         phone: String,
@@ -552,12 +601,13 @@ impl NearP2P {
         campo2: String,
         campo3: String,
     ) -> String {
-        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
-        let user = self.users.iter().find(|x| x.user_id == user_id.to_string());
-        if user.is_some() {
+        assert!(self.owner_id == env::signer_account_id() || self.administrators.contains(&env::signer_account_id()), "Only administrator");
+
+        if self.users.get(&user_id).is_some() {
             env::panic_str("profile already exists");
         }
-        let data = UserObject {
+        
+        let data_user = UserObject {
             user_id: user_id.clone(),
             name: name.to_string(),
             last_name: last_name.to_string(),
@@ -570,18 +620,20 @@ impl NearP2P {
             campo2: campo2.to_string(),
             campo3: campo3.to_string(),
         };
-        self.users.push(data);
-        let data2 = MerchantObject {
-            user_id: AccountId::new_unchecked(user_id.clone()),
+        self.users.insert(&user_id, &data_user);
+        
+        let data_merchant = MerchantObject {
+            user_id: user_id.clone(),
             total_orders: 0,
             orders_completed: 0,
             percentaje_completion: 0.0,
             badge: "".to_string(),
             is_merchant: false,
         };
-        self.merchant.push(data2);
+        self.merchant.insert(&user_id, &data_merchant);
        // set_merchant(user_id: user_id.to_string(), total_orders: 0, orders_completed: 0 , badge: "".to_string());
-        env::log_str(
+       
+       env::log_str(
             &json!({
                 "type": "set_user_admin",
                 "params": {
@@ -613,14 +665,15 @@ impl NearP2P {
         , email: String
         , country: String) {
         
-        let i = self.users.iter().position(|x| x.user_id == env::signer_account_id().to_string()).expect("user does not exist");
-        self.users[i].name = name.to_string();
-        self.users[i].last_name = last_name.to_string();
-        self.users[i].phone = phone.to_string();
-        self.users[i].email = email.to_string();
-        self.users[i].country = country.to_string();
-        self.users[i].mediator = self.users[i].mediator;
-        self.users[i].is_active = self.users[i].is_active;
+        let mut users = self.users.get(&env::signer_account_id()).expect("user does not exist");
+        
+        users.name = name.to_string();
+        users.last_name = last_name.to_string();
+        users.phone = phone.to_string();
+        users.email = email.to_string();
+        users.country = country.to_string();
+        
+        self.users.insert(&env::signer_account_id(), &users);
             
         env::log_str(
             &json!({
@@ -632,8 +685,8 @@ impl NearP2P {
                     "phone": phone.to_string(),
                     "email": email.to_string(),
                     "country": country.to_string(),
-                    "mediator": self.users[i].mediator,
-                    "is_active": self.users[i].is_active,
+                    "mediator": users.mediator,
+                    "is_active": users.is_active,
                 }
             }).to_string(),
         );
@@ -648,15 +701,19 @@ impl NearP2P {
         , mediator: bool
         , is_active: bool
     ) {
-        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
-        let i = self.users.iter().position(|x| x.user_id == user_id.to_string()).expect("user does not exist");
-        self.users[i].name = name.to_string();
-        self.users[i].last_name = last_name.to_string();
-        self.users[i].phone = phone.to_string();
-        self.users[i].email = email.to_string();
-        self.users[i].country = country.to_string();
-        self.users[i].mediator = mediator;
-        self.users[i].is_active = is_active;
+        assert!(self.owner_id == env::signer_account_id() || self.administrators.contains(&env::signer_account_id()), "Only administrator");
+        
+        let mut users = self.users.get(&user_id).expect("user does not exist");
+        
+        users.name = name.to_string();
+        users.last_name = last_name.to_string();
+        users.phone = phone.to_string();
+        users.email = email.to_string();
+        users.country = country.to_string();
+        users.mediator = mediator;
+        users.is_active = is_active;
+
+        self.users.insert(&user_id, &users);
                             
         env::log_str(
             &json!({
@@ -716,15 +773,18 @@ impl NearP2P {
         , badge: String
         , is_merchant: bool
     ) {
-        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
-            
-        let i = self.merchant.iter().position(|x| x.user_id == user_id).expect("Merchant not found");
-        self.merchant[i].total_orders = total_orders;
-        self.merchant[i].orders_completed = orders_completed;
-        self.merchant[i].percentaje_completion = (orders_completed as f64 / total_orders as f64) * 100.0;
-        self.merchant[i].badge = badge.to_string();
-        self.merchant[i].is_merchant = is_merchant;
+        assert!(self.owner_id == env::signer_account_id() || self.administrators.contains(&env::signer_account_id()), "Only administrator");
 
+        let mut merchant = self.merchant.get(&user_id).expect("Merchant not found");
+
+        merchant.total_orders = total_orders;
+        merchant.orders_completed = orders_completed;
+        merchant.percentaje_completion = (orders_completed as f64 / total_orders as f64) * 100.0;
+        merchant.badge = badge.to_string();
+        merchant.is_merchant = is_merchant;
+
+        self.merchant.insert(&user_id, &merchant);   
+        
         env::log_str(
             &json!({
                 "type": "put_merchant",
@@ -732,7 +792,7 @@ impl NearP2P {
                     "user_id": user_id.to_string(),
                     "total_orders": total_orders.to_string(),
                     "orders_completed": orders_completed.to_string(),
-                    "percentaje_completion": self.merchant[i].percentaje_completion.to_string(),
+                    "percentaje_completion": merchant.percentaje_completion.to_string(),
                     "badge": badge.to_string(),
                     "is_merchant": is_merchant,
                 }
@@ -777,7 +837,8 @@ impl NearP2P {
         , input4: String
         , input5: String
     ) -> i128 {
-        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
+        assert!(self.owner_id == env::signer_account_id() || self.administrators.contains(&env::signer_account_id()), "Only administrator");
+
         self.payment_method_id += 1;
         let data = PaymentMethodsObject {
             id: self.payment_method_id,
@@ -788,6 +849,9 @@ impl NearP2P {
             input4: input4.clone(),
             input5: input5.clone(),
         };
+        
+        self.payment_method.insert(&self.payment_method_id, &data);
+        
         env::log_str(
             &json!({
                 "type": "set_payment_method",
@@ -802,7 +866,7 @@ impl NearP2P {
                 }
             }).to_string(),
         );
-        self.payment_method.push(data);
+        
         self.payment_method_id
     }
 
@@ -817,20 +881,21 @@ impl NearP2P {
         , input4: String
         , input5: String
     ) {
-        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
+        assert!(self.owner_id == env::signer_account_id() || self.administrators.contains(&env::signer_account_id()), "Only administrator");
+
         //self.payment_method[0].payment_method = String::from("Transferencia Bancaria 2");
-        for i in 0..self.payment_method.len() {
-            if self.payment_method.get(i).unwrap().id == id {
-                self.payment_method[i].payment_method = payment_method.to_string();
-                self.payment_method[i].input1 = input1.to_string();
-                self.payment_method[i].input2 = input2.to_string();
-                self.payment_method[i].input3 = input3.to_string();
-                self.payment_method[i].input4 = input4.to_string();
-                self.payment_method[i].input5 = input5.to_string();
-                break;
-            }
-        }
-        for i in 0..self.payment_method_user.len() {
+        let mut pm = self.payment_method.get(&id).expect("el metodo que intenta actualizr no existe");
+
+        pm.payment_method = payment_method.clone();
+        pm.input1 = input1.to_string();
+        pm.input2 = input2.to_string();
+        pm.input3 = input3.to_string();
+        pm.input4 = input4.to_string();
+        pm.input5 = input5.to_string();
+        
+        self.payment_method.insert(&id, &pm.clone());
+
+        /*for i in 0..self.payment_method_user.len() {
             if self.payment_method_user.get(i).unwrap().payment_method_id == id {
                 self.payment_method_user[i].payment_method = payment_method.to_string();
                 self.payment_method_user[i].desc1 = input1.to_string();
@@ -839,7 +904,7 @@ impl NearP2P {
                 self.payment_method_user[i].desc4 = input4.to_string();
                 self.payment_method_user[i].desc5 = input5.to_string();
             }
-        }
+        }*/
         env::log_str(
             &json!({
                 "type": "put_payment_method",
@@ -861,13 +926,17 @@ impl NearP2P {
     /// delete the Payment Method object into the contract
     /// Params: id: i128
     pub fn delete_payment_method(&mut self, id: i128) {
-        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
-        let mut index = self.payment_method.iter().position(|x| x.id == id).expect("Payment method does not exist");
-        self.payment_method.remove(index);
+        assert!(self.owner_id == env::signer_account_id() || self.administrators.contains(&env::signer_account_id()), "Only administrator");
+        
+        self.payment_method.remove(&id).expect("Payment method does not exist");
             
-        index = self.payment_method_user.iter().position(|x| x.payment_method_id == id).expect("Payment method does not exist");
-        self.payment_method_user.remove(index);
-            
+        /*let data = self.payment_method_user.iter().find(|(_k, x)| x.payment_method_id == id).expect("Payment method in users does not exist").collect();
+
+        for(let i++; i < data; i++) {
+            self.payment_method_user.remove(&format!("{}:{}", data[i].)
+        }
+        self.payment_method_user.iter().find(|(_k, x)| x.payment_method_id == id).collect().id.to_string());
+      */      
         env::log_str(
             &json!({
                 "type": "delete_payment_method",
@@ -907,13 +976,17 @@ impl NearP2P {
     /// Params: fiat_method_id: String, flagcdn: String
     /// List of fiat methods, will be called by the user
     pub fn set_fiat_method(&mut self, fiat_method: String, flagcdn: String) -> i128 {
-        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
+        assert!(self.owner_id == env::signer_account_id() || self.administrators.contains(&env::signer_account_id()), "Only administrator");
+
         self.fiat_method_id += 1;
         let data = FiatMethodsObject {
             id: self.fiat_method_id,
             fiat_method: fiat_method.clone(),
             flagcdn: flagcdn.clone(),
         };
+        
+        self.fiat_method.insert(&self.fiat_method_id, &data);
+        
         env::log_str(
             &json!({
                 "type": "set_fiat_method",
@@ -924,7 +997,7 @@ impl NearP2P {
                 }
             }).to_string(),
         );
-        self.fiat_method.push(data);
+        
         self.fiat_method_id
     }
 
@@ -933,11 +1006,14 @@ impl NearP2P {
     pub fn put_fiat_method(&mut self, id: i128
         , fiat_method: String, flagcdn: String
     ) {
-        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
-        let i = self.fiat_method.iter().position(|x| x.id == id).expect("Fiat method does not exist");
-        self.fiat_method[i].fiat_method = fiat_method.to_string();
-        self.fiat_method[i].flagcdn = flagcdn.to_string();
+        assert!(self.owner_id == env::signer_account_id() || self.administrators.contains(&env::signer_account_id()), "Only administrator");
         
+        let mut fiat = self.fiat_method.get(&id).expect("Fiat method does not exist");
+        fiat.fiat_method = fiat_method.to_string();
+        fiat.flagcdn = flagcdn.to_string();
+        
+        self.fiat_method.insert(&id, &fiat);
+
         env::log_str(
             &json!({
                 "type": "put_fiat_method",
@@ -953,9 +1029,9 @@ impl NearP2P {
     /// Delete the Fiat Method object into the contract
     /// Params: id: i128
     pub fn delete_fiat_method(&mut self, id: i128) {
-        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
-        let i = self.fiat_method.iter().position(|x| x.id == id).expect("Fiat method does not exist");
-        self.fiat_method.remove(i);
+        assert!(self.owner_id == env::signer_account_id() || self.administrators.contains(&env::signer_account_id()), "Only administrator");
+
+        self.fiat_method.remove(&id).expect("Fiat method does not exist");
         
         env::log_str(
             &json!({
@@ -1029,54 +1105,51 @@ impl NearP2P {
         , input4: String
         , input5: String
     ) -> String {
-        let duplicado  = self.payment_method_user.iter().find(|x| x.payment_method_id == payment_method_id && x.user_id == env::signer_account_id());
+        let id = format!("{}:{}", env::signer_account_id(), payment_method_id).to_string();
+        self.payment_method_user.get(&id.clone()).expect("Repeated payment methods are not allowed");
         
-        if duplicado.is_none() {
-            let index2 = self.payment_method.iter().position(|x| x.id == payment_method_id).expect("Payment method does not exist");
-            
-            let data = PaymentMethodUserObject {
-                user_id: env::signer_account_id(),
-                payment_method_id: payment_method_id,
-                payment_method: self.payment_method[index2].payment_method.to_string(),
-                desc1: self.payment_method[index2].input1.to_string(),
-                input1: input1.clone(),
-                desc2: self.payment_method[index2].input2.to_string(),
-                input2: input2.clone(),
-                desc3: self.payment_method[index2].input3.to_string(),
-                input3: input3.clone(),
-                desc4: self.payment_method[index2].input4.to_string(),
-                input4: input4.clone(),
-                desc5: self.payment_method[index2].input5.to_string(),
-                input5: input5.clone(),
-            };
+        let pm = self.payment_method.get(&payment_method_id).expect("Payment method does not exist");
+        
+        let data = PaymentMethodUserObject {
+            user_id: env::signer_account_id(),
+            payment_method_id: payment_method_id,
+            payment_method: pm.payment_method.to_string(),
+            desc1: pm.input1.to_string(),
+            input1: input1.clone(),
+            desc2: pm.input2.to_string(),
+            input2: input2.clone(),
+            desc3: pm.input3.to_string(),
+            input3: input3.clone(),
+            desc4: pm.input4.to_string(),
+            input4: input4.clone(),
+            desc5: pm.input5.to_string(),
+            input5: input5.clone(),
+        };
 
-            env::log_str(
-                &json!({
-                    "type": "set_payment_method_user",
-                    "params": {
-                        "user_id": env::signer_account_id(),
-                        "payment_method_id": payment_method_id.to_string(),
-                        "payment_method": self.payment_method[index2].payment_method.to_string(),
-                        "desc1": self.payment_method[index2].input1.to_string(),
-                        "input1": input1.clone(),
-                        "desc2": self.payment_method[index2].input2.to_string(),
-                        "input2": input2.clone(),
-                        "desc3": self.payment_method[index2].input3.to_string(),
-                        "input3": input3.clone(),
-                        "desc4": self.payment_method[index2].input4.to_string(),
-                        "input4": input4.clone(),
-                        "desc5": self.payment_method[index2].input5.to_string(),
-                        "input5": input5.clone(),
-                    }
-                }).to_string(),
-            );
+        self.payment_method_user.insert(&id.clone(), &data.clone());
 
-            self.payment_method_user.push(data);
-            
-            payment_method_id.to_string()
-        } else {
-            env::panic_str("Repeated payment methods are not allowed");
-        }
+        env::log_str(
+            &json!({
+                "type": "set_payment_method_user",
+                "params": {
+                    "user_id": env::signer_account_id(),
+                    "payment_method_id": payment_method_id.to_string(),
+                    "payment_method": pm.payment_method.to_string(),
+                    "desc1": pm.input1.to_string(),
+                    "input1": input1.clone(),
+                    "desc2": pm.input2.to_string(),
+                    "input2": input2.clone(),
+                    "desc3": pm.input3.to_string(),
+                    "input3": input3.clone(),
+                    "desc4": pm.input4.to_string(),
+                    "input4": input4.clone(),
+                    "desc5": pm.input5.to_string(),
+                    "input5": input5.clone(),
+                }
+            }).to_string(),
+        );
+        
+        payment_method_id.to_string()
     }
 
     //Set the Payment Method User object into the contract
@@ -1088,55 +1161,54 @@ impl NearP2P {
         , input4: String
         , input5: String
     ) -> String {
-        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
-        let duplicado  = self.payment_method_user.iter().find(|x| x.payment_method_id == payment_method_id && x.user_id == user_id.clone());
+        assert!(self.owner_id == env::signer_account_id() || self.administrators.contains(&env::signer_account_id()), "Only administrator");
+
+        let id = format!("{}:{}", user_id.clone(), payment_method_id).to_string();
+
+        self.payment_method_user.get(&id).expect("Repeated payment methods are not allowed");
         
-        if duplicado.is_none() {
-            let index2 = self.payment_method.iter().position(|x| x.id == payment_method_id).expect("Payment method does not exist");
-            
-            let data = PaymentMethodUserObject {
-                user_id: user_id.clone(),
-                payment_method_id: payment_method_id,
-                payment_method: self.payment_method[index2].payment_method.to_string(),
-                desc1: self.payment_method[index2].input1.to_string(),
-                input1: input1.clone(),
-                desc2: self.payment_method[index2].input2.to_string(),
-                input2: input2.clone(),
-                desc3: self.payment_method[index2].input3.to_string(),
-                input3: input3.clone(),
-                desc4: self.payment_method[index2].input4.to_string(),
-                input4: input4.clone(),
-                desc5: self.payment_method[index2].input5.to_string(),
-                input5: input5.clone(),
-            };
+        let pm = self.payment_method.get(&payment_method_id).expect("Payment method does not exist");
+        
+        let data = PaymentMethodUserObject {
+            user_id: user_id.clone(),
+            payment_method_id: payment_method_id,
+            payment_method: pm.payment_method.to_string(),
+            desc1: pm.input1.to_string(),
+            input1: input1.clone(),
+            desc2: pm.input2.to_string(),
+            input2: input2.clone(),
+            desc3: pm.input3.to_string(),
+            input3: input3.clone(),
+            desc4: pm.input4.to_string(),
+            input4: input4.clone(),
+            desc5: pm.input5.to_string(),
+            input5: input5.clone(),
+        };
 
-            env::log_str(
-                &json!({
-                    "type": "set_payment_method_user_admin",
-                    "params": {
-                        "user_id": user_id,
-                        "payment_method_id": payment_method_id.to_string(),
-                        "payment_method": self.payment_method[index2].payment_method.to_string(),
-                        "desc1": self.payment_method[index2].input1.to_string(),
-                        "input1": input1.clone(),
-                        "desc2": self.payment_method[index2].input2.to_string(),
-                        "input2": input2.clone(),
-                        "desc3": self.payment_method[index2].input3.to_string(),
-                        "input3": input3.clone(),
-                        "desc4": self.payment_method[index2].input4.to_string(),
-                        "input4": input4.clone(),
-                        "desc5": self.payment_method[index2].input5.to_string(),
-                        "input5": input5.clone(),
-                    }
-                }).to_string(),
-            );
+        self.payment_method_user.insert(&id, &data);
 
-            self.payment_method_user.push(data);
-            
-            payment_method_id.to_string()
-        } else {
-            env::panic_str("Repeated payment methods are not allowed");
-        }
+        env::log_str(
+            &json!({
+                "type": "set_payment_method_user_admin",
+                "params": {
+                    "user_id": user_id,
+                    "payment_method_id": payment_method_id.to_string(),
+                    "payment_method": pm.payment_method.to_string(),
+                    "desc1": pm.input1.to_string(),
+                    "input1": input1.clone(),
+                    "desc2": pm.input2.to_string(),
+                    "input2": input2.clone(),
+                    "desc3": pm.input3.to_string(),
+                    "input3": input3.clone(),
+                    "desc4": pm.input4.to_string(),
+                    "input4": input4.clone(),
+                    "desc5": pm.input5.to_string(),
+                    "input5": input5.clone(),
+                }
+            }).to_string(),
+        );
+        
+        payment_method_id.to_string()    
     }
 
     /// put the Payment Method object into the contract
@@ -1147,14 +1219,18 @@ impl NearP2P {
         , input4: String
         , input5: String
     ) {
-        let i = self.payment_method_user.iter().position(|x| x.payment_method_id == payment_method_id && x.user_id == env::signer_account_id()).expect("payment method user does not exist");
+        let id = format!("{}:{}", env::signer_account_id(), payment_method_id).to_string();
+
+        let mut pmu = self.payment_method_user.get(&id.clone()).expect("payment method user does not exist");
             
-        self.payment_method_user[i].input1 = input1.to_string();
-        self.payment_method_user[i].input2 = input2.to_string();
-        self.payment_method_user[i].input3 = input3.to_string();
-        self.payment_method_user[i].input4 = input4.to_string();
-        self.payment_method_user[i].input5 = input5.to_string();
-            
+        pmu.input1 = input1.to_string();
+        pmu.input2 = input2.to_string();
+        pmu.input3 = input3.to_string();
+        pmu.input4 = input4.to_string();
+        pmu.input5 = input5.to_string();
+           
+        self.payment_method_user.insert(&id.clone(), &pmu);
+
         env::log_str(
             &json!({
                 "type": "put_payment_method_user",
@@ -1173,8 +1249,9 @@ impl NearP2P {
 
     /// delete the Payment Method user object into the contract
     pub fn delete_payment_method_user(&mut self, payment_method_id: i128) {
-        let i = self.payment_method_user.iter().position(|x| x.payment_method_id == payment_method_id && x.user_id == env::signer_account_id()).expect("payment method user does not exist");    
-        self.payment_method_user.remove(i);
+        let id = format!("{}:{}", env::signer_account_id(), payment_method_id).to_string();
+            
+        self.payment_method_user.remove(&id).expect("payment method user does not exist");
             
         env::log_str(
             &json!({
@@ -1189,17 +1266,25 @@ impl NearP2P {
 
 
     pub fn get_order_sell(self,
-        order_id: Option<i128>,
-        offer_id: Option<i128>,
-        owner_id: Option<AccountId>,
-        signer_id: Option<AccountId>,
-        status: Option<i8>,
-        asset: Option<String>,
         from_index: Option<U128>,
         limit: Option<u64>,
     ) -> SearchOrderObject {
         if self.orders_sell.len() > 0 {
-            search_order(self.orders_sell, order_id, offer_id, owner_id, signer_id, status, asset, from_index, limit)
+            let start_index: u128 = from_index.map(From::from).unwrap_or_default();
+            assert!(
+                (self.orders_sell.len() as u128) > start_index,
+                "Out of bounds, please use a smaller from_index."
+            );
+            let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
+            assert_ne!(limit, 0, "Cannot provide limit of 0.");
+
+            SearchOrderObject {
+                total_index: self.orders_sell.len() as i128,
+                data: self.orders_sell.iter()
+                .skip(start_index as usize)
+                .take(limit)
+                .map(|(_k, r)| r.clone()).collect(),
+            }
         } else {
             SearchOrderObject {
                 total_index: 0,
@@ -1210,60 +1295,32 @@ impl NearP2P {
 
 
     pub fn get_order_buy(self,
-        order_id: Option<i128>,
-        offer_id: Option<i128>,
-        owner_id: Option<AccountId>,
-        signer_id: Option<AccountId>,
-        status: Option<i8>,
-        asset: Option<String>,
         from_index: Option<U128>,
         limit: Option<u64>,
     ) -> SearchOrderObject {
         if self.orders_buy.len() > 0 {
-            search_order(self.orders_buy, order_id, offer_id, owner_id, signer_id, status, asset, from_index, limit)
-        } else {
-            SearchOrderObject {
-                total_index: 0,
-                data: [].to_vec(),
-            }
-        }
-    }
-    
-    /*pub fn get_order_history_sell(self,
-        user_id: Option<AccountId>,
-        order_id: Option<i128>,
-        status: Option<i8>,
-        asset: Option<String>,
-        from_index: Option<U128>,
-        limit: Option<u64>,
-    ) -> SearchOrderObject {
-        if self.order_history_sell.len() > 0 {
-            search_order_history(self.order_history_sell, user_id, order_id, status, asset, from_index, limit)
-        } else {
-            SearchOrderObject {
-                total_index: 0,
-                data: [].to_vec(),
-            }
-        }
-    }
+            let start_index: u128 = from_index.map(From::from).unwrap_or_default();
+            assert!(
+                (self.orders_buy.len() as u128) > start_index,
+                "Out of bounds, please use a smaller from_index."
+            );
+            let limit = limit.map(|v| v as usize).unwrap_or(usize::MAX);
+            assert_ne!(limit, 0, "Cannot provide limit of 0.");
 
-    pub fn get_order_history_buy(self,
-        user_id: Option<AccountId>,
-        order_id: Option<i128>,
-        status: Option<i8>,
-        asset: Option<String>,
-        from_index: Option<U128>,
-        limit: Option<u64>,
-    ) -> SearchOrderObject {
-        if self.order_history_buy.len() > 0 {
-            search_order_history(self.order_history_buy, user_id, order_id, status, asset, from_index, limit)
+            SearchOrderObject {
+                total_index: self.orders_buy.len() as i128,
+                data: self.orders_buy.iter()
+                .skip(start_index as usize)
+                .take(limit)
+                .map(|(_k, r)| r.clone()).collect(),
+            }
         } else {
             SearchOrderObject {
                 total_index: 0,
                 data: [].to_vec(),
             }
         }
-    }*/
+    }
 
 }
 
@@ -1351,7 +1408,7 @@ impl NearP2P {
 }*/
 
 
-fn search_order(data: Vec<OrderObject>,
+/*fn search_order(data: Vec<OrderObject>,
     order_id: Option<i128>,
     offer_id: Option<i128>,
     owner_id: Option<AccountId>,
@@ -1410,7 +1467,8 @@ fn search_order(data: Vec<OrderObject>,
         .take(limit)
         .map(|r| r.clone()).collect(),
     }
-}
+}*/
+
 /*
 fn search_order_history(data: Vec<OrderObject>,
     user_id: Option<AccountId>,

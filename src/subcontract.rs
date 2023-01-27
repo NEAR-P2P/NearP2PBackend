@@ -16,8 +16,8 @@ impl NearP2P {
     }
 
     pub fn listar_subcuenta(&mut self, account_id: AccountId, subcuenta: AccountId, type_contract: i8) {
-        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
-        self.contract_list.insert(account_id, ContractList{ contract: subcuenta, type_contract: type_contract});
+        assert!(self.owner_id == env::signer_account_id() || self.administrators.contains(&env::signer_account_id()), "Only administrator");
+        self.contract_list.insert(&account_id, &ContractList{ contract: subcuenta, type_contract: type_contract});
     }
 
     #[payable]
@@ -55,7 +55,7 @@ impl NearP2P {
                 BASE_GAS,
             ));
 
-            self.contract_list.insert(env::signer_account_id(), ContractList{ contract: subaccount_id.clone(), type_contract: 1 });
+            self.contract_list.insert(&env::signer_account_id(), &ContractList{ contract: subaccount_id.clone(), type_contract: 1 });
 
             let verificar_token = self.activate_token_list.get(&env::signer_account_id());
 
@@ -82,7 +82,7 @@ impl NearP2P {
     }
 
     pub fn delete_user_contract_list(&mut self, user_id: AccountId) {
-        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
+        assert!(self.owner_id == env::signer_account_id() || self.administrators.contains(&env::signer_account_id()), "Only administrator");
         self.contract_list.remove(&user_id);
     }
 
@@ -106,7 +106,7 @@ impl NearP2P {
             BASE_GAS,
         ));
 
-        self.contract_list.insert(env::signer_account_id(), ContractList{ contract: subaccount_id.clone(), type_contract: 2 });
+        self.contract_list.insert(&env::signer_account_id(), &ContractList{ contract: subaccount_id.clone(), type_contract: 2 });
         
         let verificar_token = self.activate_token_list.get(&env::signer_account_id());
 
@@ -146,7 +146,7 @@ impl NearP2P {
             tokens.push(ft_token);
             self.activate_token_list.insert(signer_id, tokens);
         } else {*/
-        self.activate_token_list.insert(signer_id, vec![ft_token]);
+        self.activate_token_list.insert(&signer_id, &vec![ft_token]);
         //}
     }
 
@@ -211,7 +211,7 @@ impl NearP2P {
 
     
     pub fn delete_contract_admin(&mut self, user_id: AccountId) {
-        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
+        assert!(self.owner_id == env::signer_account_id() || self.administrators.contains(&env::signer_account_id()), "Only administrator");
 
         let contract = self.contract_list.get(&user_id).expect("the user does not have contract deployed");
         ext_subcontract::get_balance_block_total(
@@ -236,7 +236,7 @@ impl NearP2P {
         }
         let balance_block = near_sdk::serde_json::from_slice::<u128>(&result.unwrap()).expect("u128");
         
-        if self.administrators.iter().find(|&x| x == &env::signer_account_id()).is_none(){
+        if !self.administrators.contains(&env::signer_account_id()) {
             require!(balance_block <= 0, "You still have operations in progress, finish all the operations to be able to delete the contract");
         }
 

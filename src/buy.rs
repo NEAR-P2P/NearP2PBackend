@@ -45,7 +45,9 @@ impl NearP2P {
         , terms_conditions: String
     ) -> Promise {
         require!(env::attached_deposit() >= 100000000000000000000000, "you have to deposit a minimum 0.1 Near");
-        let index = self.merchant.iter().position(|x| x.user_id == env::signer_account_id()).expect("the user is not in the list of users");
+        
+        let merchant = self.merchant.get(&env::signer_account_id()).expect("the user is not in the list of users");
+        
         #[warn(unused_assignments)]
         let contract_name = self.contract_list.get(&env::signer_account_id()).expect("the user does not have a sub contract deployed");
         
@@ -58,7 +60,7 @@ impl NearP2P {
                 0,
                 GAS_FOR_BLOCK,
             ).then(
-                int_buy::on_set_offers_buy(index
+                int_buy::on_set_offers_buy(merchant.is_merchant
                 , env::signer_account_id()
                 , asset
                 , exchange_rate
@@ -82,7 +84,7 @@ impl NearP2P {
                 0,
                 GAS_FOR_BLOCK,
             ).then(
-                int_buy::on_set_offers_buy(index
+                int_buy::on_set_offers_buy(merchant.is_merchant
                 , env::signer_account_id()
                 , asset
                 , exchange_rate
@@ -100,7 +102,7 @@ impl NearP2P {
         }
     }
 
-    pub fn on_set_offers_buy(&mut self, index: usize
+    pub fn on_set_offers_buy(&mut self, merchant: bool
         , owner_id: AccountId
         , asset: String
         , exchange_rate: String
@@ -112,7 +114,7 @@ impl NearP2P {
         , time: i64
         , terms_conditions: String
     ) -> i128 {
-        require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
+        assert!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         let result = promise_result_as_success();
         if result.is_none() {
             env::panic_str("Error bloquear balance token".as_ref());
@@ -122,10 +124,10 @@ impl NearP2P {
         
         if near_sdk::serde_json::from_slice::<bool>(&result.unwrap()).expect("bool") { 
             self.offer_buy_id += 1;
-            let offer_buy_id: String = self.offer_buy_id.to_string();
+            let offer_buy_id = self.offer_buy_id;
 
             let data = OfferObject {
-                offer_id: offer_buy_id.parse::<i128>().unwrap(),
+                offer_id: offer_buy_id,
                 owner_id: owner_id.clone(),
                 asset: asset.clone(),
                 exchange_rate: exchange_rate.clone(),
@@ -135,19 +137,19 @@ impl NearP2P {
                 max_limit: max_limit.0,
                 payment_method: payment_method.clone(),
                 fiat_method: fiat_method,
-                is_merchant: self.merchant[index].is_merchant,
+                is_merchant: merchant,
                 time: time,
                 terms_conditions: terms_conditions.clone(),
                 status: 1,
             };
 
-            self.offers_buy.push(data);
+            self.offers_buy.insert(&offer_buy_id, &data);
 
             env::log_str(
                 &json!({
                     "type": "set_offers_buy",
                     "params": {
-                        "offer_id": offer_buy_id,
+                        "offer_id": offer_buy_id.to_string(),
                         "owner_id": owner_id.clone(),
                         "asset": asset.clone(),
                         "exchange_rate": exchange_rate.clone(),
@@ -157,7 +159,7 @@ impl NearP2P {
                         "max_limit": max_limit,
                         "payment_method": payment_method.clone(),
                         "fiat_method": fiat_method.to_string(),
-                        "is_merchant": self.merchant[index].is_merchant,
+                        "is_merchant": merchant,
                         "time": time.to_string(),
                         "terms_conditions": terms_conditions.clone(),
                         "status": "1".to_string(),
@@ -356,15 +358,18 @@ impl NearP2P {
     
     #[payable]
     pub fn delete_offers_buy(&mut self, offer_id: i128) {
-        let offer = self.offers_buy.iter().position(|x| x.offer_id == offer_id && x.owner_id == env::signer_account_id()).expect("Offer not found");
+        let offer = self.offers_buy.get(&offer_id).expect("Offer not found");
+        
+        assert!(offer.owner_id == env::signer_account_id(), "the user is not the creator of this offer");
+
         #[warn(unused_assignments)]
-        let contract_name = self.contract_list.get(&self.offers_buy[offer].owner_id.clone()).expect("the user does not have a sub contract deployed");
+        let contract_name = self.contract_list.get(&offer.owner_id.clone()).expect("the user does not have a sub contract deployed");
         require!(contract_name.type_contract != 2, "must have a contract as a deployed merchant");
 
         let contract_ft: Option<AccountId>;
         let ft_token: String;
         
-        if self.offers_buy[offer].asset == "USDC".to_string() {
+        if offer.asset == "USDC".to_string() {
             contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
             ft_token = "USDC".to_string();
         } else {
@@ -373,8 +378,8 @@ impl NearP2P {
         }   
         
         ext_subcontract::transfer(
-            self.offers_buy[offer].owner_id.clone(),
-            U128(self.offers_buy[offer].remaining_amount),
+            offer.owner_id.clone(),
+            U128(offer.remaining_amount),
             U128(0u128),
             contract_ft,
             false,
@@ -383,7 +388,6 @@ impl NearP2P {
             1,
             GAS_FOR_TRANSFER,
         ).then(int_buy::on_delete_offers_buy(
-            offer,
             offer_id,
             env::current_account_id(),
             0,
@@ -392,14 +396,14 @@ impl NearP2P {
     }
 
     #[private]
-    pub fn on_delete_offers_buy(&mut self, offer: usize, offer_buy_id: i128) {
+    pub fn on_delete_offers_buy(&mut self, offer_buy_id: i128) {
         require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         let result = promise_result_as_success();
         if result.is_none() {
             env::panic_str("Error al eliminar".as_ref());
         }
         
-        self.offers_buy.remove(offer);
+        self.offers_buy.remove(&offer_buy_id);
         
         env::log_str(
             &json!({

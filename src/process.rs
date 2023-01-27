@@ -7,13 +7,11 @@ impl NearP2P {
     // #[payable]
 
     pub fn delete_order(&mut self, offer_type: i8, order_id: i128) {
-        self.administrators.iter().find(|&x| x == &env::signer_account_id()).expect("Only administrators");
+        assert!(self.owner_id == env::signer_account_id() || self.administrators.contains(&env::signer_account_id()), "Only administrator");
         if offer_type == 1{
-            let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
-            self.orders_sell.remove(i);
+            self.orders_sell.remove(&order_id).expect("Order Sell not found");
         } else if offer_type == 2 {
-            let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
-            self.orders_buy.remove(i);
+            self.orders_buy.remove(&order_id).expect("Order Sell not found");
         } else {
             env::panic_str("offer type no found");
         }
@@ -26,12 +24,14 @@ impl NearP2P {
         let ft_token: String;
         let mut status: i8;
         if offer_type == 1 {
-            let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
-            if self.orders_sell[i].owner_id == env::signer_account_id() {
-                self.orders_sell[i].confirmation_owner_id = 1;
-                if self.orders_sell[i].status == 1 {
-                    self.orders_sell[i].status = 2;
+            let mut order = self.orders_sell.get(&order_id).expect("Order Sell not found");
+            if order.owner_id == env::signer_account_id() {
+                order.confirmation_owner_id = 1;
+                if order.status == 1 {
+                    order.status = 2;
                 }
+                self.orders_sell.insert(&order_id, &order);
+
                 env::log_str(
                     &json!({
                         "type": "order_confirmation_owner",
@@ -39,22 +39,24 @@ impl NearP2P {
                             "offer_type": offer_type.to_string(),
                             "order_id": order_id.to_string(),
                             "confirmation_owner_id": "1".to_string(),
-                            "status": self.orders_sell[i].status.to_string(),
+                            "status": order.status.to_string(),
                         }
                     }).to_string(),
                 );
-            } else if self.orders_sell[i].signer_id == env::signer_account_id() { 
-                status = self.orders_sell[i].status;
-                if self.orders_sell[i].status == 1 {
+            } else if order.signer_id == env::signer_account_id() { 
+                status = order.status;
+                if order.status == 1 {
                     status = 2;
                 }
 
-                let index_offer = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer sell not found");
+                self.orders_sell.insert(&order_id, &order);
+
+                let offer = self.offers_sell.get(&order.offer_id).expect("Offer sell not found");
 
                 #[warn(unused_assignments)]
-                let contract_name = self.contract_list.get(&self.orders_sell[i].signer_id).expect("the user does not have a sub contract deployed");
+                let contract_name = self.contract_list.get(&order.signer_id).expect("the user does not have a sub contract deployed");
 
-                match self.offers_sell[index_offer].asset.as_str(){
+                match offer.asset.as_str(){
                     "NEAR" => {
                         contract_ft = None;
                         ft_token = "NEAR".to_string();
@@ -66,9 +68,9 @@ impl NearP2P {
                 };
                 
                 ext_subcontract::transfer(
-                    self.orders_sell[i].owner_id.clone(),
-                    U128(self.orders_sell[i].operation_amount),
-                    U128(self.orders_sell[i].fee_deducted),
+                    order.owner_id.clone(),
+                    U128(order.operation_amount),
+                    U128(order.fee_deducted),
                     contract_ft,
                     false,
                     ft_token,
@@ -80,11 +82,11 @@ impl NearP2P {
                     1,
                     /*ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
                     self.orders_sell[i].signer_id.clone(),*/
-                    i,
+                    order.clone(),
                     true,
-                    self.orders_sell[i].confirmation_owner_id,
+                    order.confirmation_owner_id,
                     1,
-                    self.orders_sell[i].confirmation_current,
+                    order.confirmation_current,
                     env::current_account_id(),
                     0,
                     GAS_ON_CONFIRMATION,
@@ -93,11 +95,12 @@ impl NearP2P {
                 env::panic_str("Server internar error, signer not found");
             }
         } else if offer_type == 2 {
-            let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order buy not found");
-            if self.orders_buy[i].signer_id == env::signer_account_id() {
-                self.orders_buy[i].confirmation_signer_id = 1;
-                if self.orders_buy[i].status == 1 {
-                    self.orders_buy[i].status = 2;
+            let mut order = self.orders_buy.get(&order_id).expect("Order buy not found");
+            
+            if order.signer_id == env::signer_account_id() {
+                order.confirmation_signer_id = 1;
+                if order.status == 1 {
+                    order.status = 2;
                 }
                 env::log_str(
                     &json!({
@@ -106,22 +109,22 @@ impl NearP2P {
                             "offer_type": offer_type.to_string(),
                             "order_id": order_id.to_string(),
                             "confirmation_signer_id": "1".to_string(),
-                            "status": self.orders_buy[i].status.to_string(),
+                            "status": order.status.to_string(),
                         }
                     }).to_string(),
                 );
-            } else if self.orders_buy[i].owner_id == env::signer_account_id() {
-                status = self.orders_buy[i].status;
-                if self.orders_buy[i].status == 1 {
+            } else if order.owner_id == env::signer_account_id() {
+                status = order.status;
+                if order.status == 1 {
                     status = 2;
                 }
 
-                let index_offer = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer buy not found");
+                let offer = self.offers_buy.get(&order.offer_id).expect("Offer buy not found");
 
                 #[warn(unused_assignments)]
-                let contract_name = self.contract_list.get(&self.orders_buy[i].owner_id).expect("the user does not have a sub contract deployed");
+                let contract_name = self.contract_list.get(&order.owner_id).expect("the user does not have a sub contract deployed");
                
-                match self.offers_buy[index_offer].asset.as_str(){
+                match offer.asset.as_str(){
                     "NEAR" => {
                         contract_ft = None;
                         ft_token = "NEAR".to_string();
@@ -133,9 +136,9 @@ impl NearP2P {
                 };
                 
                 ext_subcontract::transfer(
-                    self.orders_buy[i].signer_id.clone(),
-                    U128(self.orders_buy[i].operation_amount),
-                    U128(self.orders_buy[i].fee_deducted),
+                    order.signer_id.clone(),
+                    U128(order.operation_amount),
+                    U128(order.fee_deducted),
                     contract_ft,
                     false,
                     ft_token,
@@ -147,11 +150,11 @@ impl NearP2P {
                     2,
                     /*ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
                     self.orders_buy[i].owner_id.clone(),*/
-                    i,
+                    order.clone(),
                     true,
                     1,
-                    self.orders_buy[i].confirmation_signer_id,
-                    self.orders_buy[i].confirmation_current,
+                    order.confirmation_signer_id,
+                    order.confirmation_current,
                     env::current_account_id(),
                     0,
                     GAS_ON_CONFIRMATION,
@@ -172,20 +175,20 @@ impl NearP2P {
         let ft_token: String;
         let mut status: i8;
         if offer_type == 1 {
-            let i = self.orders_sell.iter().position(|x| x.order_id == order_id).expect("Order Sell not found");
+            let mut order = self.orders_sell.get(&order_id).expect("Order Sell not found");
             
-            if self.orders_sell[i].owner_id == env::signer_account_id() {
-                let j = self.offers_sell.iter().position(|x| x.offer_id == self.orders_sell[i].offer_id).expect("Offer Sell not found");
+            if order.owner_id == env::signer_account_id() {
+                let offer = self.offers_sell.get(&order.offer_id).expect("Offer Sell not found");
                 
-                status = self.orders_sell[i].status;
-                if self.orders_sell[i].status == 1 || self.orders_sell[i].status == 2 {
+                status = order.status;
+                if order.status == 1 || order.status == 2 {
                     status = 4;
                 }
 
                 #[warn(unused_assignments)]
-                let contract_name = self.contract_list.get(&self.orders_sell[i].signer_id).expect("the user does not have a sub contract deployed");
+                let contract_name = self.contract_list.get(&order.signer_id).expect("the user does not have a sub contract deployed");
 
-                match self.offers_sell[j].asset.as_str(){
+                match offer.asset.as_str(){
                     "NEAR" => {
                         contract_ft = None;
                         ft_token = "NEAR".to_string();
@@ -197,8 +200,8 @@ impl NearP2P {
                 };
                 
                 ext_subcontract::transfer(
-                    self.orders_sell[i].signer_id.clone(),
-                    U128(self.orders_sell[i].operation_amount),
+                    order.signer_id.clone(),
+                    U128(order.operation_amount),
                     U128(0),
                     contract_ft,
                     false,
@@ -211,21 +214,24 @@ impl NearP2P {
                     1,
                     /*ContractList{contract: contract_name.contract.clone(), type_contract: contract_name.type_contract.clone()},
                     self.orders_sell[i].signer_id.clone(),*/
-                    i,
+                    order.clone(),
                     false,
                     3,
-                    self.orders_sell[i].confirmation_signer_id,
-                    self.orders_sell[i].confirmation_current,
+                    order.confirmation_signer_id,
+                    order.confirmation_current,
                     env::current_account_id(),
                     0,
                     GAS_ON_CONFIRMATION,
                 ));
                 
-            } else if self.orders_sell[i].signer_id == env::signer_account_id() {
-                self.orders_sell[i].confirmation_signer_id = 3;
-                if self.orders_sell[i].status == 1 || self.orders_sell[i].status == 2 {
-                    self.orders_sell[i].status = 4;
+            } else if order.signer_id == env::signer_account_id() {
+                order.confirmation_signer_id = 3;
+                if order.status == 1 || order.status == 2 {
+                    order.status = 4;
                 }
+
+                self.orders_sell.insert(&order_id, &order);
+
                 env::log_str(
                     &json!({
                         "type": "cancel_order_signer",
@@ -233,7 +239,7 @@ impl NearP2P {
                             "offer_type": offer_type.to_string(),
                             "order_id": order_id.to_string(),
                             "confirmation_signer_id": "3".to_string(),
-                            "status": self.orders_sell[i].status.to_string(),
+                            "status": order.status.to_string(),
                         }
                     }).to_string(),
                 );
@@ -241,13 +247,16 @@ impl NearP2P {
                 env::panic_str("Server internar error, signer not found");  
             }
         } else if offer_type == 2 {
-            let i = self.orders_buy.iter().position(|x| x.order_id == order_id).expect("Order buy not found");
+            let mut order = self.orders_buy.get(&order_id).expect("Order buy not found");
 
-            if self.orders_buy[i].owner_id == env::signer_account_id() {
-                self.orders_buy[i].confirmation_owner_id = 3;
-                if self.orders_buy[i].status == 1 || self.orders_buy[i].status == 2 {
-                    self.orders_buy[i].status = 4;
+            if order.owner_id == env::signer_account_id() {
+                order.confirmation_owner_id = 3;
+                if order.status == 1 || order.status == 2 {
+                    order.status = 4;
                 }
+
+                self.orders_sell.insert(&order_id, &order);
+
                 env::log_str(
                     &json!({
                         "type": "cancel_order_owner",
@@ -255,22 +264,22 @@ impl NearP2P {
                             "offer_type": offer_type.to_string(),
                             "order_id": order_id.to_string(),
                             "confirmation_owner_id": "3".to_string(),
-                            "status": self.orders_buy[i].status.to_string(),
+                            "status": order.status.to_string(),
                         }
                     }).to_string(),
                 );
-            } else if self.orders_buy[i].signer_id == env::signer_account_id() {
-                let j = self.offers_buy.iter().position(|x| x.offer_id == self.orders_buy[i].offer_id).expect("Offer buy not found");
+            } else if order.signer_id == env::signer_account_id() {
+                let offer = self.offers_buy.get(&order.offer_id).expect("Offer buy not found");
                 
-                status = self.orders_buy[i].status;
-                if self.orders_buy[i].status == 1 || self.orders_buy[i].status == 2 {
+                status = order.status;
+                if order.status == 1 || order.status == 2 {
                     status = 4;
                 }
 
                 #[warn(unused_assignments)]
-                let contract = self.contract_list.get(&self.orders_buy[i].owner_id).expect("the user does not have a sub contract deployed");
+                let contract = self.contract_list.get(&order.owner_id).expect("the user does not have a sub contract deployed");
 
-                match self.offers_buy[j].asset.as_str(){
+                match offer.asset.as_str(){
                     "NEAR" => {
                         contract_ft = None;
                         ft_token = "NEAR".to_string();
@@ -282,8 +291,8 @@ impl NearP2P {
                 };
 
                 ext_subcontract::transfer(
-                    self.orders_buy[i].owner_id.clone(),
-                    U128(self.orders_buy[i].operation_amount),
+                    order.owner_id.clone(),
+                    U128(order.operation_amount),
                     U128(0),
                     contract_ft,
                     false,
@@ -296,11 +305,11 @@ impl NearP2P {
                     2,
                     /*ContractList{contract: contract.contract.clone(), type_contract: contract.type_contract.clone()},
                     self.orders_buy[i].owner_id.clone(),*/
-                    i,
+                    order.clone(),
                     false,
-                    self.orders_buy[i].confirmation_owner_id,
+                    order.confirmation_owner_id,
                     3,
-                    self.orders_buy[i].confirmation_current,
+                    order.confirmation_current,
                     env::current_account_id(),
                     0,
                     GAS_ON_CONFIRMATION,
@@ -321,7 +330,7 @@ impl NearP2P {
         order_type: i8,
         /*data_contract: ContractList,
         signer_id: AccountId,*/
-        index: usize,
+        mut order: OrderObject,
         confirmacion: bool,
         confirmation_owner_id: i8,
         confirmation_signer_id: i8,
@@ -333,78 +342,42 @@ impl NearP2P {
             env::panic_str("balance is None".as_ref());
         }
 
-        let arreglo;
-        if order_type == 1 {
-            self.orders_sell[index].status = status;
-            self.orders_sell[index].confirmation_owner_id = confirmation_owner_id;
-            self.orders_sell[index].confirmation_signer_id = confirmation_signer_id;
-            self.orders_sell[index].confirmation_current = confirmation_current;
-            arreglo = self.orders_sell.clone();
-        } else if order_type == 2 {
-            self.orders_buy[index].status = status;
-            self.orders_buy[index].confirmation_owner_id = confirmation_owner_id;
-            self.orders_buy[index].confirmation_signer_id = confirmation_signer_id;
-            self.orders_buy[index].confirmation_current = confirmation_current;
-            arreglo = self.orders_buy.clone();
-        } else {
-            env::panic_str("order type incorret");
-        }
+        order.status = status;
+        order.confirmation_owner_id = confirmation_owner_id;
+        order.confirmation_signer_id = confirmation_signer_id;
+        order.confirmation_current = confirmation_current;
 
-        //let index = arreglo.iter().position(|x| x.order_id == order_id).expect("Order not found");
-
-        let data = OrderObject {
-            offer_id: arreglo[index].offer_id,
-            order_id: arreglo[index].order_id,
-            owner_id: arreglo[index].owner_id.clone(),
-            asset: arreglo[index].asset.clone(),
-            signer_id: arreglo[index].signer_id.clone(),
-            exchange_rate: arreglo[index].exchange_rate.clone(),
-            operation_amount: arreglo[index].operation_amount,
-            amount_delivered: arreglo[index].amount_delivered,
-            fee_deducted: arreglo[index].fee_deducted,
-            payment_method: arreglo[index].payment_method,
-            fiat_method: arreglo[index].fiat_method,
-            confirmation_owner_id: arreglo[index].confirmation_owner_id,
-            confirmation_signer_id: arreglo[index].confirmation_signer_id,
-            confirmation_current: arreglo[index].confirmation_current,
-            referente: arreglo[index].referente.clone(),
-            time: arreglo[index].time,
-            datetime: arreglo[index].datetime.clone(),
-            terms_conditions: arreglo[index].terms_conditions.clone(),
-            status: status,
-        };
         if order_type == 1 {
             /*if confirmacion == true {
                 self.orders_sell_completed(index);
             }*/
-            self.order_history_sell.push(data);
-            self.orders_sell.remove(index);
+            self.orders_sell.remove(&order.order_id);
             
             env::log_str(
                 &json!({
                     "type": "on_confirmation_sell",
                     "params": {
-                        "offer_id": arreglo[index].offer_id.to_string(),
-                        "order_id": arreglo[index].order_id.to_string(),
-                        "owner_id": arreglo[index].owner_id.clone(),
-                        "asset": arreglo[index].asset.clone(),
-                        "signer_id": arreglo[index].signer_id.clone(),
-                        "exchange_rate": arreglo[index].exchange_rate.clone(),
-                        "operation_amount": arreglo[index].operation_amount.to_string(),
-                        "amount_delivered": arreglo[index].amount_delivered.to_string(),
-                        "fee_deducted": arreglo[index].fee_deducted.to_string(),
-                        "payment_method": arreglo[index].payment_method.to_string(),
-                        "fiat_method": arreglo[index].fiat_method.to_string(),
-                        "confirmation_owner_id": arreglo[index].confirmation_owner_id.to_string(),
-                        "confirmation_signer_id": arreglo[index].confirmation_signer_id.to_string(),
-                        "confirmation_current": arreglo[index].confirmation_current.to_string(),
-                        "referente": arreglo[index].referente.clone(),
+                        "offer_id": order.offer_id.to_string(),
+                        "order_id": order.order_id.to_string(),
+                        "owner_id": order.owner_id.clone(),
+                        "asset": order.asset.clone(),
+                        "signer_id": order.signer_id.clone(),
+                        "exchange_rate": order.exchange_rate.clone(),
+                        "operation_amount": order.operation_amount.to_string(),
+                        "amount_delivered": order.amount_delivered.to_string(),
+                        "fee_deducted": order.fee_deducted.to_string(),
+                        "payment_method": order.payment_method.to_string(),
+                        "fiat_method": order.fiat_method.to_string(),
+                        "confirmation_owner_id": order.confirmation_owner_id.to_string(),
+                        "confirmation_signer_id": order.confirmation_signer_id.to_string(),
+                        "confirmation_current": order.confirmation_current.to_string(),
+                        "referente": order.referente.clone(),
                         "porcentaje_referente": self.porcentaje_referente.to_string(),
                         "porcentaje_referido": self.porcentaje_referido.to_string(),
-                        "time": arreglo[index].time.to_string(),
-                        "datetime": arreglo[index].datetime.clone(),
-                        "terms_conditions": arreglo[index].terms_conditions.clone(),
-                        "status": status.to_string(),
+                        "time": order.time.to_string(),
+                        "datetime": order.datetime.clone(),
+                        "terms_conditions": order.terms_conditions.clone(),
+                        "status": order.status.to_string(),
                         "confirmacion": confirmacion,
                     }
                 }).to_string(),
@@ -427,34 +400,34 @@ impl NearP2P {
             /*if confirmacion  == true {
                 self.orders_buy_completed(index);
             }*/
-            self.order_history_buy.push(data);
-            self.orders_buy.remove(index);   
+            
+            self.orders_buy.remove(&order.order_id);   
 
             env::log_str(
                 &json!({
                     "type": "on_confirmation_buy",
                     "params": {
-                        "offer_id": arreglo[index].offer_id.to_string(),
-                        "order_id": arreglo[index].order_id.to_string(),
-                        "owner_id": arreglo[index].owner_id.clone(),
-                        "asset": arreglo[index].asset.clone(),
-                        "signer_id": arreglo[index].signer_id.clone(),
-                        "exchange_rate": arreglo[index].exchange_rate.clone(),
-                        "operation_amount": arreglo[index].operation_amount.to_string(),
-                        "amount_delivered": arreglo[index].amount_delivered.to_string(),
-                        "fee_deducted": arreglo[index].fee_deducted.to_string(),
-                        "payment_method": arreglo[index].payment_method.to_string(),
-                        "fiat_method": arreglo[index].fiat_method.to_string(),
-                        "confirmation_owner_id": arreglo[index].confirmation_owner_id.to_string(),
-                        "confirmation_signer_id": arreglo[index].confirmation_signer_id.to_string(),
-                        "confirmation_current": arreglo[index].confirmation_current.to_string(),
-                        "referente": arreglo[index].referente.clone(),
+                        "offer_id": order.offer_id.to_string(),
+                        "order_id": order.order_id.to_string(),
+                        "owner_id": order.owner_id.clone(),
+                        "asset": order.asset.clone(),
+                        "signer_id": order.signer_id.clone(),
+                        "exchange_rate": order.exchange_rate.clone(),
+                        "operation_amount": order.operation_amount.to_string(),
+                        "amount_delivered": order.amount_delivered.to_string(),
+                        "fee_deducted": order.fee_deducted.to_string(),
+                        "payment_method": order.payment_method.to_string(),
+                        "fiat_method": order.fiat_method.to_string(),
+                        "confirmation_owner_id": order.confirmation_owner_id.to_string(),
+                        "confirmation_signer_id": order.confirmation_signer_id.to_string(),
+                        "confirmation_current": order.confirmation_current.to_string(),
+                        "referente": order.referente.clone(),
                         "porcentaje_referente": self.porcentaje_referente.to_string(),
                         "porcentaje_referido": self.porcentaje_referido.to_string(),
-                        "time": arreglo[index].time.to_string(),
-                        "datetime": arreglo[index].datetime.clone(),
-                        "terms_conditions": arreglo[index].terms_conditions.clone(),
-                        "status": status.to_string(),
+                        "time": order.time.to_string(),
+                        "datetime": order.datetime.clone(),
+                        "terms_conditions": order.terms_conditions.clone(),
+                        "status": order.status.to_string(),
                         "confirmacion": confirmacion,
                     }
                 }).to_string(),
