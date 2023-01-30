@@ -361,11 +361,11 @@ impl NearP2P {
                 ))
             },
             _=> {
-                self.ft_token_list.get(&ft_token).expect("El ft_token subministrado en la oferta es incorrecto");
+                let contract_ft = self.ft_token_list.get(&ft_token).expect("El ft_token subministrado es incorrecto");
 
                 ext_usdc::ft_balance_of(
                     contract.contract.to_string(),
-                    AccountId::new_unchecked(CONTRACT_USDC.to_string()),
+                    contract_ft.contract, //AccountId::new_unchecked(CONTRACT_USDC.to_string()),
                     0,
                     Gas(30_000_000_000_000),
                 ).then(int_sub_contract::on_withdraw_token_block(
@@ -459,11 +459,13 @@ impl NearP2P {
         
         require!(amount_withdraw > 0, "No balance available to withdraw");
 
+        let contract_ft = self.ft_token_list.get(&ft_token.clone()).expect("El ft_token subministrado es incorrecto");
+
         ext_subcontract::transfer(
             signer_id,
             U128(amount_withdraw),
             U128(0u128),
-            Some(AccountId::new_unchecked(CONTRACT_USDC.to_string())),
+            Some(contract_ft.contract), //Some(AccountId::new_unchecked(CONTRACT_USDC.to_string())),
             true,
             ft_token,
             sub_contract,

@@ -166,8 +166,8 @@ impl NearP2P {
                                 ft_token = "NEAR".to_string();
                             },
                             _=> {
-                                contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
-                                ft_token = "USDC".to_string();
+                                contract_ft = Some(self.ft_token_list.get(&offer.asset.clone()).expect("El ft_token subministrado en la oferta es incorrecto").contract);//Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
+                                ft_token = offer.asset.clone();
                             },
                         };
                         
@@ -216,8 +216,8 @@ impl NearP2P {
                                 ft_token = "NEAR".to_string();
                             },
                             _=> {
-                                contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
-                                ft_token = "USDC".to_string();
+                                contract_ft = Some(self.ft_token_list.get(&offer.asset.clone()).expect("El ft_token subministrado en la oferta es incorrecto").contract);
+                                ft_token = offer.asset.clone();
                             },
                         };
                         
@@ -269,8 +269,8 @@ impl NearP2P {
                                 ft_token = "NEAR".to_string();
                             },
                             _=> {
-                                contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
-                                ft_token = "USDC".to_string();
+                                contract_ft = Some(self.ft_token_list.get(&offer.asset.clone()).expect("El ft_token subministrado en la oferta es incorrecto").contract);
+                                ft_token = offer.asset.clone();
                             },
                         };
                         
@@ -317,8 +317,8 @@ impl NearP2P {
                                 ft_token = "NEAR".to_string();
                             },
                             _=> {
-                                contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
-                                ft_token = "USDC".to_string();
+                                contract_ft = Some(self.ft_token_list.get(&offer.asset.clone()).expect("El ft_token subministrado en la oferta es incorrecto").contract);
+                                ft_token = offer.asset.clone();
                             },
                         };
 

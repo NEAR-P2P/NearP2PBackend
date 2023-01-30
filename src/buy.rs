@@ -371,12 +371,12 @@ impl NearP2P {
         let contract_ft: Option<AccountId>;
         let ft_token: String;
         
-        if offer.asset == "USDC".to_string() {
-            contract_ft = Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
-            ft_token = "USDC".to_string();
-        } else {
+        if offer.asset == "NEAR".to_string() {
             contract_ft = None;
             ft_token = "NEAR".to_string();
+        } else {
+            contract_ft = Some(self.ft_token_list.get(&offer.asset.clone()).expect("El ft_token subministrado en la oferta es incorrecto").contract);
+            ft_token = "USDC".to_string();
         }   
         
         ext_subcontract::transfer(
