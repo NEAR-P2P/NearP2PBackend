@@ -40,7 +40,7 @@ impl NearP2P {
         
         let contract_ft = self.ft_token_list.get(&asset).expect("El asset subministrado en la oferta es incorrecto");
 
-        let token_activos = self.activate_token_list.get(&env::signer_account_id()).or(Some([].to_vec())).unwrap();
+        let token_activos = self.activate_token_list.get(&subaccount_id.clone()).or(Some([].to_vec())).unwrap();
 
         assert!(token_activos.iter().find(|&x| x == &asset).is_none(), "El token ya esta activo");
 
