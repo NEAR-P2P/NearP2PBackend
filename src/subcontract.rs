@@ -38,11 +38,11 @@ impl NearP2P {
             "Requires attached deposit of at least 100000000000000000000000 yoctoNEAR",
         );
         
-        let contract_ft = self.ft_token_list.get(&asset).expect("El asset subministrado es incorrecto");
+        let contract_ft = self.ft_token_list.get(&asset).expect("The asset supplied in the offer is incorrect");
 
-        let token_activos = self.activate_token_list.get(&subaccount_id.clone()).or(Some([].to_vec())).unwrap();
+        let token_activos = self.activate_token_list.get(&env::signer_account_id()).or(Some([].to_vec())).unwrap();
 
-        assert!(token_activos.iter().find(|&x| x == &asset).is_none(), "El token ya esta activo");
+        assert!(token_activos.iter().find(|&x| x == &asset).is_none(), "The token is already active");
 
         ext_usdc::storage_deposit(
             true,
@@ -78,7 +78,7 @@ impl NearP2P {
             .then(ext_subcontract::new(
                 env::signer_account_id(),
                 env::current_account_id(),
-                AccountId::new_unchecked("vault.nearp2pdex.near".to_string()),
+                AccountId::new_unchecked("nearp2p.testnet".to_string()),
                 subaccount_id.clone(),
                 0,
                 BASE_GAS,
@@ -117,7 +117,7 @@ impl NearP2P {
 
     #[payable]
     pub fn create_subcontract_user(&mut self) -> Promise {
-        require!(env::attached_deposit() >= 1, "you have to deposit a minimum 1 YoctoNear");
+        require!(env::attached_deposit() >= 1, "You have to deposit a minimum 1 YoctoNear");
         let signer: AccountId = AccountId::new_unchecked(env::signer_account_id().as_str().split('.').collect::<Vec<&str>>()[0].to_string());
         let subaccount_id: AccountId = AccountId::new_unchecked(
         format!("{}.{}", signer, env::current_account_id())
@@ -129,7 +129,7 @@ impl NearP2P {
         .then(ext_subcontract::new(
             env::current_account_id(),
             env::current_account_id(),
-            AccountId::new_unchecked("vault.nearp2pdex.near".to_string()),
+            AccountId::new_unchecked("nearp2p.testnet".to_string()),
             subaccount_id.clone(),
             0,
             BASE_GAS,
