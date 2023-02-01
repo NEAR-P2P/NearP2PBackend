@@ -38,7 +38,7 @@ impl NearP2P {
             "Requires attached deposit of at least 100000000000000000000000 yoctoNEAR",
         );
         
-        let contract_ft = self.ft_token_list.get(&asset).expect("El asset subministrado en la oferta es incorrecto");
+        let contract_ft = self.ft_token_list.get(&asset).expect("El asset subministrado es incorrecto");
 
         let token_activos = self.activate_token_list.get(&subaccount_id.clone()).or(Some([].to_vec())).unwrap();
 
