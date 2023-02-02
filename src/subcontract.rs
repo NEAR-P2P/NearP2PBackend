@@ -42,7 +42,7 @@ impl NearP2P {
 
         let token_activos = self.activate_token_list.get(&env::signer_account_id()).or(Some([].to_vec())).unwrap();
 
-        //assert!(token_activos.iter().find(|&x| x == &asset).is_none(), "The token is already active");
+        //assert!(token_activos.iter().find(|&x| x == &asset).is_s(), "The token is already active");
 
         ext_usdc::storage_deposit(
             true,
