@@ -62,6 +62,7 @@ impl NearP2P {
     
     /// accept offer into the contract
     /// Params: offer_type: 1 = sell, 2 = buy
+    #[payable]
     pub fn accept_offer(&mut self, offer_type: i8
         , offer_id: i128
         , amount: U128
