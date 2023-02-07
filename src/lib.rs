@@ -1133,7 +1133,7 @@ impl NearP2P {
         , input5: String
     ) -> String {
         let id = format!("{}:{}", env::signer_account_id(), payment_method_id).to_string();
-        self.payment_method_user.get(&id.clone()).expect("Repeated payment methods are not allowed");
+        assert!(self.payment_method_user.get(&id.clone()).is_none(),"Repeated payment methods are not allowed");
         
         let pm = self.payment_method.get(&payment_method_id).expect("Payment method does not exist");
         
