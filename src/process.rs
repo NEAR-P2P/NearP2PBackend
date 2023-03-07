@@ -18,6 +18,7 @@ impl NearP2P {
         
     }
 
+    #[payable]
     pub fn order_confirmation(&mut self, offer_type: i8, order_id: i128) {
         require!(env::attached_deposit() >= 1, "Requires attached deposit of at least 1 yoctoNEAR");
         let contract_ft: Option<AccountId>;
@@ -169,7 +170,7 @@ impl NearP2P {
     }
 
 
-    // #[payable]
+    #[payable]
     pub fn cancel_order(&mut self, offer_type: i8, order_id: i128) {
         assert_one_yocto();
         let contract_ft: Option<AccountId>;
