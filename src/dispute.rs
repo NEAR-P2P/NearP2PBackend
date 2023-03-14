@@ -10,8 +10,9 @@ impl NearP2P {
 
     /// dispute order into the contract
     /// Params: offer_type: 1 = sell, 2 = buy
-    // #[payable]
+    #[payable]
     pub fn order_dispute(&mut self, offer_type: i8, order_id: i128) {
+        require!(env::attached_deposit() >= 1, "Requires attached deposit of at least 1 yoctoNEAR");
         // assert_one_yocto();
         if offer_type == 1 {
             let mut order = self.orders_sell.get(&order_id).expect("Order Sell not found");
