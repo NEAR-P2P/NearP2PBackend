@@ -354,6 +354,10 @@ impl NearP2P {
                 self.orders_sell_completed(index);
             }*/
             self.orders_sell.remove(&order.order_id);
+            let oferta = self.offers_sell.get(&order.offer_id).expect("Offer sell not found");
+            if oferta.remaining_amount <= 0 {
+                self.offers_sell.remove(&order.offer_id);
+            }
             
             env::log_str(
                 &json!({
@@ -403,7 +407,11 @@ impl NearP2P {
                 self.orders_buy_completed(index);
             }*/
             
-            self.orders_buy.remove(&order.order_id);   
+            self.orders_buy.remove(&order.order_id);
+            let oferta = self.offers_buy.get(&order.offer_id).expect("Offer sell not found");
+            if oferta.remaining_amount <= 0 {
+                self.offers_buy.remove(&order.offer_id);
+            }
 
             env::log_str(
                 &json!({
