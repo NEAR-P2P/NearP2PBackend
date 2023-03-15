@@ -141,7 +141,7 @@ impl NearP2P {
         offer_type: i8,
         order_id: i128
     ) {
-        require!(self.disputer == env::signer_account_id(), "Only disputer");
+        //require!(self.disputer == env::signer_account_id(), "Only disputer");
         let contract_ft: Option<AccountId>;
         let ft_token: String;
         let mut status: i8;
@@ -194,7 +194,7 @@ impl NearP2P {
                             1,
                             env::current_account_id(),
                             0,
-                            BASE_GAS,
+                            GAS_ON_CONFIRMATION,
                         ));
                 
                     }, 
@@ -244,7 +244,7 @@ impl NearP2P {
                             1,
                             env::current_account_id(),
                             0,
-                            BASE_GAS,
+                            GAS_ON_CONFIRMATION,
                         ));
                     },
                     _=> env::panic_str("Invalid offer type"),
@@ -345,7 +345,7 @@ impl NearP2P {
                             3,
                             env::current_account_id(),
                             0,
-                            BASE_GAS,
+                            GAS_ON_CONFIRMATION,
                         ));
                     },
                     _=> env::panic_str("Invalid offer type"),
