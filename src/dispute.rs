@@ -141,7 +141,7 @@ impl NearP2P {
         offer_type: i8,
         order_id: i128
     ) {
-        //require!(self.disputer == env::signer_account_id(), "Only disputer");
+        require!(self.disputer == env::signer_account_id(), "Only disputer");
         let contract_ft: Option<AccountId>;
         let ft_token: String;
         let mut status: i8;
