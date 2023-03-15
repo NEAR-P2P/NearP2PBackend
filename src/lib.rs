@@ -388,8 +388,8 @@ impl NearP2P {
             activate_token_list: UnorderedMap::new(StorageKey::KeyActivateTokenList),
             disputer: AccountId::new_unchecked("nearp2p.sputnikv2.testnet".to_string()),
             referidos: UnorderedMap::new(StorageKey::KeyReferidos),
-            porcentaje_referente: 42000,
-            porcentaje_referido: 5000,
+            porcentaje_referente: 7000,
+            porcentaje_referido: 3000,
         }
     }
     /*pub fn prueba_balance(&mut self, account_id: String) -> Promise {
