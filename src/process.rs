@@ -349,12 +349,12 @@ impl NearP2P {
         order.confirmation_signer_id = confirmation_signer_id;
         order.confirmation_current = confirmation_current;
         
-        let amount_referente: u128 = 0;
-        let amount_referido: u128 = 0;
+        let mut amount_referente: u128 = 0;
+        let mut amount_referido: u128 = 0;
         if confirmacion  == true {
             //self.orders_buy_completed(index);
-            amount_referente: u128 = ((order.fee_deducted * self.porcentaje_referente)/10000)
-            amount_referido: u128 = ((order.fee_deducted * self.porcentaje_referido)/10000)
+            amount_referente = (order.fee_deducted * self.porcentaje_referente)/10_000u128;
+            amount_referido = (order.fee_deducted * self.porcentaje_referido)/10_000u128;
         }
 
         if order_type == 1 {
