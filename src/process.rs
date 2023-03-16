@@ -348,10 +348,20 @@ impl NearP2P {
         order.confirmation_owner_id = confirmation_owner_id;
         order.confirmation_signer_id = confirmation_signer_id;
         order.confirmation_current = confirmation_current;
+        
+        let amount_referente: u128 = 0;
+        let amount_referido: u128 = 0;
+        if confirmacion  == true {
+            //self.orders_buy_completed(index);
+            amount_referente: u128 = ((order.fee_deducted * self.porcentaje_referente)/10000)
+            amount_referido: u128 = ((order.fee_deducted * self.porcentaje_referido)/10000)
+        }
 
         if order_type == 1 {
             /*if confirmacion == true {
-                self.orders_sell_completed(index);
+                //self.orders_sell_completed(index);
+                amount_referente: u128 = ((order.fee_deducted * self.porcentaje_referente)/10000)
+                amount_referido: u128 = ((order.fee_deducted * self.porcentaje_referido)/10000)
             }*/
             self.orders_sell.remove(&order.order_id);
             let oferta = self.offers_sell.get(&order.offer_id).expect("Offer sell not found");
@@ -380,6 +390,8 @@ impl NearP2P {
                         "referente": order.referente.clone(),
                         "porcentaje_referente": self.porcentaje_referente.to_string(),
                         "porcentaje_referido": self.porcentaje_referido.to_string(),
+                        "amount_referente": amount_referente.to_string(),
+                        "amount_referido": amount_referido.to_string(),
                         "time": order.time.to_string(),
                         "datetime": order.datetime.clone(),
                         "terms_conditions": order.terms_conditions.clone(),
@@ -404,7 +416,9 @@ impl NearP2P {
             }*/ 
         } else if order_type == 2 {
             /*if confirmacion  == true {
-                self.orders_buy_completed(index);
+                //self.orders_buy_completed(index);
+                amount_referente: u128 = ((order.fee_deducted * self.porcentaje_referente)/10000)
+                amount_referido: u128 = ((order.fee_deducted * self.porcentaje_referido)/10000)
             }*/
             
             self.orders_buy.remove(&order.order_id);
@@ -434,6 +448,8 @@ impl NearP2P {
                         "referente": order.referente.clone(),
                         "porcentaje_referente": self.porcentaje_referente.to_string(),
                         "porcentaje_referido": self.porcentaje_referido.to_string(),
+                        "amount_referente": amount_referente.to_string(),
+                        "amount_referido": amount_referido.to_string(),
                         "time": order.time.to_string(),
                         "datetime": order.datetime.clone(),
                         "terms_conditions": order.terms_conditions.clone(),
