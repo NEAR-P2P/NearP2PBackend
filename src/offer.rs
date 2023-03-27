@@ -161,7 +161,7 @@ impl NearP2P {
                 };
             }
 
-            let fee: u128 = (amount.0 * FEE_TRANSACTION_NEAR) / 100000;
+            let fee: u128 = (amount.0 * FEE_TRANSACTION_NEAR) / 10000;
             //let fee_deducted = amount - fee;
             offer.remaining_amount = remaining;
 
@@ -266,7 +266,7 @@ impl NearP2P {
             };
         }
         
-        let fee: u128 = (amount.0 * FEE_TRANSACTION_NEAR) / 100000;
+        let fee: u128 = (amount.0 * FEE_TRANSACTION_NEAR) / 10000;
 
         offer.remaining_amount = remaining;
 
