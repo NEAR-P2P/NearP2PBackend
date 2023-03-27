@@ -32,7 +32,7 @@ use std::collections::HashMap;
 use near_sdk::collections::{LazyOption, UnorderedMap, UnorderedSet};
 
 const KEY_TOKEN: &str = "qbogcyqiqO7Utwqm3VgKhxrmQIc0ROjj";
-const FEE_TRANSACTION_NEAR: u128 = 30; // 0.003%  
+const FEE_TRANSACTION_NEAR: u128 = 3; // 0.003%  
 
 //const GAS_FOR_RESOLVE_TRANSFER: Gas = Gas(10_000_000_000_000);
 const GAS_FOR_TRANSFER: Gas = Gas(25_000_000_000_000);
