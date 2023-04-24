@@ -242,6 +242,15 @@ pub struct FtData {
     contract: AccountId,
     min_limit: u128,
 }
+
+#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub struct FtTokenListJson {
+    asset: String,
+    contract: AccountId,
+    min_limit: u128,
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /// Objects Definition////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -434,6 +443,29 @@ impl NearP2P {
         );
     }
 
+    pub fn get_ft_token(self) -> Vec<FtTokenListJson> {
+        self.ft_token_list.iter().map(|(k, v)| FtTokenListJson {
+            asset: k.to_string(),
+            contract: v.contract,
+            min_limit: v.min_limit,
+        }).collect()
+    }
+
+    pub fn delete_ft_token(&mut self, asset: String) {
+        assert!(self.owner_id == env::signer_account_id() || self.administrators.contains(&env::signer_account_id()), "Only administrator");
+        
+        self.ft_token_list.remove(&asset);
+
+        env::log_str(
+            &json!({
+                "type": "delete_ft_token",
+                "params": {
+                    "asset": asset.clone(),
+                    "user_delete": env::predecessor_account_id()
+                }
+            }).to_string(),
+        );
+    }
 
     pub fn add_referido(&mut self, referente: AccountId) {
         let signer_id: AccountId = env::signer_account_id();
