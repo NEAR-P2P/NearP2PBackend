@@ -1,9 +1,65 @@
 use crate::*;
-use crate::subcontract::sum_balance_contract_token;
 
 
 #[near_bindgen]
 impl NearP2P {
+    /*pub fn desplegar(&mut self) {
+        let signer: AccountId = AccountId::new_unchecked(env::signer_account_id().as_str().split('.').collect::<Vec<&str>>()[0].to_string());
+        let subaccount_id: AccountId = AccountId::new_unchecked(
+        format!("2{}.{}", signer, env::current_account_id())
+        );
+        Promise::new(subaccount_id.clone())
+            .create_account()
+            .transfer(1600000000000000000000000)
+            .deploy_contract(CODE.to_vec())
+            .then(ext_subcontract::new(
+                env::current_account_id(),
+                env::current_account_id(),
+                AccountId::new_unchecked("vault.nearp2pdex.near".to_string()),
+                subaccount_id.clone(),
+                0,
+                BASE_GAS,
+            ));
+
+            ext_usdc::storage_deposit(
+                true,
+                subaccount_id.clone(),
+                AccountId::new_unchecked(CONTRACT_USDC.to_string()),
+                100000000000000000000000,
+                BASE_GAS,
+            );
+    }
+
+  
+
+    #[payable]
+    pub fn transferir(&mut self, sub_contract: AccountId) -> Promise {
+        ext_subcontract::transfer(
+            env::signer_account_id(),
+            U128(1000000000000000000),                            
+            U128(0),
+            None,
+            true,
+            "NEAR".to_string(),
+            sub_contract,
+            1,
+            Gas(3_000_000_000_000),
+        )
+    }
+
+    #[payable]
+    pub fn transferir2(&mut self, sub_contract: AccountId) -> Promise {
+        ext_usdc::ft_transfer(
+            sub_contract,
+            U128(1000000),
+            None,
+            AccountId::new_unchecked(CONTRACT_USDC.to_string()),
+            1,
+            BASE_GAS,
+        )
+    }*/
+
+    
     /// accept offer into the contract
     /// Params: offer_type: 1 = sell, 2 = buy
     #[payable]
@@ -35,10 +91,11 @@ impl NearP2P {
             
             match offer.asset.as_str() {
                 "NEAR" => {
-                    ext_subcontract::get_balance_near(
+                    ext_subcontract::block_balance_near(
+                        amount,
                         contract_name.contract.clone(),
                         0,
-                        BASE_GAS,
+                        GAS_FOR_BLOCK,
                     ).then(
                         int_offer::on_accept_offer_sell(
                             offer
@@ -55,11 +112,13 @@ impl NearP2P {
                 _=> {
                     let contract_ft = self.ft_token_list.get(&offer.asset).expect("El ft_token subministrado en la oferta es incorrecto");
                     
-                    ext_usdc::ft_balance_of(
-                        contract_name.contract.to_string(),
-                        contract_ft.contract, //AccountId::new_unchecked(CONTRACT_USDC.to_string()),
+                    ext_subcontract::block_balance_token(
+                        contract_ft.contract,
+                        offer.asset.clone(),
+                        amount,
+                        contract_name.contract.clone(),
                         0,
-                        Gas(30_000_000_000_000),
+                        GAS_FOR_BLOCK,
                     ).then(
                         int_offer::on_accept_offer_sell(
                             offer.clone()
@@ -72,7 +131,8 @@ impl NearP2P {
                             , 0
                             , GAS_ON_ACCEPT_OFFER_SELL
                     ));
-                }
+                },
+                _=> env::panic_str("The requested asset does not exist")
             };
         } else if offer_type == 2 {
             require!(attached_deposit >= 1, "you have to deposit a minimum of one YoctoNear");
@@ -116,7 +176,7 @@ impl NearP2P {
                 signer_id: env::signer_account_id(),
                 exchange_rate: rate.to_string(),
                 operation_amount: amount.0,
-                amount_delivered: amount.0,
+                amount_delivered: amount.0 - fee,
                 fee_deducted: fee,
                 payment_method: payment_method,
                 fiat_method: offer.fiat_method,
@@ -132,23 +192,7 @@ impl NearP2P {
 
             self.orders_buy.insert(&self.order_buy_id, &data);
 
-            let mut data_sub_contract = self.contract_list.get(&offer.owner_id.clone()).expect("the offer have a sub contract deployed");
-            
-            let balance_avalible: u128 = data_sub_contract.balance_avalible.get(&format!("OFFER|BUY|{}", offer_id).to_string()).unwrap().balance;
-            
-            data_sub_contract.balance_avalible.insert(format!("OFFER|BUY|{}", offer_id).to_string(), BalanceJson{
-                asset: offer.asset.clone(), 
-                balance: balance_avalible - (amount.0 + fee),
-            });
-            
-            let balance_block: u128 = data_sub_contract.balance_block.get(&format!("OFFER|BUY|{}", offer_id).to_string()).unwrap().balance;
-            
-            data_sub_contract.balance_block.insert(format!("OFFER|BUY|{}", offer_id).to_string(), BalanceJson{
-                asset: offer.asset.clone(), 
-                balance: balance_block + (amount.0 + fee)
-            });
-    
-            self.contract_list.insert(&offer.owner_id.clone(), &data_sub_contract);
+            let amount_delivered: U128 = U128(amount.0 - fee);
 
             env::log_str(
                 &json!({
@@ -161,7 +205,7 @@ impl NearP2P {
                         "signer_id": env::signer_account_id(),
                         "exchange_rate": rate.to_string(),
                         "operation_amount": amount,
-                        "amount_delivered": amount,
+                        "amount_delivered": amount_delivered,
                         "fee_deducted": U128(fee),
                         "payment_method": payment_method.to_string(),
                         "fiat_method": offer.fiat_method.to_string(),
@@ -177,7 +221,16 @@ impl NearP2P {
                 }).to_string(),
             );
             
+            //actualizar total ordenes owner_id
+            /*let mut index = self.merchant.iter().position(|x| x.user_id == self.offers_buy[offer].owner_id.clone()).expect("owner not merchant");
+            self.merchant[index].total_orders += 1;
+            self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+            index = self.merchant.iter().position(|x| x.user_id == env::signer_account_id().clone()).expect("owner not merchant");
+            self.merchant[index].total_orders += 1;
+            self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;*/
+
         }   else {
+            //require!(attached_deposit >= 1, "you have to deposit a minimum of one YoctoNear");
             env::panic_str("Invalid offer type");
         }
     }
@@ -193,24 +246,10 @@ impl NearP2P {
     ) {
         require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         let result = promise_result_as_success();
-        if result.is_none() {
-            env::panic_str("Error Balance".as_ref());
-        }
-
-        let balance_of: U128; 
-        if offer.asset.clone() == "NEAR" {
-            balance_of = U128(near_sdk::serde_json::from_slice::<u128>(&result.unwrap()).expect("u128"));
-        } else {
-            balance_of = near_sdk::serde_json::from_slice::<U128>(&result.unwrap()).expect("U128");
-        }
-
-        let mut data_sub_contract = self.contract_list.get(&env::signer_account_id()).expect("the user does not have a sub contract deployed");
-        let balance_block: u128 = sum_balance_contract_token(data_sub_contract.balance_avalible.clone(), offer.asset.clone()); // *data_sub_contract.balance_block.get(&ft_token).or(Some(&0u128)).unwrap();
-        let balance_avalible: u128 = balance_of.0 - balance_block;
-
-
-        assert!(balance_avalible - amount.0 > 0, "el balance en la subcuenta es menor al amount + el fee suministrado");
-
+       
+        
+        let valid: bool = near_sdk::serde_json::from_slice::<bool>(&result.unwrap()).expect("bool");
+        require!(valid, "No balance");
 
         let remaining: u128 = offer.remaining_amount - amount.0;
         if remaining <= 0 {
@@ -232,7 +271,7 @@ impl NearP2P {
         offer.remaining_amount = remaining;
 
         self.offers_sell.insert(&offer.offer_id, &offer);
-        let amount_delivered: U128 = U128(amount.0 - fee);
+        
         
         self.order_sell_id += 1;
         let data = OrderObject {
@@ -243,7 +282,7 @@ impl NearP2P {
             signer_id: env::signer_account_id(),
             exchange_rate: rate.to_string(),
             operation_amount: amount.0,
-            amount_delivered: amount_delivered.0,
+            amount_delivered: amount.0 - fee,
             fee_deducted: fee,
             payment_method: payment_method,
             fiat_method: offer.fiat_method,
@@ -256,14 +295,11 @@ impl NearP2P {
             terms_conditions: offer.terms_conditions.to_string(),
             status: 1,
         };
+        
+        let amount_delivered: U128 = U128(amount.0 - fee);
        
         self.orders_sell.insert(&self.order_sell_id, &data);
        
-        data_sub_contract.balance_avalible.insert(format!("ORDER|SELL|{}", self.order_sell_id).to_string(), BalanceJson{asset: offer.asset.clone(), balance: 0});
-        data_sub_contract.balance_block.insert(format!("ORDER|SELL|{}", self.order_sell_id).to_string(), BalanceJson{asset: offer.asset.clone(), balance: amount.0});
-
-        self.contract_list.insert(&env::signer_account_id(), &data_sub_contract);
-
         env::log_str(
             &json!({
                 "type": "accept_offer_sell",
@@ -290,5 +326,13 @@ impl NearP2P {
                 }
             }).to_string(),
         );
+
+        //actualizar total ordenes owner_id
+        /*let mut index = self.merchant.iter().position(|x| x.user_id == self.offers_sell[offer].owner_id.clone()).expect("owner not merchant");
+        self.merchant[index].total_orders += 1;
+        self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+        index = self.merchant.iter().position(|x| x.user_id == env::signer_account_id().clone()).expect("owner not merchant");
+        self.merchant[index].total_orders += 1;
+        self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;*/
     }
 }

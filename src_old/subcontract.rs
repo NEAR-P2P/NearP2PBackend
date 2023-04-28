@@ -7,27 +7,17 @@ impl NearP2P {
     #[payable]
     pub fn deposit(&mut self, sub_contract: AccountId) -> Promise {
         let attached_deposit = env::attached_deposit();
-        //let sub_contract = self.contract_list.get(&sub_contract).expect("El usuario no cuenta con subcontract registrado");
-
         assert!(
-            attached_deposit >= 1000000000000000000000,
-            "Requires attached deposit of at least 0.001 NEAR",
+            attached_deposit >= 1,
+            "Requires attached deposit of at least 1 yoctoNEAR",
         );
         //let sub_contract = self.contract_list.get(&env::signer_account_id()).expect("the user does not have contract deployed");
-        let result = Promise::new(sub_contract).transfer(attached_deposit);
-
-        result
+        Promise::new(sub_contract).transfer(attached_deposit)
     }
 
     pub fn listar_subcuenta(&mut self, account_id: AccountId, subcuenta: AccountId, type_contract: i8) {
         assert!(self.owner_id == env::signer_account_id() || self.administrators.contains(&env::signer_account_id()), "Only administrator");
-        assert!(self.contract_list.get(&account_id).is_none(), "El usuario ya cuenta con un subcontract listado");
-        self.contract_list.insert(&account_id, &ContractList{
-            contract: subcuenta,
-            type_contract: type_contract,
-            balance_avalible: HashMap::new(),
-            balance_block: HashMap::new(),
-        });
+        self.contract_list.insert(&account_id, &ContractList{ contract: subcuenta, type_contract: type_contract});
     }
 
     /*#[payable]
@@ -47,11 +37,10 @@ impl NearP2P {
             env::attached_deposit() >= 100000000000000000000000,
             "Requires attached deposit of at least 100000000000000000000000 yoctoNEAR",
         );
-        assert!(self.contract_list.get(&env::predecessor_account_id()).is_some(), "El usuario ya cuenta con un subcontract listado");
         
         let contract_ft = self.ft_token_list.get(&asset).expect("The asset supplied in the offer is incorrect");
 
-        //let token_activos = self.activate_token_list.get(&env::signer_account_id()).or(Some([].to_vec())).unwrap();
+        let token_activos = self.activate_token_list.get(&env::signer_account_id()).or(Some([].to_vec())).unwrap();
 
         //assert!(token_activos.iter().find(|&x| x == &asset).is_s(), "The token is already active");
 
@@ -78,8 +67,6 @@ impl NearP2P {
             attached_deposit >= 1485000000000000000000000,
             "Requires attached deposit of at least 1485000000000000000000000 yoctoNEAR",
         );
-        assert!(self.contract_list.get(&env::signer_account_id()).is_none(), "El usuario ya cuenta con un subcontract listado");
-
         let signer: AccountId = AccountId::new_unchecked(env::signer_account_id().as_str().split('.').collect::<Vec<&str>>()[0].to_string());
         let subaccount_id: AccountId = AccountId::new_unchecked(
         format!("{}.{}", signer, env::current_account_id())
@@ -97,12 +84,28 @@ impl NearP2P {
                 BASE_GAS,
             ));
 
-            self.contract_list.insert(&env::signer_account_id(), &ContractList{ 
-                contract: subaccount_id.clone(),
-                type_contract: 1,
-                balance_avalible: HashMap::new(),
-                balance_block: HashMap::new(),
-            });
+            self.contract_list.insert(&env::signer_account_id(), &ContractList{ contract: subaccount_id.clone(), type_contract: 1 });
+
+            //let verificar_token = self.activate_token_list.get(&env::signer_account_id());
+
+            //if verificar_token.is_none() || verificar_token.unwrap().get(verificar_token.unwrap().iter().position(|x| *x == "USDC".to_string()).unwrap() as usize).is_none() {
+            /*if verificar_token.is_none() {
+                ext_usdc::storage_deposit(
+                    true,
+                    subaccount_id,
+                    AccountId::new_unchecked(CONTRACT_USDC.to_string()),
+                    100000000000000000000000,
+                    BASE_GAS,
+                ).then(int_sub_contract::on_listar_token_activo(
+                    env::signer_account_id(),
+                    "USDC".to_string(),
+                    env::current_account_id(),
+                    0,
+                    Gas(10_000_000_000_000),
+                ));
+            } else {
+                Promise::new(env::signer_account_id()).transfer(100000000000000000000000);
+            }*/  
 
         result
     }
@@ -115,8 +118,6 @@ impl NearP2P {
     #[payable]
     pub fn create_subcontract_user(&mut self) -> Promise {
         require!(env::attached_deposit() >= 1, "You have to deposit a minimum 1 YoctoNear");
-        assert!(self.contract_list.get(&env::signer_account_id()).is_none(), "El usuario ya cuenta con un subcontract listado");
-
         let signer: AccountId = AccountId::new_unchecked(env::signer_account_id().as_str().split('.').collect::<Vec<&str>>()[0].to_string());
         let subaccount_id: AccountId = AccountId::new_unchecked(
         format!("{}.{}", signer, env::current_account_id())
@@ -134,13 +135,28 @@ impl NearP2P {
             BASE_GAS,
         ));
 
-        self.contract_list.insert(&env::signer_account_id(), &ContractList{ 
-            contract: subaccount_id.clone(), 
-            type_contract: 2,
-            balance_avalible: HashMap::new(),
-            balance_block: HashMap::new(),
-        });
+        self.contract_list.insert(&env::signer_account_id(), &ContractList{ contract: subaccount_id.clone(), type_contract: 2 });
         
+        /*let verificar_token = self.activate_token_list.get(&env::signer_account_id());
+
+        //if verificar_token.is_none() || verificar_token.unwrap().get(verificar_token.unwrap().iter().position(|x| *x == "USDC".to_string()).unwrap() as usize).is_none() {
+        if verificar_token.is_none() {
+            ext_usdc::storage_deposit(
+                true,
+                subaccount_id,
+                AccountId::new_unchecked(CONTRACT_USDC.to_string()),
+                100000000000000000000000,
+                BASE_GAS,
+            ).then(int_sub_contract::on_listar_token_activo(
+                env::signer_account_id(),
+                "USDC".to_string(),
+                env::current_account_id(),
+                0,
+                Gas(10_000_000_000_000)
+            ));
+        } else {
+            Promise::new(env::signer_account_id()).transfer(100000000000000000000000);
+        }*/
 
         result
     }
@@ -207,15 +223,8 @@ impl NearP2P {
            // attached_deposit >= 1,
            // "you have to deposit a minimum of one yoctoNear"
         // );
-        
-        let data_sub_contract = self.contract_list.get(&env::signer_account_id()).expect("el usuario no cuenta con un subcontracto listado");
 
-        let balance_block_total = sum_balance_contract(data_sub_contract.balance_block);
-        
-        require!(balance_block_total <= 0, "You still have operations in progress, finish all the operations to be able to delete the contract");
-        
-        
-        /*let contract = self.contract_list.get(&env::signer_account_id()).expect("the user does not have contract deployed");
+        let contract = self.contract_list.get(&env::signer_account_id()).expect("the user does not have contract deployed");
         ext_subcontract::get_balance_block_total(
             contract.contract.clone(),
             0,
@@ -226,18 +235,6 @@ impl NearP2P {
             env::current_account_id(),
             0,
             Gas(140_000_000_000_000),
-        ));*/
-
-        ext_subcontract::get_balance_near(
-            data_sub_contract.contract.clone(),
-            0,
-            BASE_GAS,
-        ).then(int_sub_contract::on_delete_withdraw_near(
-            data_sub_contract.contract.clone(),
-            env::signer_account_id(),
-            env::current_account_id(),
-            0,
-            Gas(100_000_000_000_000),
         ));
     }
 
@@ -245,13 +242,7 @@ impl NearP2P {
     pub fn delete_contract_admin(&mut self, user_id: AccountId) {
         assert!(self.owner_id == env::signer_account_id() || self.administrators.contains(&env::signer_account_id()), "Only administrator");
 
-        let data_sub_contract = self.contract_list.get(&user_id).expect("el usuario no cuenta con un subcontracto listado");
-
-        let balance_block_total = sum_balance_contract(data_sub_contract.balance_block);
-        
-        require!(balance_block_total <= 0, "You still have operations in progress, finish all the operations to be able to delete the contract");
-
-        /*let contract = self.contract_list.get(&user_id).expect("the user does not have contract deployed");
+        let contract = self.contract_list.get(&user_id).expect("the user does not have contract deployed");
         ext_subcontract::get_balance_block_total(
             contract.contract.clone(),
             0,
@@ -262,22 +253,10 @@ impl NearP2P {
             env::current_account_id(),
             0,
             Gas(140_000_000_000_000),
-        ));*/
-
-        ext_subcontract::get_balance_near(
-            data_sub_contract.contract.clone(),
-            0,
-            BASE_GAS,
-        ).then(int_sub_contract::on_delete_withdraw_near(
-            data_sub_contract.contract.clone(),
-            user_id.clone(),
-            env::current_account_id(),
-            0,
-            Gas(100_000_000_000_000),
         ));
     }
 
-    /*#[private]
+    #[private]
     pub fn on_delete_contract(&mut self, signer_id: AccountId, sub_contract: AccountId) {
         require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         let result = promise_result_as_success();
@@ -302,7 +281,7 @@ impl NearP2P {
             0,
             Gas(100_000_000_000_000),
         ));
-    }*/
+    }
 
 
     #[private]
@@ -326,6 +305,8 @@ impl NearP2P {
                 U128(amount_withdraw),
                 U128(0),
                 None,
+                true,
+                "NEAR".to_string(),
                 sub_contract.clone(),
                 1,
                 GAS_FOR_TRANSFER,
@@ -362,22 +343,18 @@ impl NearP2P {
             env::attached_deposit() >= 1,
             "Requires attached deposit of at least 1 yoctoNEAR",
         );
-        let data_sub_contract = self.contract_list.get(&env::signer_account_id()).expect("El usuario no cuenta con subcontract listado");
-
         //let contract: AccountId = AccountId::new_unchecked("pruebaa.globaldv.testnet".to_string());
         let contract = self.contract_list.get(&env::signer_account_id()).expect("the user does not have contract deployed");
-        let balance_block: U128 = U128(sum_balance_contract_token(data_sub_contract.balance_block, ft_token.clone())); //U128(*data_sub_contract.balance_block.get(&ft_token).or(Some(&0u128)).unwrap());
-        //let balance_block: U128 = U128(sum_balance_block_token(data_sub_contract.balance_block, ft_token.clone())); //U128( *data_sub_contract.balance_block.get(&"NEAR".to_string()).or(Some(&0u128)).unwrap() );
         match ft_token.as_ref() {
             "NEAR" => { 
                 ext_subcontract::get_balance_near(
+                    "libre".to_string(),
                     contract.contract.clone(),
                     0,
                     BASE_GAS,
                 ).then(int_sub_contract::on_withdraw_near(
                     contract.contract.clone(),
                     env::signer_account_id(),
-                    balance_block,
                     env::current_account_id(),
                     0,
                     GAS_ON_WITHDRAW_NEAR,
@@ -388,28 +365,27 @@ impl NearP2P {
 
                 ext_usdc::ft_balance_of(
                     contract.contract.to_string(),
-                    contract_ft.contract.clone(), //AccountId::new_unchecked(CONTRACT_USDC.to_string()),
+                    contract_ft.contract, //AccountId::new_unchecked(CONTRACT_USDC.to_string()),
                     0,
                     Gas(30_000_000_000_000),
                 ).then(int_sub_contract::on_withdraw_token_block(
                     contract.contract.clone(),
                     env::signer_account_id(),
-                    contract_ft.contract.clone(),
-                    balance_block,
+                    ft_token.clone(),
                     env::current_account_id(),
                     0,
                     GAS_ON_WITHDRAW_TOKEN_BLOCK,
                 ))
-            }
+            },
+            _=> env::panic_str("ft_token not found")
+
         }
-        
     }
 
     #[private]
     pub fn on_withdraw_near(&mut self,
         sub_contract: AccountId,
-        signer_id: AccountId,
-        balance_block: U128
+        signer_id: AccountId
     ) -> Promise {
         require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         let result = promise_result_as_success();
@@ -418,15 +394,16 @@ impl NearP2P {
         }
         
         let amount_withdraw: u128 = near_sdk::serde_json::from_slice::<u128>(&result.unwrap()).expect("u128");
-        //env::log_str(format!("{}",amount_withdraw).as_str());
-        let amount_withdraw_final: u128 = amount_withdraw - balance_block.0; 
-        require!(amount_withdraw_final > 0, "No balance available to withdraw");
+        env::log_str(format!("{}",amount_withdraw).as_str());
+        require!(amount_withdraw > 0, "No balance available to withdraw");
         
         ext_subcontract::transfer(
             signer_id,
-            U128(amount_withdraw_final),
+            U128(amount_withdraw),
             U128(0),
             None,
+            true,
+            "NEAR".to_string(),
             sub_contract,
             1,
             GAS_FOR_TRANSFER,
@@ -437,8 +414,7 @@ impl NearP2P {
     pub fn on_withdraw_token_block(&mut self,
         sub_contract: AccountId,
         signer_id: AccountId,
-        contract_ft: AccountId,
-        balance_block: U128,
+        ft_token: String,
     ) -> Promise {
         require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
 
@@ -447,36 +423,51 @@ impl NearP2P {
             env::panic_str("Error balance token general".as_ref());
         }
         
-        let balance_ft: U128 = near_sdk::serde_json::from_slice::<U128>(&result.unwrap()).expect("U128");
-        let amount_withdraw: U128 = U128(balance_ft.0 - balance_block.0);
+        let balannce_general: U128 = near_sdk::serde_json::from_slice::<U128>(&result.unwrap()).expect("U128");
 
-        require!(amount_withdraw.0 > 0, "No balance available to withdraw");
-
-        int_sub_contract::on_withdraw_token(
+        ext_subcontract::get_balance_block_token(
+            ft_token.clone(),
+            sub_contract.clone(),
+            0,
+            BASE_GAS,
+        ).then(int_sub_contract::on_withdraw_token(
             sub_contract,
             signer_id,
-            contract_ft,
-            amount_withdraw,
+            ft_token,
+            balannce_general,
             env::current_account_id(),
             0,
             GAS_ON_WITHDRAW_TOKEN,
-        )
+        ))
     }
 
     #[private]
     pub fn on_withdraw_token(&mut self,
         sub_contract: AccountId,
         signer_id: AccountId,
-        contract_ft: AccountId,
-        amount_withdraw: U128,
+        ft_token: String,
+        balance_general: U128,
     ) -> Promise {
         require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
+        let result = promise_result_as_success();
+        if result.is_none() {
+            env::panic_str("Error withdraw token".as_ref());
+        }
+        
+        let balannce_block: u128 = near_sdk::serde_json::from_slice::<u128>(&result.unwrap()).expect("u128");
+        let amount_withdraw: u128 = balance_general.0 - balannce_block;
+        
+        require!(amount_withdraw > 0, "No balance available to withdraw");
+
+        let contract_ft = self.ft_token_list.get(&ft_token.clone()).expect("El ft_token subministrado es incorrecto");
 
         ext_subcontract::transfer(
             signer_id,
-            amount_withdraw,
+            U128(amount_withdraw),
             U128(0u128),
-            Some(contract_ft), //Some(AccountId::new_unchecked(CONTRACT_USDC.to_string())),
+            Some(contract_ft.contract), //Some(AccountId::new_unchecked(CONTRACT_USDC.to_string())),
+            true,
+            ft_token,
             sub_contract,
             1,
             GAS_FOR_TRANSFER,
@@ -484,22 +475,4 @@ impl NearP2P {
 
     }
 
-}
-
-pub fn sum_balance_contract(list_balance_block:  HashMap<String, BalanceJson>) -> u128 {
-    let mut balance_bloqueado = 0;
-    list_balance_block.iter().for_each(|(_k, v)| {
-        balance_bloqueado += v.balance;
-    });
-    balance_bloqueado
-}
-
-pub fn sum_balance_contract_token(list_balance_block:  HashMap<String, BalanceJson>, asset: String) -> u128 {
-    let mut balance_bloqueado = 0;
-    list_balance_block.iter().for_each(|(_k, v)| {
-        if v.asset == asset {
-            balance_bloqueado += v.balance;
-        }
-    });
-    balance_bloqueado
 }

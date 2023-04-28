@@ -29,13 +29,14 @@ use near_sdk::json_types::U128;
 use std::collections::HashMap;
 //near_sdk::setup_alloc!();
 
-use near_sdk::collections::{/*LazyOption,*/ UnorderedMap, UnorderedSet};
+use near_sdk::collections::{LazyOption, UnorderedMap, UnorderedSet};
 
 const KEY_TOKEN: &str = "qbogcyqiqO7Utwqm3VgKhxrmQIc0ROjj";
 const FEE_TRANSACTION_NEAR: u128 = 3; // 0.003%  
 
 //const GAS_FOR_RESOLVE_TRANSFER: Gas = Gas(10_000_000_000_000);
 const GAS_FOR_TRANSFER: Gas = Gas(25_000_000_000_000);
+const GAS_FOR_BLOCK: Gas = Gas(30_000_000_000_000);
 const GAS_ON_WITHDRAW_NEAR: Gas = Gas(40_000_000_000_000);
 const GAS_ON_WITHDRAW_TOKEN_BLOCK: Gas = Gas(80_000_000_000_000);
 const GAS_ON_WITHDRAW_TOKEN: Gas = Gas(45_000_000_000_000);
@@ -48,7 +49,7 @@ const BASE_GAS: Gas = Gas(3_000_000_000_000);
 
 //const INITIAL_BALANCE: Balance = 2_50_000_000_000_000_000_000_000; // 1e24yN, 0.25N
 //const INITIAL_BALANCE: Balance = 1_080_000_000_000_000_000_000_000; // 1e24yN, 0.25N
-const CODE: &[u8] = include_bytes!("./wasm/subcontract_p2_p_v2.wasm");
+const CODE: &[u8] = include_bytes!("./wasm/subcontract_p2_p_v19.wasm");
 /////////////////////////////////////////////////////////////////////////////////////////////////
 /// Objects Definition///////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -233,15 +234,6 @@ pub struct SearchOrderObject {
 pub struct ContractList {
     contract: AccountId,
     type_contract: i8,
-    balance_avalible: HashMap<String, BalanceJson>,
-    balance_block: HashMap<String, BalanceJson>,
-}
-
-#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
-pub struct BalanceJson {
-    asset: String,
-    balance: u128,
 }
 
 #[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]

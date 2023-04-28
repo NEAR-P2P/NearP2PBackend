@@ -27,22 +27,24 @@ trait ExtSubContract {
         operation_amount: U128,
         fee_deducted: U128,
         contract_ft: Option<AccountId>,
+        retiro: bool,
+        ft_token: String,
     );
 
-    fn get_balance_near(self) -> Balance;
+    fn get_balance_near(self, balance: String) -> Balance;
 
-    //fn get_balance_block_token(self, ft_token: String) -> Balance;
+    fn get_balance_block_token(self, ft_token: String) -> Balance;
 
-    //fn get_balance_block_total(self) -> Balance;
+    fn get_balance_block_total(self) -> Balance;
 
     fn delete_contract(&mut self);
 
-    //fn block_balance_near(&mut self, amount: U128) -> bool;
+    fn block_balance_near(&mut self, amount: U128) -> bool;
 
-    /*fn block_balance_token(&mut self,
+    fn block_balance_token(&mut self,
         contract_ft: AccountId,
         ft_token: String,
         amount: U128
-    ) -> bool;*/
+    ) -> bool;
 
 }

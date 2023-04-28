@@ -143,6 +143,7 @@ impl NearP2P {
     ) {
         require!(self.disputer == env::signer_account_id(), "Only disputer");
         let contract_ft: Option<AccountId>;
+        let ft_token: String;
         let mut status: i8;
         match confirmation {
             true => {
@@ -163,9 +164,11 @@ impl NearP2P {
                         match offer.asset.as_str(){
                             "NEAR" => {
                                 contract_ft = None;
+                                ft_token = "NEAR".to_string();
                             },
                             _=> {
                                 contract_ft = Some(self.ft_token_list.get(&offer.asset.clone()).expect("El ft_token subministrado en la oferta es incorrecto").contract);//Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
+                                ft_token = offer.asset.clone();
                             },
                         };
                         
@@ -174,6 +177,8 @@ impl NearP2P {
                             U128(order.operation_amount),
                             U128(order.fee_deducted),
                             contract_ft,
+                            false,
+                            ft_token,
                             contract_name.contract.clone(),
                             2,
                             GAS_FOR_TRANSFER,
@@ -209,9 +214,11 @@ impl NearP2P {
                         match offer.asset.as_str(){
                             "NEAR" => {
                                 contract_ft = None;
+                                ft_token = "NEAR".to_string();
                             },
                             _=> {
                                 contract_ft = Some(self.ft_token_list.get(&offer.asset.clone()).expect("El ft_token subministrado en la oferta es incorrecto").contract);
+                                ft_token = offer.asset.clone();
                             },
                         };
                         
@@ -220,6 +227,8 @@ impl NearP2P {
                             U128(order.operation_amount),
                             U128(order.fee_deducted),
                             contract_ft,
+                            false,
+                            ft_token,
                             contract_name.contract.clone(),
                             2,
                             GAS_FOR_TRANSFER,
@@ -258,9 +267,11 @@ impl NearP2P {
                         match offer.asset.as_str(){
                             "NEAR" => {
                                 contract_ft = None;
+                                ft_token = "NEAR".to_string();
                             },
                             _=> {
                                 contract_ft = Some(self.ft_token_list.get(&offer.asset.clone()).expect("El ft_token subministrado en la oferta es incorrecto").contract);
+                                ft_token = offer.asset.clone();
                             },
                         };
                         
@@ -269,6 +280,8 @@ impl NearP2P {
                             U128(order.operation_amount),
                             U128(0),
                             contract_ft,
+                            false,
+                            ft_token,
                             contract_name.contract.clone(),
                             1,
                             GAS_FOR_TRANSFER,
@@ -302,9 +315,11 @@ impl NearP2P {
                         match offer.asset.as_str(){
                             "NEAR" => {
                                 contract_ft = None;
+                                ft_token = "NEAR".to_string();
                             },
                             _=> {
                                 contract_ft = Some(self.ft_token_list.get(&offer.asset.clone()).expect("El ft_token subministrado en la oferta es incorrecto").contract);
+                                ft_token = offer.asset.clone();
                             },
                         };
 
@@ -313,6 +328,8 @@ impl NearP2P {
                             U128(order.operation_amount),
                             U128(0),
                             contract_ft,
+                            false,
+                            ft_token,
                             contract_name.contract.clone(),
                             1,
                             GAS_FOR_TRANSFER,

@@ -6,7 +6,7 @@ impl NearP2P {
     /// Params: offer_type: 1 = sell, 2 = buy
     // #[payable]
 
-    /*pub fn delete_order(&mut self, offer_type: i8, order_id: i128) {
+    pub fn delete_order(&mut self, offer_type: i8, order_id: i128) {
         assert!(self.owner_id == env::signer_account_id() || self.administrators.contains(&env::signer_account_id()), "Only administrator");
         if offer_type == 1{
             self.orders_sell.remove(&order_id).expect("Order Sell not found");
@@ -16,12 +16,13 @@ impl NearP2P {
             env::panic_str("offer type no found");
         }
         
-    }*/
+    }
 
     #[payable]
     pub fn order_confirmation(&mut self, offer_type: i8, order_id: i128) {
-        require!(env::attached_deposit() >= 3, "Requires attached deposit of at least 3 yoctoNEAR");
+        require!(env::attached_deposit() >= 1, "Requires attached deposit of at least 1 yoctoNEAR");
         let contract_ft: Option<AccountId>;
+        let ft_token: String;
         let mut status: i8;
         if offer_type == 1 {
             let mut order = self.orders_sell.get(&order_id).expect("Order Sell not found");
@@ -57,17 +58,21 @@ impl NearP2P {
                 match offer.asset.as_str(){
                     "NEAR" => {
                         contract_ft = None;
+                        ft_token = "NEAR".to_string();
                     },
                     _=> {
                         contract_ft = Some(self.ft_token_list.get(&offer.asset).expect("El asset subministrado en la oferta es incorrecto").contract); //Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
+                        ft_token = offer.asset;
                     },
                 };
                 
                 ext_subcontract::transfer(
                     order.owner_id.clone(),
-                    U128(order.amount_delivered),
+                    U128(order.operation_amount),
                     U128(order.fee_deducted),
                     contract_ft,
+                    false,
+                    ft_token,
                     contract_name.contract.clone(),
                     2,
                     GAS_FOR_TRANSFER,
@@ -124,17 +129,21 @@ impl NearP2P {
                 match offer.asset.as_str(){
                     "NEAR" => {
                         contract_ft = None;
+                        ft_token = "NEAR".to_string();
                     },
                     _=> {
                         contract_ft = Some(self.ft_token_list.get(&offer.asset).expect("El asset subministrado en la oferta es incorrecto").contract); //Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
+                        ft_token = offer.asset;
                     },
                 };
                 
                 ext_subcontract::transfer(
                     order.signer_id.clone(),
-                    U128(order.amount_delivered),
+                    U128(order.operation_amount),
                     U128(order.fee_deducted),
                     contract_ft,
+                    false,
+                    ft_token,
                     contract_name.contract.clone(),
                     2,
                     GAS_FOR_TRANSFER,
@@ -163,9 +172,9 @@ impl NearP2P {
 
     #[payable]
     pub fn cancel_order(&mut self, offer_type: i8, order_id: i128) {
-        //assert_one_yocto();
-        require!(env::attached_deposit() >= 2, "Requires attached deposit of at least 2 yoctoNEAR");
+        assert_one_yocto();
         let contract_ft: Option<AccountId>;
+        let ft_token: String;
         let mut status: i8;
         if offer_type == 1 {
             let mut order = self.orders_sell.get(&order_id).expect("Order Sell not found");
@@ -184,9 +193,11 @@ impl NearP2P {
                 match offer.asset.as_str(){
                     "NEAR" => {
                         contract_ft = None;
+                        ft_token = "NEAR".to_string();
                     },
                     _=> {
                         contract_ft = Some(self.ft_token_list.get(&offer.asset).expect("El asset subministrado en la oferta es incorrecto").contract); //Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
+                        ft_token = offer.asset;
                     },
                 };
                 
@@ -195,6 +206,8 @@ impl NearP2P {
                     U128(order.operation_amount),
                     U128(0),
                     contract_ft,
+                    false,
+                    ft_token,
                     contract_name.contract.clone(),
                     1,
                     GAS_FOR_TRANSFER,
@@ -271,9 +284,11 @@ impl NearP2P {
                 match offer.asset.as_str(){
                     "NEAR" => {
                         contract_ft = None;
+                        ft_token = "NEAR".to_string();
                     },
                     _=> {
                         contract_ft = Some(self.ft_token_list.get(&offer.asset).expect("El asset subministrado en la oferta es incorrecto").contract); //Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
+                        ft_token = offer.asset;
                     },
                 };
 
@@ -282,6 +297,8 @@ impl NearP2P {
                     U128(order.operation_amount),
                     U128(0),
                     contract_ft,
+                    false,
+                    ft_token,
                     contract.contract.clone(),
                     1,
                     GAS_FOR_TRANSFER,
@@ -342,22 +359,12 @@ impl NearP2P {
         }
 
         if order_type == 1 {
-            let mut data_sub_contract = self.contract_list.get(&order.signer_id).expect("the user does not have a sub contract deployed");
-            
-            let balance_json_default: BalanceJson = BalanceJson{asset: "".to_string(), balance: 0u128};
-
-            let balance_block: u128 = data_sub_contract.balance_block.get(&format!("ORDER|SELL|{}", order.order_id).to_string()).or(Some(&balance_json_default)).unwrap().balance;
-            
-            data_sub_contract.balance_block.insert(format!("ORDER|SELL|{}", order.order_id).to_string(), BalanceJson{
-                asset: order.asset.clone(), 
-                balance: balance_block - order.operation_amount,
-            });
-            
-            self.contract_list.insert(&order.signer_id, &data_sub_contract);
-            
-
+            /*if confirmacion == true {
+                //self.orders_sell_completed(index);
+                amount_referente: u128 = ((order.fee_deducted * self.porcentaje_referente)/10000)
+                amount_referido: u128 = ((order.fee_deducted * self.porcentaje_referido)/10000)
+            }*/
             self.orders_sell.remove(&order.order_id);
-
             let oferta = self.offers_sell.get(&order.offer_id).expect("Offer sell not found");
             if oferta.remaining_amount <= 0 {
                 self.offers_sell.remove(&order.offer_id);
@@ -409,21 +416,14 @@ impl NearP2P {
                 ));
             }*/ 
         } else if order_type == 2 {
+            /*if confirmacion  == true {
+                //self.orders_buy_completed(index);
+                amount_referente: u128 = ((order.fee_deducted * self.porcentaje_referente)/10000)
+                amount_referido: u128 = ((order.fee_deducted * self.porcentaje_referido)/10000)
+            }*/
+            
             self.orders_buy.remove(&order.order_id);
-            
-            let mut data_sub_contract = self.contract_list.get(&order.owner_id).expect("the offer does not have a sub contract deployed");
-
-            let balance_block: u128 = data_sub_contract.balance_block.get(&format!("OFFER|SELL|{}", order.offer_id).to_string()).unwrap().balance;
-            
-            data_sub_contract.balance_block.insert(format!("OFFER|SELL|{}", order.offer_id).to_string(), BalanceJson{
-                asset: order.asset.clone(), 
-                balance: balance_block - (order.operation_amount + order.fee_deducted),
-            });
-            
-            self.contract_list.insert(&order.owner_id, &data_sub_contract);
-            
             let oferta = self.offers_buy.get(&order.offer_id).expect("Offer sell not found");
-            
             if oferta.remaining_amount <= 0 {
                 self.offers_buy.remove(&order.offer_id);
             }
@@ -461,4 +461,62 @@ impl NearP2P {
             );
         }   
     }
+
+    /*#[private]
+    pub fn on_delete_contract_user(&mut self, signer_id: AccountId, sub_contract: AccountId) {
+        require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
+        let result = promise_result_as_success();
+        if result.is_none() {
+            env::panic_str("Error check balance blocked".as_ref());
+        }
+        let balance_block = near_sdk::serde_json::from_slice::<u128>(&result.unwrap()).expect("u128");
+        //require!(balance_block <= 0, "You still have operations in progress, finish all the operations to be able to delete the contract");
+        
+        if balance_block <= 0 {
+            ext_subcontract::delete_contract(
+                sub_contract.clone(),
+                0,
+                Gas(5_000_000_000_000),
+            ).then(int_offer::on_delete_contract_list_user(
+                signer_id,
+                env::current_account_id(),
+                0,
+                Gas(5_000_000_000_000),
+            ));
+            env::log_str("delete")
+        } else {
+            env::log_str("no delete")
+        }
+
+    }
+
+    #[private]
+    pub fn on_delete_contract_list_user(&mut self, signer_id: AccountId) {
+        require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
+        let result = promise_result_as_success();
+        if result.is_none() {
+            env::panic_str("Error al eliminar la cuenta".as_ref());
+        }
+        self.contract_list.remove(&signer_id);
+    }*/
+
+    /*#[private]
+    fn orders_sell_completed(&mut self, index_order: usize) {
+        let mut index = self.merchant.iter().position(|x| x.user_id == self.orders_sell[index_order].owner_id.clone()).expect("owner not merchant");
+        self.merchant[index].orders_completed += 1;
+        self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+        index = self.merchant.iter().position(|x| x.user_id == self.orders_sell[index_order].signer_id.clone()).expect("owner not merchant");
+        self.merchant[index].orders_completed += 1;
+        self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+    }
+
+    #[private]
+    fn orders_buy_completed(&mut self, index_order: usize) {
+        let mut index = self.merchant.iter().position(|x| x.user_id == self.orders_buy[index_order].owner_id.clone()).expect("owner not merchant");
+        self.merchant[index].orders_completed += 1;
+        self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+        index = self.merchant.iter().position(|x| x.user_id == self.orders_buy[index_order].signer_id.clone()).expect("owner not merchant");
+        self.merchant[index].orders_completed += 1;
+        self.merchant[index].percentaje_completion = (self.merchant[index].orders_completed as f64 / self.merchant[index].total_orders as f64) * 100.0;
+    }*/
 }

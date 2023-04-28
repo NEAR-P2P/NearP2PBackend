@@ -20,22 +20,20 @@ trait IntSubContract {
     
     fn on_withdraw_near(&mut self,
         sub_contract: AccountId,
-        signer_id: AccountId,
-        balance_block: U128,
+        signer_id: AccountId
     ) -> Promise;
 
     fn on_withdraw_token_block(&mut self,
         sub_contract: AccountId,
         signer_id: AccountId,
-        contract_ft: AccountId,
-        balance_block: U128,
+        ft_token: String,
     ) -> Promise;
 
     fn on_withdraw_token(&mut self,
         sub_contract: AccountId,
         signer_id: AccountId,
-        contract_ft: AccountId,
-        amount_withdraw: U128,
+        ft_token: String,
+        balance_general: U128,
     ) -> Promise;
 
     fn on_listar_token_activo(&mut self, signer_id: AccountId, ft_token: String);
