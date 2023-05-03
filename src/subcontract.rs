@@ -199,7 +199,7 @@ impl NearP2P {
         }
     }
 
-    pub fn get_balance_block_token(self, user_id: AccountId, asset: String) -> u128 {
+    pub fn get_balance_block(self, user_id: AccountId, asset: String) -> u128 {
         let list_balance_block = self.contract_list.get(&user_id).expect("El usuario no tiene contrato listado");
         sum_balance_contract_token(list_balance_block.balance_block, asset)
     }
