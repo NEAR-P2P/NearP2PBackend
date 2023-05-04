@@ -102,9 +102,13 @@ impl NearP2P {
             balance_of = near_sdk::serde_json::from_slice::<U128>(&result.unwrap()).expect("U128");
         }
 
+        assert!(balance_of.0 > 0, "El subcontrato no tiene balance");
+
         let mut data_sub_contract = self.contract_list.get(&env::signer_account_id()).expect("the user does not have a sub contract deployed");
         let balance_block: u128 = sum_balance_contract_token(data_sub_contract.balance_avalible.clone(), asset.clone().to_string()); // *data_sub_contract.balance_block.get(&ft_token).or(Some(&0u128)).unwrap();
         let balance_avalible: u128 = balance_of.0 - balance_block;
+
+        assert!(balance_avalible > 0, "no hay saldo libre en el subcontrato");
 
         let fee: u128 = (amount.0 * FEE_TRANSACTION_NEAR) / 10000;
         let amount_offer: u128 = amount.0 + fee;
