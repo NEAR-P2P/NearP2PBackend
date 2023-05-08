@@ -19,7 +19,8 @@ trait ExtSubContract {
     fn new(
         owner_id: AccountId,
         user_admin: AccountId, 
-        vault: AccountId
+        vault: AccountId,
+        consumo_storage_near_subcontract: u128,
     );
 
     fn transfer(&mut self,
