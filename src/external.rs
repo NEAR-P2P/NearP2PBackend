@@ -30,7 +30,7 @@ trait ExtSubContract {
         contract_ft: Option<AccountId>,
     );
 
-    fn get_balance_near(self) -> Balance;
+    fn get_balance_near(self) -> u128;
 
     //fn get_balance_block_token(self, ft_token: String) -> Balance;
 

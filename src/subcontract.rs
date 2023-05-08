@@ -78,7 +78,8 @@ impl NearP2P {
         
         assert!(
             attached_deposit >= amount_despliegue,
-            format!("Requires attached deposit of at least {} yoctoNEAR", amount_despliegue).to_string() ,
+            "Requires attached deposit of at least {} yoctoNEAR",
+            amount_despliegue
         );
         assert!(self.contract_list.get(&env::signer_account_id()).is_none(), "El usuario ya cuenta con un subcontract listado");
 
