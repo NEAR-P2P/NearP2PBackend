@@ -47,13 +47,12 @@ impl NearP2P {
             env::attached_deposit() >= 100000000000000000000000,
             "Requires attached deposit of at least 100000000000000000000000 yoctoNEAR",
         );
-        assert!(self.contract_list.get(&env::predecessor_account_id()).is_some(), "El usuario ya cuenta con un subcontract listado");
         
         let contract_ft = self.ft_token_list.get(&asset).expect("The asset supplied in the offer is incorrect");
 
-        //let token_activos = self.activate_token_list.get(&env::signer_account_id()).or(Some([].to_vec())).unwrap();
+        let token_activos = self.activate_token_list.get(&subaccount_id).or(Some([].to_vec())).unwrap();
 
-        //assert!(token_activos.iter().find(|&x| x == &asset).is_s(), "The token is already active");
+        assert!(token_activos.iter().find(|&x| x == &asset).is_none(), "The token is already active");
 
         ext_usdc::storage_deposit(
             true,
