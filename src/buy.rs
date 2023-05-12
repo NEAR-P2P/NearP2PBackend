@@ -113,6 +113,8 @@ impl NearP2P {
         let fee: u128 = (amount.0 * FEE_TRANSACTION_NEAR) / 10000;
         let amount_offer: u128 = amount.0 + fee;
 
+        env::log_str(&format!("balance_of: {} - balance_block: {} - amount: {} - fee: {} - balance_avalible: {} - amount_ofer: {} - ",  balance_of.0, balance_block, amount.0, fee, balance_avalible, amount_offer).to_string());
+
         assert!(balance_avalible - amount_offer > 0, "el balance en la subcuenta es menor al amount + el fee suministrado");
 
         
