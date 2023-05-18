@@ -222,7 +222,7 @@ impl NearP2P {
         
         let data_sub_contract = self.contract_list.get(&env::signer_account_id()).expect("el usuario no cuenta con un subcontracto listado");
 
-        let balance_block_total = sum_balance_contract(data_sub_contract.balance_block);
+        let balance_block_total = sum_balance_contract(data_sub_contract.balance_block) + sum_balance_contract(data_sub_contract.balance_avalible);
         
         require!(balance_block_total <= 0, "You still have operations in progress, finish all the operations to be able to delete the contract");
         
@@ -259,22 +259,9 @@ impl NearP2P {
 
         let data_sub_contract = self.contract_list.get(&user_id).expect("el usuario no cuenta con un subcontracto listado");
 
-        let balance_block_total = sum_balance_contract(data_sub_contract.balance_block);
+        let balance_block_total = sum_balance_contract(data_sub_contract.balance_block) + sum_balance_contract(data_sub_contract.balance_avalible);
         
         require!(balance_block_total <= 0, "You still have operations in progress, finish all the operations to be able to delete the contract");
-
-        /*let contract = self.contract_list.get(&user_id).expect("the user does not have contract deployed");
-        ext_subcontract::get_balance_block_total(
-            contract.contract.clone(),
-            0,
-            BASE_GAS,
-        ).then(int_sub_contract::on_delete_contract(
-            user_id,
-            contract.contract.clone(),
-            env::current_account_id(),
-            0,
-            Gas(140_000_000_000_000),
-        ));*/
 
         ext_subcontract::get_balance_near(
             data_sub_contract.contract.clone(),
