@@ -378,7 +378,8 @@ impl NearP2P {
 
         //let contract: AccountId = AccountId::new_unchecked("pruebaa.globaldv.testnet".to_string());
         let contract = self.contract_list.get(&env::signer_account_id()).expect("the user does not have contract deployed");
-        let balance_block: U128 = U128(sum_balance_contract_token(data_sub_contract.balance_block, ft_token.clone())); //U128(*data_sub_contract.balance_block.get(&ft_token).or(Some(&0u128)).unwrap());
+        let balance_avalible: u128 = sum_balance_contract_token(data_sub_contract.balance_avalible, ft_token.clone());
+        let balance_block: u128 = sum_balance_contract_token(data_sub_contract.balance_block, ft_token.clone()); //U128(*data_sub_contract.balance_block.get(&ft_token).or(Some(&0u128)).unwrap());
         //let balance_block: U128 = U128(sum_balance_block_token(data_sub_contract.balance_block, ft_token.clone())); //U128( *data_sub_contract.balance_block.get(&"NEAR".to_string()).or(Some(&0u128)).unwrap() );
         match ft_token.as_ref() {
             "NEAR" => { 
@@ -389,7 +390,7 @@ impl NearP2P {
                 ).then(int_sub_contract::on_withdraw_near(
                     contract.contract.clone(),
                     env::signer_account_id(),
-                    balance_block,
+                    U128(balance_block + balance_avalible),
                     env::current_account_id(),
                     0,
                     GAS_ON_WITHDRAW_NEAR,
@@ -407,7 +408,7 @@ impl NearP2P {
                     contract.contract.clone(),
                     env::signer_account_id(),
                     contract_ft.contract.clone(),
-                    balance_block,
+                    U128(balance_block + balance_avalible),
                     env::current_account_id(),
                     0,
                     GAS_ON_WITHDRAW_TOKEN_BLOCK,
