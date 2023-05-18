@@ -74,7 +74,7 @@ impl NearP2P {
     pub fn create_subcontract_merchant(&mut self) -> Promise {
         let attached_deposit = env::attached_deposit();
         
-        let amount_despliegue: u128 = 1250000000000000000000000;
+        let amount_despliegue: u128 = 1300000000000000000000000;
         
         assert!(
             attached_deposit >= amount_despliegue,
@@ -121,7 +121,7 @@ impl NearP2P {
         require!(env::attached_deposit() >= 1, "You have to deposit a minimum 1 YoctoNear");
         assert!(self.contract_list.get(&env::signer_account_id()).is_none(), "El usuario ya cuenta con un subcontract listado");
         
-        let amount_despliegue: u128 = 1250000000000000000000000;
+        let amount_despliegue: u128 = 1300000000000000000000000;
 
         let signer: AccountId = AccountId::new_unchecked(env::signer_account_id().as_str().split('.').collect::<Vec<&str>>()[0].to_string());
         let subaccount_id: AccountId = AccountId::new_unchecked(
