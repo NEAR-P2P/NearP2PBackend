@@ -219,6 +219,12 @@ impl NearP2P {
             env::panic_str("Error al eliminar".as_ref());
         }
         
+        let mut data_sub_contract = self.contract_list.get(&env::signer_account_id()).expect("the user does not have a sub contract deployed");
+        data_sub_contract.balance_avalible.remove(&format!("OFFER|BUY|{}", offer_buy_id).to_string());
+        data_sub_contract.balance_block.remove(&format!("OFFER|BUY|{}", offer_buy_id).to_string());
+
+        self.contract_list.insert(&env::signer_account_id(), &data_sub_contract);
+
         self.offers_buy.remove(&offer_buy_id);
         
         env::log_str(
