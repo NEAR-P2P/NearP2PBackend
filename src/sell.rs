@@ -41,6 +41,7 @@ impl NearP2P {
             time: time,
             terms_conditions: terms_conditions.clone(),
             status: 1,
+            is_pause: false,
         };
 
         self.offers_sell.insert(&offer_sell_id, &data);
@@ -65,6 +66,7 @@ impl NearP2P {
                     "time": time.to_string(),
                     "terms_conditions": terms_conditions.to_string(),
                     "status": "1".to_string(),
+                    "is_pause": false,
                 }
             }).to_string(),
         );

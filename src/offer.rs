@@ -4,6 +4,52 @@ use crate::subcontract::sum_balance_contract_token;
 
 #[near_bindgen]
 impl NearP2P {
+    pub fn pause_play_offer(&mut self, offer_type: i8, offer_id: i128) {
+        let signer_id = env::signer_account_id();
+        
+        if offer_type == 1 {
+            let mut offer = self.offers_sell.get(&offer_id).expect("Offer sell not found");
+            
+            require!(offer.owner_id == signer_id, "only the offer creator can pause or resume");
+
+            offer.is_pause = !offer.is_pause;
+
+            self.offers_sell.insert(&offer_id, &offer);
+
+            env::log_str(
+                &json!({
+                    "type": "pause_play_offer",
+                    "params": {
+                        "offer_type": offer_type.to_string(),
+                        "offer_id": offer_id.to_string(),
+                        "is_pause": offer.is_pause.clone(),
+                    }
+                }).to_string(),
+            );
+        } else if offer_type == 2 {
+            let mut offer = self.offers_buy.get(&offer_id).expect("Offer sell not found");
+            
+            require!(offer.owner_id == signer_id, "only the offer creator can pause or resume");
+
+            offer.is_pause = !offer.is_pause;
+
+            self.offers_buy.insert(&offer_id, &offer);
+
+            env::log_str(
+                &json!({
+                    "type": "pause_play_offer",
+                    "params": {
+                        "offer_type": offer_type.to_string(),
+                        "offer_id": offer_id.to_string(),
+                        "is_pause": offer.is_pause.clone(),
+                    }
+                }).to_string(),
+            );
+        } else {
+            env::panic_str("invalid offer type");
+        }
+    }
+    
     /// accept offer into the contract
     /// Params: offer_type: 1 = sell, 2 = buy
     #[payable]
@@ -28,6 +74,7 @@ impl NearP2P {
             let offer = self.offers_sell.get(&offer_id).expect("Offer sell not found");
             let signer_id = env::signer_account_id();
             require!(offer.owner_id != signer_id, "you can not accept your own offer");
+            require!(offer.is_pause == false, "the offer is currently on pause");
 
 
             #[warn(unused_assignments)]
@@ -80,6 +127,7 @@ impl NearP2P {
             let mut offer = self.offers_buy.get(&offer_id).expect("Offer buy not found");
             
             require!(offer.owner_id != env::signer_account_id(), "you can not accept your own offer");
+            require!(offer.is_pause == false, "the offer is currently on pause");
             require!(offer.remaining_amount >= amount.0, "the quantity is greater than the offer buy amount");
             
                 
