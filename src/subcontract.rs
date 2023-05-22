@@ -214,7 +214,7 @@ impl NearP2P {
     }
 
     pub fn get_balances(self, user_id: AccountId, asset: String) -> u128 {
-        let storage_usage = env::storage_usage();
+        let storage_usage: u128 = env::storage_usage() as u128;
         let balance_avalible = env::account_balance();
         let result = balance_avalible - storage_usage;
 
@@ -222,7 +222,7 @@ impl NearP2P {
         env::log_str(&balance_avalible.to_string());
         env::log_str(&result.to_string());
 
-        balance_block
+        storage_usage
     }
 
     // #[payable]
