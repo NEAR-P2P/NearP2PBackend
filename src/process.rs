@@ -413,9 +413,9 @@ impl NearP2P {
             
             let mut data_sub_contract = self.contract_list.get(&order.owner_id).expect("the offer does not have a sub contract deployed");
 
-            let balance_block: u128 = data_sub_contract.balance_block.get(&format!("OFFER|SELL|{}", order.offer_id).to_string()).unwrap().balance;
+            let balance_block: u128 = data_sub_contract.balance_block.get(&format!("OFFER|BUY|{}", order.offer_id).to_string()).unwrap().balance;
             
-            data_sub_contract.balance_block.insert(format!("OFFER|SELL|{}", order.offer_id).to_string(), BalanceJson{
+            data_sub_contract.balance_block.insert(format!("OFFER|BUY|{}", order.offer_id).to_string(), BalanceJson{
                 asset: order.asset.clone(), 
                 balance: balance_block - (order.operation_amount + order.fee_deducted),
             });
