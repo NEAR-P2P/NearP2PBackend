@@ -253,7 +253,7 @@ impl NearP2P {
         }
 
         let mut data_sub_contract = self.contract_list.get(&env::signer_account_id()).expect("the user does not have a sub contract deployed");
-        let balance_block: u128 = sum_balance_contract_token(data_sub_contract.balance_block.clone(), offer.asset.clone()) + sum_balance_contract_token(data_sub_contract.balance_avalible.clone(), offer.asset.clone()); // *data_sub_contract.balance_block.get(&ft_token).or(Some(&0u128)).unwrap();
+        let balance_block: u128 = sum_balance_contract_token(data_sub_contract.balance_block.clone(), offer.asset.clone()); // *data_sub_contract.balance_block.get(&ft_token).or(Some(&0u128)).unwrap();
         let balance_avalible: u128 = balance_of.0 - balance_block;
 
 
