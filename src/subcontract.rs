@@ -212,18 +212,7 @@ impl NearP2P {
         
         balance_block
     }
-
-    pub fn get_balances(self) -> u128 {
-        let storage_usage: u128 = env::storage_usage() as u128;
-        let balance_avalible = env::account_balance();
-        let result = balance_avalible - storage_usage;
-
-        env::log_str(&storage_usage.to_string());
-        env::log_str(&balance_avalible.to_string());
-        env::log_str(&result.to_string());
-
-        storage_usage
-    }
+    
 
     // #[payable]
     pub fn delete_contract(&mut self) {
