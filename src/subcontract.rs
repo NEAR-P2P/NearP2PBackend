@@ -208,17 +208,17 @@ impl NearP2P {
 
     pub fn get_balance_block(self, user_id: AccountId, asset: String) -> u128 {
         let list_balance_block = self.contract_list.get(&user_id).expect("El usuario no tiene contrato listado");
-        let balance_block = sum_balance_contract_token(list_balance_block.balance_block, asset.clone()) + sum_balance_contract_token(list_balance_block.balance_avalible, asset.clone());
+        let balance_block: u128 = sum_balance_contract_token(list_balance_block.balance_block, asset.clone()) + sum_balance_contract_token(list_balance_block.balance_avalible, asset.clone());
         
         balance_block
     }
 
     pub fn get_balances(self, user_id: AccountId, asset: String) -> u128 {
-        let balance_block = env::account_locked_balance();
+        let storage_usage = env::storage_usage();
         let balance_avalible = env::account_balance();
-        let result = balance_avalible - balance_block;
+        let result = balance_avalible - storage_usage;
 
-        env::log_str(&balance_block.to_string());
+        env::log_str(&storage_usage.to_string());
         env::log_str(&balance_avalible.to_string());
         env::log_str(&result.to_string());
 
@@ -508,7 +508,7 @@ pub fn sum_balance_contract(list_balance_block:  HashMap<String, BalanceJson>) -
 }
 
 pub fn sum_balance_contract_token(list_balance_block:  HashMap<String, BalanceJson>, asset: String) -> u128 {
-    let mut balance_bloqueado = 0;
+    let mut balance_bloqueado: u128 = 0;
     list_balance_block.iter().for_each(|(_k, v)| {
         if v.asset == asset {
             balance_bloqueado += v.balance;
