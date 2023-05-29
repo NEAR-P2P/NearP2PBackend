@@ -89,7 +89,7 @@ impl NearP2P {
                     ).then(
                         int_offer::on_accept_offer_sell(
                             offer
-                            , amount
+                            , amount.0
                             , payment_method
                             , datetime
                             , rate
@@ -110,7 +110,7 @@ impl NearP2P {
                     ).then(
                         int_offer::on_accept_offer_sell(
                             offer.clone()
-                            , amount
+                            , amount.0
                             , payment_method
                             , datetime
                             , rate
@@ -233,7 +233,7 @@ impl NearP2P {
 
     #[private]
     pub fn on_accept_offer_sell(&mut self, mut offer: OfferObject
-        , amount: U128
+        , amount: u128
         , payment_method: i128
         , datetime: String
         , rate: f64
@@ -257,10 +257,10 @@ impl NearP2P {
         let balance_avalible: u128 = balance_of.0 - balance_block;
 
 
-        assert!(balance_avalible - amount.0 > 0, "the balance in the subaccount is less than the amount");
+        assert!(balance_avalible - amount > 0, "the balance in the subaccount is less than the amount, avalible: {} - block: {}", balance_avalible, balance_block);
 
 
-        let remaining: u128 = offer.remaining_amount - amount.0;
+        let remaining: u128 = offer.remaining_amount - amount;
         if remaining <= 0 {
             offer.status = 2;
         }
@@ -275,12 +275,12 @@ impl NearP2P {
             };
         }
         
-        let fee: u128 = (amount.0 * FEE_TRANSACTION_NEAR) / 10000;
+        let fee: u128 = (amount * FEE_TRANSACTION_NEAR) / 10000;
 
         offer.remaining_amount = remaining;
 
         self.offers_sell.insert(&offer.offer_id, &offer);
-        let amount_delivered: U128 = U128(amount.0 - fee);
+        let amount_delivered: U128 = U128(amount - fee);
         
         self.order_sell_id += 1;
         let data = OrderObject {
@@ -290,7 +290,7 @@ impl NearP2P {
             asset: offer.asset.clone(),
             signer_id: env::signer_account_id(),
             exchange_rate: rate.to_string(),
-            operation_amount: amount.0,
+            operation_amount: amount,
             amount_delivered: amount_delivered.0,
             fee_deducted: fee,
             payment_method: payment_method,
@@ -308,7 +308,7 @@ impl NearP2P {
         self.orders_sell.insert(&self.order_sell_id, &data);
        
         data_sub_contract.balance_avalible.insert(format!("ORDER|SELL|{}", self.order_sell_id).to_string(), BalanceJson{asset: offer.asset.clone(), balance: 0});
-        data_sub_contract.balance_block.insert(format!("ORDER|SELL|{}", self.order_sell_id).to_string(), BalanceJson{asset: offer.asset.clone(), balance: amount.0});
+        data_sub_contract.balance_block.insert(format!("ORDER|SELL|{}", self.order_sell_id).to_string(), BalanceJson{asset: offer.asset.clone(), balance: amount});
 
         self.contract_list.insert(&env::signer_account_id(), &data_sub_contract);
 
@@ -322,7 +322,7 @@ impl NearP2P {
                     "asset": offer.asset.clone(),
                     "signer_id": env::signer_account_id(),
                     "exchange_rate": rate.to_string(),
-                    "operation_amount": amount,
+                    "operation_amount": amount.to_string(),
                     "amount_delivered": amount_delivered,
                     "fee_deducted": U128(fee),
                     "payment_method": payment_method.to_string(),

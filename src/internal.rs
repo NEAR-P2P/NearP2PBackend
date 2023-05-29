@@ -76,7 +76,7 @@ trait IntBuy {
 #[ext_contract(int_offer)]
 trait IntOffer {
     fn on_accept_offer_sell(&mut self, offer: OfferObject
-        , amount: U128
+        , amount: u128
         , payment_method: i128
         , datetime: String
         , rate: f64
