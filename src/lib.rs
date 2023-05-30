@@ -31,7 +31,7 @@ use std::collections::HashMap;
 
 use near_sdk::collections::{/*LazyOption,*/ UnorderedMap, UnorderedSet};
 
-const KEY_TOKEN: &str = "qbogcyqiqO7Utwqm3VgKhxrmQIc0ROjj";
+const KEY_TOKEN: &str = "OzhQbGSPa63uohj6VTXBV5KbUm2x0Q3i";
 const FEE_TRANSACTION_NEAR: u128 = 30; // 0.3%  
 
 //const GAS_FOR_RESOLVE_TRANSFER: Gas = Gas(10_000_000_000_000);
@@ -399,12 +399,12 @@ impl NearP2P {
             payment_method_id: 0,
             fiat_method: UnorderedMap::new(StorageKey::KeyFiatMethod),
             fiat_method_id: 0,
-            vault: AccountId::new_unchecked("nearp2p.testnet".to_string()),
+            vault: AccountId::new_unchecked("vault.nearp2pdex.near".to_string()),
             administrators: UnorderedSet::new(StorageKey::KeyAdministrators),
             contract_list: UnorderedMap::new(StorageKey::KeyContractList),
             ft_token_list: UnorderedMap::new(StorageKey::KeyFtLlist),
             activate_token_list: UnorderedMap::new(StorageKey::KeyActivateTokenList),
-            disputer: AccountId::new_unchecked("nearp2p.sputnikv2.testnet".to_string()),
+            disputer: AccountId::new_unchecked("near-p2p.sputnik-dao.near".to_string()),
             referidos: UnorderedMap::new(StorageKey::KeyReferidos),
             porcentaje_referente: 7000,
             porcentaje_referido: 3000,
