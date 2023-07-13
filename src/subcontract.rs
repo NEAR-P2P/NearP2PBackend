@@ -159,23 +159,23 @@ impl NearP2P {
         if result.is_none() {
             env::panic_str("Error activate ft_token".as_ref());
         }
-        //let listar_token_activo = self.activate_token_list.get(&signer_id);
+        let listar_token_activo = self.activate_token_list.get(&signer_id);
 
-        /*if listar_token_activo.is_some() {
-            let mut tokens: Vec<String> = listar_token_activo.unwrap().iter().map(|x| x.clone()).collect::<Vec<String>>();
+        if listar_token_activo.is_some() {
+            let mut tokens: Vec<String> = listar_token_activo.unwrap().clone(); //.unwrap().iter().map(|x| x.clone()).collect::<Vec<String>>();
             tokens.push(ft_token);
-            self.activate_token_list.insert(signer_id, tokens);
-        } else {*/
-        self.activate_token_list.insert(&signer_id, &vec![ft_token]);
-        //}
+            self.activate_token_list.insert(&signer_id, &tokens);
+        } else {
+            self.activate_token_list.insert(&signer_id, &vec![ft_token]);
+        }
     }
 
-    pub fn get_token_activo(self, user_id: AccountId) -> bool {
+    pub fn get_token_activo(self, user_id: AccountId, ft_token: String) -> bool {
         let tokens = self.activate_token_list.get(&user_id);
-        if tokens.is_none() {
-            false
+        if tokens.is_some() {
+            tokens.unwrap().contains(&ft_token)
         } else {
-            true
+            false
         }  
     }
 
