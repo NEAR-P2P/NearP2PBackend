@@ -62,6 +62,7 @@ impl NearP2P {
                         contract_ft = Some(self.ft_token_list.get(&offer.asset).expect("El asset subministrado en la oferta es incorrecto").contract); //Some(AccountId::new_unchecked(CONTRACT_USDC.to_string()));
                     },
                 };
+
                 
                 ext_subcontract::transfer(
                     order.owner_id.clone(),
