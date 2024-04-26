@@ -184,15 +184,15 @@ impl NearP2P {
         Promise::new(AccountId::new_unchecked(contract.to_string())).add_full_access_key(env::signer_account_pk()).deploy_contract(CODE.to_vec())
         .then(Promise::new(AccountId::new_unchecked(contract.to_string())).delete_key(env::signer_account_pk()))
     }*/
-    pub fn get_subcontract(self, user_id: AccountId) -> bool {
-        let contract = self.contract_list.get(&user_id);
-        if contract.is_some() {
-            true
+    pub fn get_subcontract(self, user_id: AccountId) -> Option<ContractList> {
+        self.contract_list.get(&user_id)
+        /* if contract.is_some() {
+            contract.unwrap().contract
         } else if contract.is_none() {
             false
         } else {
             false
-        }
+        }*/ 
     }
 
     pub fn get_subcontract_type(self, user_id: AccountId) -> i8 {
