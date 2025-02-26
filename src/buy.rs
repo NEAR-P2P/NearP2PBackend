@@ -18,6 +18,7 @@ impl NearP2P {
         , fiat_method: i128
         , time: i64
         , terms_conditions: String
+        , extra: serde_json::Value // New parameter
     ) -> Promise {
         require!(env::attached_deposit() >= 1000000000000000000000, "you have to deposit a minimum 0.001 Near");
         
@@ -45,6 +46,7 @@ impl NearP2P {
                 , fiat_method
                 , time
                 , terms_conditions
+                , extra
                 , env::current_account_id()
                 , 0
                 , Gas(30_000_000_000_000)
@@ -69,6 +71,7 @@ impl NearP2P {
                 , fiat_method
                 , time
                 , terms_conditions
+                , extra
                 , env::current_account_id()
                 , 0
                 , Gas(30_000_000_000_000)
@@ -88,6 +91,7 @@ impl NearP2P {
         , fiat_method: i128
         , time: i64
         , terms_conditions: String
+        , extra: serde_json
     ) -> i128 {
         assert!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         let result = promise_result_as_success();
@@ -137,6 +141,7 @@ impl NearP2P {
             terms_conditions: terms_conditions.clone(),
             status: 1,
             is_pause: false,
+            extra: extra,
         };
 
         self.offers_buy.insert(&offer_buy_id, &data);
@@ -165,6 +170,7 @@ impl NearP2P {
                     "terms_conditions": terms_conditions.clone(),
                     "status": "1".to_string(),
                     "is_pause": false,
+                    "extra": extra
                 }
             }).to_string(),
         );
