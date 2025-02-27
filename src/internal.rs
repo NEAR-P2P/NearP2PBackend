@@ -55,6 +55,7 @@ trait IntBuy {
         , fiat_method: i128
         , time: i64
         , terms_conditions: String
+        , extra: String
     ) -> i128;
 
     /*fn on_put_offers_buy(&mut self, offer_id: i128

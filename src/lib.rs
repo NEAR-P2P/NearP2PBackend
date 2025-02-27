@@ -123,8 +123,7 @@ pub struct OfferObject {
     time: i64,
     terms_conditions: String,
     status: i8, // 1: active, 2: closed
-    is_pause: bool,
-    extra: serde_json::Value, // New field for extra JSON data
+    is_pause: bool
 }
 
 
