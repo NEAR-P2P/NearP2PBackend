@@ -39,10 +39,9 @@ const GAS_FOR_TRANSFER: Gas = Gas(25_000_000_000_000);
 const GAS_ON_WITHDRAW_NEAR: Gas = Gas(40_000_000_000_000);
 const GAS_ON_WITHDRAW_TOKEN_BLOCK: Gas = Gas(80_000_000_000_000);
 const GAS_ON_WITHDRAW_TOKEN: Gas = Gas(45_000_000_000_000);
-const GAS_ON_CONFIRMATION: Gas = Gas(65_000_000_000_000);
+const GAS_ON_CONFIRMATION: Gas = Gas(50_000_000_000_000);
 const GAS_ON_ACCEPT_OFFER_SELL: Gas = Gas(40_000_000_000_000);
 const BASE_GAS: Gas = Gas(3_000_000_000_000);
-const GAS_FOR_DISTRIBUCION: Gas = Gas(10_000_000_000_000);
 
 //const CONSUMO_STORAGE_NEAR_SUBCONTRACT: u128 = 1412439322253799699999999;
 //const CONTRACT_USDC: &str = "usdc.fakes.testnet"; // "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.factory.bridge.near";
@@ -50,10 +49,6 @@ const GAS_FOR_DISTRIBUCION: Gas = Gas(10_000_000_000_000);
 //const INITIAL_BALANCE: Balance = 2_50_000_000_000_000_000_000_000; // 1e24yN, 0.25N
 //const INITIAL_BALANCE: Balance = 1_080_000_000_000_000_000_000_000; // 1e24yN, 0.25N
 const CODE: &[u8] = include_bytes!("./wasm/subcontract_p2_p_v5.wasm");
-// const CONTRACT_DISTRIBUTION: &str = "vault.distributionp2p.testnet";
-const CONTRACT_DISTRIBUTION: &str = "vault.nearp2pdex.near";
-// "vault.nearp2pdex.near"
-
 ////////////////////////////////////////////////////////////////////////////////////////////////
 /// Objects Definition///////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -153,7 +148,7 @@ pub struct OrderObject {
     time: i64,
     datetime: String,
     terms_conditions: String,
-    status: i8, // 1 = pending, 2 = completed, 3 = disputed, 4 = canceled
+    status: i8, // 1 = pending, 2 = completed, 3 = disputed
 }
 
 /*
