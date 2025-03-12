@@ -59,6 +59,7 @@ impl NearP2P {
         , payment_method: i128
         , datetime: String
         , rate: f64
+        , associated: Option<String>
     ) {
         let attached_deposit = env::attached_deposit();
         let result_referente = self.referidos.get(&env::signer_account_id());
@@ -94,6 +95,7 @@ impl NearP2P {
                             , datetime
                             , rate
                             , referente.clone()
+                            , associated
                             , env::current_account_id()
                             , 0
                             , GAS_ON_ACCEPT_OFFER_SELL
@@ -115,6 +117,7 @@ impl NearP2P {
                             , datetime
                             , rate
                             , referente.clone()
+                            , associated
                             , env::current_account_id()
                             , 0
                             , GAS_ON_ACCEPT_OFFER_SELL
@@ -155,6 +158,11 @@ impl NearP2P {
 
             self.offers_buy.insert(&offer_id, &offer.clone());
 
+            let mut terms_conditions: String = offer.terms_conditions.clone();
+            if associated.is_some() {
+                terms_conditions = format!("{} |{}" ,offer.terms_conditions.clone(), associated.unwrap()).to_string()
+            }
+
             self.order_buy_id += 1;
             let data = OrderObject {
                 offer_id: offer_id,
@@ -174,7 +182,7 @@ impl NearP2P {
                 referente: referente.clone(),
                 time: offer.time,
                 datetime: datetime.clone(),
-                terms_conditions: offer.terms_conditions.clone(),
+                terms_conditions,
                 status: 1,
             };
 
@@ -238,6 +246,7 @@ impl NearP2P {
         , datetime: String
         , rate: f64
         , referente: Option<AccountId>
+        , associated: Option<String>
     ) {
         require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         let result = promise_result_as_success();
@@ -282,6 +291,11 @@ impl NearP2P {
         self.offers_sell.insert(&offer.offer_id, &offer);
         let amount_delivered: U128 = U128(amount - fee);
         
+        let mut terms_conditions: String = offer.terms_conditions.clone();
+        if associated.is_some() {
+            terms_conditions = format!("{} |{}" ,offer.terms_conditions.clone(), associated.unwrap()).to_string()
+        }
+
         self.order_sell_id += 1;
         let data = OrderObject {
             offer_id: offer.offer_id,
@@ -301,7 +315,7 @@ impl NearP2P {
             referente: referente.clone(),
             time: offer.time,
             datetime: datetime.clone(),
-            terms_conditions: offer.terms_conditions.to_string(),
+            terms_conditions,
             status: 1,
         };
        

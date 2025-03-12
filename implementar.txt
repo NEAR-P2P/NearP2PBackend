@@ -1,0 +1,23 @@
+near delete vault.distributionp2p.testnet distributionp2p.testnet
+near create-account vault.distributionp2p.testnet --masterAccount distributionp2p.testnet --initialBalance 7
+
+cargo build --target wasm32-unknown-unknown --release
+
+near deploy v17.nearp2p.testnet target/wasm32-unknown-unknown/release/near_p2_p.wasm
+
+near call vault.distributionp2p.testnet new '{"owner_id": "vault.distributionp2p.testnet"}' --accountId vault.distributionp2p.testnet
+
+
+
+
+NEAR_ENV=mainnet near deploy v4.nearp2pdex.near target/wasm32-unknown-unknown/release/near_p2_p.wasm
+
+
+
+NEAR_ENV=mainnet near call v4.nearp2pdex.near resolve_dispute '{"confirmation": true, "offer_type": 1, "order_id": 139}' --gas 300000000000000 --accountId hrpalencia.near
+
+
+NEAR_ENV=mainnet near call v4.nearp2pdex.near set_disputer '{"disputer": "v4.nearp2pdex.near"}' --accountId v4.nearp2pdex.near
+
+
+NEAR_ENV=mainnet near call v4.nearp2pdex.near get_order_sell  --accountId v4.nearp2pdex.near

@@ -47,3 +47,12 @@ trait ExtSubContract {
     ) -> bool;*/
 
 }
+
+#[ext_contract(ext_distribution)]
+trait ExtSubContract {
+    fn set_fee(&mut self,
+        id: String,
+        token: Option<AccountId>,
+        amount: U128,
+    );
+}

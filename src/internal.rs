@@ -81,6 +81,7 @@ trait IntOffer {
         , datetime: String
         , rate: f64
         , referente: Option<AccountId>
+        , associated: Option<String>
     );
 
     /*fn on_delete_contract_user(&mut self, signer_id: AccountId, sub_contract: AccountId);
@@ -100,5 +101,6 @@ trait IntProcess {
         confirmation_owner_id: i8,
         confirmation_signer_id: i8,
         confirmation_current: i8,
+        contract_ft: Option<AccountId>,
     );
 }

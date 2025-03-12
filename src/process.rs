@@ -68,7 +68,7 @@ impl NearP2P {
                     order.owner_id.clone(),
                     U128(order.amount_delivered),
                     U128(order.fee_deducted),
-                    contract_ft,
+                    contract_ft.clone(),
                     contract_name.contract.clone(),
                     2,
                     GAS_FOR_TRANSFER,
@@ -82,6 +82,7 @@ impl NearP2P {
                     order.confirmation_owner_id,
                     1,
                     order.confirmation_current,
+                    contract_ft.clone(),
                     env::current_account_id(),
                     0,
                     GAS_ON_CONFIRMATION,
@@ -135,7 +136,7 @@ impl NearP2P {
                     order.signer_id.clone(),
                     U128(order.amount_delivered),
                     U128(order.fee_deducted),
-                    contract_ft,
+                    contract_ft.clone(),
                     contract_name.contract.clone(),
                     2,
                     GAS_FOR_TRANSFER,
@@ -149,6 +150,7 @@ impl NearP2P {
                     1,
                     order.confirmation_signer_id,
                     order.confirmation_current,
+                    contract_ft.clone(),
                     env::current_account_id(),
                     0,
                     GAS_ON_CONFIRMATION,
@@ -195,7 +197,7 @@ impl NearP2P {
                     order.signer_id.clone(),
                     U128(order.operation_amount),
                     U128(0),
-                    contract_ft,
+                    contract_ft.clone(),
                     contract_name.contract.clone(),
                     1,
                     GAS_FOR_TRANSFER,
@@ -209,6 +211,7 @@ impl NearP2P {
                     3,
                     order.confirmation_signer_id,
                     order.confirmation_current,
+                    contract_ft.clone(),
                     env::current_account_id(),
                     0,
                     GAS_ON_CONFIRMATION,
@@ -282,7 +285,7 @@ impl NearP2P {
                     order.owner_id.clone(),
                     U128(order.operation_amount),
                     U128(0),
-                    contract_ft,
+                    contract_ft.clone(),
                     contract.contract.clone(),
                     1,
                     GAS_FOR_TRANSFER,
@@ -296,6 +299,7 @@ impl NearP2P {
                     order.confirmation_owner_id,
                     3,
                     order.confirmation_current,
+                    contract_ft.clone(),
                     env::current_account_id(),
                     0,
                     GAS_ON_CONFIRMATION,
@@ -321,6 +325,7 @@ impl NearP2P {
         confirmation_owner_id: i8,
         confirmation_signer_id: i8,
         confirmation_current: i8,
+        contract_ft: Option<AccountId>,
     ) {
         require!(env::predecessor_account_id() == env::current_account_id(), "Only administrators");
         let result = promise_result_as_success();
@@ -343,25 +348,43 @@ impl NearP2P {
         }
 
         if order_type == 1 {
-            let mut data_sub_contract = self.contract_list.get(&order.signer_id).expect("the user does not have a sub contract deployed");
+            let data_sub_contract = self.contract_list.get(&order.signer_id); //.expect("the user does not have a sub contract deployed");
             
-            let balance_json_default: BalanceJson = BalanceJson{asset: "".to_string(), balance: 0u128};
+            if data_sub_contract.is_some() {
+                let mut data_sub_contract_clon: ContractList = data_sub_contract.clone().unwrap();
 
-            let balance_block: u128 = data_sub_contract.balance_block.get(&format!("ORDER|SELL|{}", order.order_id).to_string()).or(Some(&balance_json_default)).unwrap().balance;
-            
-            data_sub_contract.balance_block.insert(format!("ORDER|SELL|{}", order.order_id).to_string(), BalanceJson{
-                asset: order.asset.clone(), 
-                balance: balance_block - order.operation_amount,
-            });
-            
-            self.contract_list.insert(&order.signer_id, &data_sub_contract);
+                let balance_json_default: BalanceJson = BalanceJson{asset: "".to_string(), balance: 0u128};
+
+                let balance_block: u128 = data_sub_contract_clon.balance_block.get(&format!("ORDER|SELL|{}", order.order_id).to_string()).or(Some(&balance_json_default)).unwrap().balance;
+                
+                data_sub_contract_clon.balance_block.insert(format!("ORDER|SELL|{}", order.order_id).to_string(), BalanceJson{
+                    asset: order.asset.clone(), 
+                    balance: balance_block - order.operation_amount,
+                });
+                
+                self.contract_list.insert(&order.signer_id, &data_sub_contract_clon);
+            }
             
 
-            self.orders_sell.remove(&order.order_id);
+            /* self.orders_sell.remove(&order.order_id);
 
-            let oferta = self.offers_sell.get(&order.offer_id).expect("Offer sell not found");
-            if oferta.remaining_amount <= 0 {
-                self.offers_sell.remove(&order.offer_id);
+            let oferta = self.offers_sell.get(&order.offer_id); // .expect("Offer sell not found");
+            if oferta.is_some() {
+                if oferta.unwrap().remaining_amount <= 0 {
+                    self.offers_sell.remove(&order.offer_id);
+                }
+            } */
+
+            let associated: Vec<&str> = order.terms_conditions.split("|").collect::<Vec<&str>>();
+            if associated.len() > 1 {
+                ext_distribution::set_fee(
+                    associated[1].to_string(),
+                    contract_ft,
+                    U128(order.fee_deducted),
+                    AccountId::new_unchecked(CONTRACT_DISTRIBUTION.to_string()),
+                    0,
+                    GAS_FOR_DISTRIBUCION,
+                );
             }
             
             env::log_str(
@@ -390,7 +413,7 @@ impl NearP2P {
                         "time": order.time.to_string(),
                         "datetime": order.datetime.clone(),
                         "terms_conditions": order.terms_conditions.clone(),
-                        "status": order.status.to_string(),
+                        "status": status.to_string(),
                         "confirmacion": confirmacion,
                     }
                 }).to_string(),
@@ -412,21 +435,39 @@ impl NearP2P {
         } else if order_type == 2 {
             self.orders_buy.remove(&order.order_id);
             
-            let mut data_sub_contract = self.contract_list.get(&order.owner_id).expect("the offer does not have a sub contract deployed");
+            let data_sub_contract = self.contract_list.get(&order.owner_id);//.expect("the offer does not have a sub contract deployed");
 
-            let balance_block: u128 = data_sub_contract.balance_block.get(&format!("OFFER|BUY|{}", order.offer_id).to_string()).unwrap().balance;
+            if data_sub_contract.is_some() {
+                let mut data_sub_contract_clon: ContractList = data_sub_contract.clone().unwrap();
+
+                let balance_block: u128 = data_sub_contract_clon.balance_block.get(&format!("OFFER|BUY|{}", order.offer_id).to_string()).unwrap().balance;
+                
+                data_sub_contract_clon.balance_block.insert(format!("OFFER|BUY|{}", order.offer_id).to_string(), BalanceJson{
+                    asset: order.asset.clone(), 
+                    balance: balance_block - (order.operation_amount + order.fee_deducted),
+                });
+                
+                self.contract_list.insert(&order.owner_id, &data_sub_contract_clon);
+            }
             
-            data_sub_contract.balance_block.insert(format!("OFFER|BUY|{}", order.offer_id).to_string(), BalanceJson{
-                asset: order.asset.clone(), 
-                balance: balance_block - (order.operation_amount + order.fee_deducted),
-            });
+            /* let oferta = self.offers_buy.get(&order.offer_id); //.expect("Offer sell not found");
             
-            self.contract_list.insert(&order.owner_id, &data_sub_contract);
-            
-            let oferta = self.offers_buy.get(&order.offer_id).expect("Offer sell not found");
-            
-            if oferta.remaining_amount <= 0 {
-                self.offers_buy.remove(&order.offer_id);
+            if oferta.is_some() {
+                if oferta.unwrap().remaining_amount <= 0 {
+                    self.offers_buy.remove(&order.offer_id);
+                }
+            } */
+
+            let associated: Vec<&str> = order.terms_conditions.split("|").collect::<Vec<&str>>();
+            if associated.len() > 1 {
+                ext_distribution::set_fee(
+                    associated[1].to_string(),
+                    contract_ft,
+                    U128(order.fee_deducted),
+                    AccountId::new_unchecked(CONTRACT_DISTRIBUTION.to_string()),
+                    0,
+                    GAS_FOR_DISTRIBUCION,
+                );
             }
 
             env::log_str(

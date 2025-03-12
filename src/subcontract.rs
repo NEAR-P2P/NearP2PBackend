@@ -94,7 +94,7 @@ impl NearP2P {
             .then(ext_subcontract::new(
                 env::signer_account_id(),
                 env::current_account_id(),
-                AccountId::new_unchecked("vault.nearp2pdex.near".to_string()),
+                AccountId::new_unchecked(CONTRACT_DISTRIBUTION.to_string()),
                 amount_despliegue,
                 subaccount_id.clone(),
                 0,
@@ -123,9 +123,18 @@ impl NearP2P {
         
         let amount_despliegue: u128 = 1300000000000000000000000;
 
-        let signer: AccountId = AccountId::new_unchecked(env::signer_account_id().as_str().split('.').collect::<Vec<&str>>()[0].to_string());
+        let signer: String = env::signer_account_id().as_str().split('.').collect::<Vec<&str>>()[0].to_string();
+        
+        let signer_final: String;
+
+        if signer.len() >= 60 {
+            signer_final = signer[..30].to_string();
+        } else {
+            signer_final = signer.to_string();
+        }
+        
         let subaccount_id: AccountId = AccountId::new_unchecked(
-        format!("{}.{}", signer, env::current_account_id())
+        format!("{}.{}", signer_final, env::current_account_id())
         );
         let result = Promise::new(subaccount_id.clone())
         .create_account()
@@ -134,7 +143,7 @@ impl NearP2P {
         .then(ext_subcontract::new(
             env::current_account_id(),
             env::current_account_id(),
-            AccountId::new_unchecked("vault.nearp2pdex.near".to_string()),
+            AccountId::new_unchecked(CONTRACT_DISTRIBUTION.to_string()),
             amount_despliegue,
             subaccount_id.clone(),
             0,
