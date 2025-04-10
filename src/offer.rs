@@ -258,7 +258,7 @@ impl NearP2P {
 
 
         assert!((balance_avalible - amount) as f64 >= 0.0, "the balance in the subaccount is less than the amount, avalible: {} - block: {}", balance_avalible, balance_block);
-
+        
 
         let remaining: u128 = offer.remaining_amount - amount;
         if remaining <= 0 {
