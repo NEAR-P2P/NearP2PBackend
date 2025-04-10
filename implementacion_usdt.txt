@@ -1,0 +1,42 @@
+near delete weth.tokens-pruebas.testnet tokens-pruebas.testnet
+near create-account weth.tokens-pruebas.testnet --masterAccount tokens-pruebas.testnet --initialBalance 15
+
+cargo build --target wasm32-unknown-unknown --release
+near deploy weth.tokens-pruebas.testnet target/wasm32-unknown-unknown/release/token_weth.wasm
+
+
+
+near call weth.tokens-pruebas.testnet new_default_meta '{"owner_id": "weth.tokens-pruebas.testnet", "total_supply": "21000000000000000"}' --accountId weth.tokens-pruebas.testnet
+
+
+
+near call weth.tokens-pruebas.testnet storage_deposit '{"account_id":"daov5.metademocracia.testnet"}' --accountId hpalencia.testnet --amount 0.00125
+near call weth.tokens-pruebas.testnet ft_transfer '{"receiver_id": "daov5.metademocracia.testnet", "amount": "50000000"}' --accountId weth.tokens-pruebas.testnet --depositYocto 1
+
+
+
+near call weth.tokens-pruebas.testnet storage_deposit '{"account_id":"5d18671d5948cd3348ff4fe4578518ed25a77ee73d18e4ee2b21b335d1585df7"}' --accountId hpalencia.testnet --amount 0.00125
+near call weth.tokens-pruebas.testnet ft_transfer '{"receiver_id": "5d18671d5948cd3348ff4fe4578518ed25a77ee73d18e4ee2b21b335d1585df7", "amount": "50000000"}' --accountId weth.tokens-pruebas.testnet --depositYocto 1
+
+near call weth.tokens-pruebas.testnet storage_deposit '{"account_id":"prueba90.testnet"}' --accountId hpalencia.testnet --amount 0.00125
+near call weth.tokens-pruebas.testnet ft_transfer '{"receiver_id": "prueba90.testnet", "amount": "50000000"}' --accountId weth.tokens-pruebas.testnet --depositYocto 1
+
+
+
+near view weth.tokens-pruebas.testnet ft_balance_of '{"account_id": "hpalencia.testnet"}'
+
+near view weth.tokens-pruebas.testnet ft_balance_of '{"account_id": "weth.tokens-pruebas.testnet"}'
+
+near view weth.tokens-pruebas.testnet ft_balance_of '{"account_id": "andromeda2018.v17.nearp2p.testnet"}'
+
+
+
+near view weth.tokens-pruebas.testnet ft_metadata
+near view weth.tokens-pruebas.testnet ft_total_supply
+
+
+
+
+
+
+
