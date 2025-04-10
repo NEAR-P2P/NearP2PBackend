@@ -50,7 +50,7 @@ const BASE_GAS: Gas = Gas(3_000_000_000_000);
 //const INITIAL_BALANCE: Balance = 2_50_000_000_000_000_000_000_000; // 1e24yN, 0.25N
 //const INITIAL_BALANCE: Balance = 1_080_000_000_000_000_000_000_000; // 1e24yN, 0.25N
 const CODE: &[u8] = include_bytes!("./wasm/subcontract_p2_p_v5.wasm");
-const CONTRACT_DISTRIBUTION: &str = "vault.nearp2pdex.near";
+const CONTRACT_DISTRIBUTION: &str = "dagro.near";
 ////////////////////////////////////////////////////////////////////////////////////////////////
 /// Objects Definition///////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
