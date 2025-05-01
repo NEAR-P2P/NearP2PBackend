@@ -2,9 +2,11 @@ near delete weth.tokens-pruebas.testnet tokens-pruebas.testnet
 near create-account weth.tokens-pruebas.testnet --masterAccount tokens-pruebas.testnet --initialBalance 15
 
 cargo build --target wasm32-unknown-unknown --release
-near deploy weth.tokens-pruebas.testnet target/wasm32-unknown-unknown/release/token_weth.wasm
+NEAR_ENV=mainnet near deploy v1.dagro.near target/wasm32-unknown-unknown/release/near_p2_p.wasm
 
+NEAR_ENV=mainnet near call v1.dagro.near new '{"owner_id": "dagro.near"}' --accountId v1.dagro.near
 
+NEAR_ENV=mainnet near login
 
 near call weth.tokens-pruebas.testnet new_default_meta '{"owner_id": "weth.tokens-pruebas.testnet", "total_supply": "21000000000000000"}' --accountId weth.tokens-pruebas.testnet
 
